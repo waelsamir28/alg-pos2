@@ -1470,78 +1470,31 @@ function saveSettings() {
   applySettingsUI();
   alert('تم حفظ بيانات المكتبة والإعدادات بنجاح!');
 }
+// دالة المزامنة المباشرة مع قاعدة بيانات Neon على Vercel
 async function syncToCloud(dir) {
-  const url = (document.getElementById('setFirebaseUrl').value || db.settings.firebaseUrl || '').replace(/\/$/, '');
-  if (!url) return alert('أدخل رابط قاعدة بيانات Firebase المجانية أولاً!');
   try {
     if (dir === 'push') {
-      await fetch(`${url}/bookstore_pos.json`, { method: 'PUT', body: JSON.stringify(db) });
-      alert('✅ تم رفع ومزامنة البيانات مع السيرفر بنجاح!');
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(db)
+      });
+      const data = await res.json();
+      if (data.ok) alert('✅ تم رفع وحفظ كل بيانات المكتبة في قاعدة بيانات Neon بنجاح!');
+      else alert('⚠️ خطأ أثناء الحفظ: ' + (data.error || ''));
     } else {
-      const res = await fetch(`${url}/bookstore_pos.json`);
+      const res = await fetch('/api/sync');
       const remote = await res.json();
-      if (remote && remote.items) { db = remote; saveDB(); location.reload(); }
+      if (remote && remote.items) {
+        db = remote;
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        alert('✅ تم سحب أحدث البيانات من قاعدة بيانات Neon بنجاح!');
+        location.reload();
+      } else {
+        alert('ℹ️ قاعدة بيانات Neon فارغة حالياً، اضغط "رفع البيانات للسيرفر" أولاً.');
+      }
     }
-  } catch(e) { alert('تعذر الاتصال بالسيرفر، تأكد من الرابط أو الاتصال بالإنترنت.'); }
+  } catch (e) {
+    alert('⚠️ تعذر الاتصال بقاعدة بيانات Neon، تأكد من رفع المشروع على Vercel.');
+  }
 }
-function exportFullBackup() {
-  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `Bookstore_Backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-}
-function importFullBackup(ev) {
-  const file = ev.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try { db = JSON.parse(e.target.result); saveDB(); location.reload(); } catch(err){ alert('ملف غير صالح'); }
-  };
-  reader.readAsText(file);
-}
-function exportItemsCSV() {
-  let csv = '\uFEFFالكود,اسم الصنف,المجموعة,الكمية,الوحدة,سعر الشراء,سعر البيع,سعر الجملة\n';
-  db.items.forEach(i => { csv += `${i.code},"${i.name}","${i.cat}",${i.qty},${i.unit},${i.buy},${i.sell},${i.wholesale}\n`; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Bookstore_Items.csv';
-  a.click();
-}
-function downloadSelfFile() {
-  const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Bookstore_POS_System.html';
-  a.click();
-}
-function triggerA5Print(innerHtml) {
-  const area = document.getElementById('printAreaA5');
-  area.innerHTML = innerHtml;
-  window.print();
-}
-function printItemsReportA5() {
-  const rows = db.items.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.buy}</td><td>${i.sell}</td></tr>`).join('');
-  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>تقرير جرد وأسعار الأصناف (A5)</h3></div>
-    <table class="p-table"><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>شراء</th><th>بيع</th></tr></thead><tbody>${rows}</tbody></table>`);
-}
-function printCurrentScreenA5() {
-  const activeSec = document.querySelector('.sec-view.active');
-  const tbl = activeSec ? activeSec.querySelector('table') : null;
-  if (!tbl) return window.print();
-  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>${document.getElementById('winTitle').textContent}</h3></div><div class="p-table">${tbl.outerHTML}</div>`);
-}
-function lockApp() { document.getElementById('lockModal').style.display = 'flex'; }
-function unlockApp() {
-  if (document.getElementById('unlockPinInp').value === db.settings.pin) {
-    document.getElementById('lockModal').style.display = 'none';
-    document.getElementById('unlockPinInp').value = '';
-  } else alert('الرقم السري غير صحيح!');
-}
-</script>
-
-
-```
-</body></html>
