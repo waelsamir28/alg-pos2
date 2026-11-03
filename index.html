@@ -3,405 +3,744 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<title>نظام إدارة المكتبات والمبيعات الشامل - POS & ERP</title>
+<title>YAZSYS | نظام نقاط البيع وإدارة المكتبات</title>
 <style>
   :root {
-    --teal-dark: #065a60;
-    --teal-main: #0b7279;
-    --teal-light: #e0f2f1;
-    --blue-win: #2b78a6;
-    --blue-light: #eaf4fb;
-    --red-accent: #b71c1c;
-    --green-btn: #1b8a4b;
-    --orange-btn: #d97706;
-    --purple-btn: #8e24aa;
-    --bg-main: #f0f4f8;
-    --text-dark: #1e293b;
+    --g-dark:#2d5a1a; --g-bar:#3b7323; --g-line:#224a12; --g-soft:#eaf0e0;
+    --paper:#f4f2e4; --paper-2:#ecead6; --panel:#fbfaef; --panel-2:#f3f1de;
+    --ink:#1b2313; --muted:#5f6650;
+    --line:#b5b096; --line-dark:#8b8669; --line-soft:#d9d5bb;
+    --thead:#e7e2c4; --row-alt:#f4f7fa; --row-sel:#fdf4b0; --row-hover:#fffbdc;
+    --btn:#f1efdb; --btn-2:#e6e3cb; --btn-hover:#fffef2;
+    --ok:#2f7d32; --ok-dark:#20591f; --danger:#b1251d; --info:#2b5c8a; --warn:#a5641a; --purple:#6a4b9c;
+    --accent:#3b7323; --shadow:0 10px 28px #00000038;
+    --radius:3px; --fs:12.5px;
   }
-  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-  body { margin: 0; background: var(--bg-main); color: var(--text-dark); font-size: 14px; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html, body { height:100%; }
+  body {
+    margin:0; background:#dcd9c6; color:var(--ink);
+    font-family:Tahoma, 'Segoe UI', Arial, sans-serif; font-size:var(--fs);
+    -webkit-font-smoothing:antialiased;
+  }
+  button, input, select, textarea { font-family:inherit; font-size:inherit; color:inherit; }
+  button { cursor:pointer; }
+  button:disabled, input:disabled, select:disabled { opacity:.55; cursor:not-allowed; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid #f0a500; outline-offset:1px; }
+  code { background:#00000010; padding:1px 4px; border-radius:3px; }
 
-  .top-utility-bar {
-    background: #0f172a; color: #fff; padding: 6px 14px;
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-  }
-  .top-utility-bar .util-btns button {
-    border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;
-    font-weight: bold; font-size: 12px; margin-left: 5px; color: #fff;
-  }
-  .btn-dl { background: #10b981; }
-  .btn-sync { background: #3b82f6; }
-  .btn-lock { background: #ef4444; }
-  .btn-view-mode { background: #f59e0b; color: #000 !important; }
+  .sec-view { display:none; }
+  .sec-view.active { display:block; }
 
-  .main-banner {
-    background: var(--teal-dark); color: #fff; margin: 8px;
-    border: 3px solid #043d41; border-radius: 6px; padding: 10px 16px;
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  /* ============ TOP GREEN BANNER ============ */
+  .top-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:9px 16px; color:#fff; min-height:58px;
+    background:linear-gradient(180deg,#4a842c 0%,var(--g-bar) 45%,#2c591a 100%);
+    border-bottom:2px solid var(--g-line);
+    box-shadow:inset 0 1px 0 #ffffff35;
   }
-  .banner-info { text-align: center; flex: 1; }
-  .banner-info h1 { margin: 0 0 4px 0; font-size: 24px; letter-spacing: 0.5px; }
-  .banner-info p { margin: 2px 0; font-size: 15px; opacity: 0.95; font-weight: bold; }
-  .banner-kpis { display: flex; gap: 10px; flex-wrap: wrap; }
+  .top-bar .brand { display:flex; align-items:center; gap:10px; min-width:170px; }
+  .brand-badge {
+    display:grid; place-items:center; width:36px; height:36px; border-radius:5px;
+    background:#ffffff1f; border:1px solid #ffffff59; font-weight:bold; font-size:15px; letter-spacing:.5px;
+  }
+  .brand-text strong { display:block; font-size:15px; letter-spacing:.5px; }
+  .brand-text small { font-size:10.5px; opacity:.85; }
+  .top-bar .store-title {
+    flex:1; text-align:center; font-size:21px; font-weight:bold; letter-spacing:.4px;
+    text-shadow:0 1px 2px #00000055; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .top-bar .store-title span { color:#ffe98a; }
+  .top-bar .top-meta { display:flex; align-items:center; gap:8px; min-width:170px; justify-content:flex-end; }
+  .clock-pill {
+    background:#00000030; border:1px solid #ffffff4d; border-radius:4px; padding:3px 9px;
+    font-size:11.5px; font-weight:bold; text-align:center; line-height:1.5; min-width:96px;
+  }
+  .clock-pill small { display:block; font-size:9.5px; opacity:.8; font-weight:normal; }
+
+  /* ============ TOOL STRIP ============ */
+  .tool-strip {
+    display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+    padding:4px 12px; background:linear-gradient(#f7f5e8,#e9e6d2);
+    border-bottom:1px solid var(--line-dark); box-shadow:0 1px 0 #ffffff90 inset;
+  }
+  .tool-strip .strip-label { font-size:11px; color:var(--muted); margin-inline-start:auto; display:flex; align-items:center; gap:6px; }
+  .y-btn {
+    display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--radius);
+    border:1px solid var(--line-dark); background:linear-gradient(#fdfcf2,var(--btn) 60%,var(--btn-2));
+    box-shadow:inset 0 1px 0 #fff, 0 1px 1px #00000012; font-size:11.5px; font-weight:bold; color:#2c3320;
+    transition:background .12s;
+  }
+  .y-btn:hover { background:linear-gradient(#fffef7,#f6f4e2); }
+  .y-btn:active { background:var(--btn-2); box-shadow:inset 0 1px 3px #0000002e; transform:translateY(1px); }
+  .y-btn.primary { background:linear-gradient(#3f8a2a,#2f6a1d); color:#fff; border-color:#20460f; }
+  .y-btn.primary:hover { background:linear-gradient(#4b9c33,#35741f); }
+  .status-dot { width:9px; height:9px; border-radius:50%; background:#e0a800; box-shadow:0 0 0 2px #e0a80033; display:inline-block; }
+  .status-indicator { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:bold; }
+  .status-indicator[data-state="synced"] .status-dot { background:#2ec27e; box-shadow:0 0 0 2px #2ec27e33; }
+  .status-indicator[data-state="error"] .status-dot { background:#d93025; box-shadow:0 0 0 2px #d9302533; }
+  .user-session-button, .user-chip {
+    border:1px solid #ffffff66; background:#ffffff1f; color:#fff; padding:3px 10px;
+    border-radius:999px; font-size:11px; font-weight:bold;
+  }
+
+  /* ============ SHELL ============ */
+  .app-shell {
+    display:grid; grid-template-columns:252px minmax(0,1fr); direction:rtl; gap:0;
+    align-items:stretch; min-height:calc(100vh - 96px);
+    transition:grid-template-columns .18s ease;
+  }
+  .app-shell.sidebar-collapsed { grid-template-columns:66px minmax(0,1fr); }
+
+  /* ============ SIDEBAR (classic YAZSYS) ============ */
+  .side-nav {
+    background:var(--panel); border-inline-start:1px solid var(--line-dark);
+    border-inline-end:1px solid var(--line); padding:0 0 14px;
+    display:flex; flex-direction:column; overflow-y:auto; max-height:calc(100vh - 96px); position:sticky; top:0;
+  }
+  .side-brand {
+    display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--line);
+    background:linear-gradient(#f8f7ec,#ecead7); white-space:nowrap;
+  }
+  .side-brand .brand-mark { display:grid; place-items:center; width:30px; height:30px; border-radius:4px; background:var(--g-bar); color:#fff; font-size:15px; flex:0 0 30px; }
+  .side-brand strong { display:block; font-size:12.5px; }
+  .side-brand small { display:block; font-size:9.5px; color:var(--muted); }
+  .nav-caption {
+    padding:6px 12px 3px; font-size:10.5px; font-weight:bold; color:#5c6650;
+    background:linear-gradient(#ecead8,#e3e0c8); border-block:1px solid var(--line-soft);
+    letter-spacing:.2px; white-space:nowrap; margin-top:6px;
+  }
+  .nav-group { border-bottom:1px solid var(--line-soft); }
+  .nav-link {
+    width:100%; display:flex; align-items:center; gap:8px; text-align:right;
+    padding:5px 10px; border:0; border-bottom:1px solid #e8e5d2; background:transparent;
+    font-size:11.5px; font-weight:bold; color:#333c22; white-space:nowrap; line-height:1.45;
+  }
+  .nav-link:hover { background:#fffbdc; }
+  .nav-link.selected { background:linear-gradient(#fdf3ae,#f6e889); box-shadow:inset 3px 0 0 #b58a00; }
+  .nav-link.accent { background:linear-gradient(#cde5c0,#b9d8a7); }
+  .nav-icon {
+    display:grid; place-items:center; width:22px; height:22px; flex:0 0 22px;
+    border-radius:3px; background:#ffffff; border:1px solid var(--line-soft); font-size:12px;
+  }
+  .nav-label { overflow:hidden; text-overflow:ellipsis; }
+  .nav-link .nav-caret { margin-inline-start:auto; color:#8a8a75; font-size:10px; }
+  .nav-sub { display:flex; flex-direction:column; background:#f6f5e8; }
+  .nav-sub .nav-link { font-weight:normal; padding-inline-start:34px; font-size:11px; }
+  .side-nav-foot {
+    margin-top:auto; padding:8px 12px 0; border-top:1px solid var(--line-soft);
+    font-size:10px; color:var(--muted); display:flex; align-items:center; gap:7px; white-space:nowrap;
+  }
+  .nav-status-dot { width:8px; height:8px; border-radius:50%; background:#2ec27e; box-shadow:0 0 0 2px #2ec27e33; flex:0 0 auto; }
+  .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-caret, .sidebar-collapsed .nav-caption,
+  .sidebar-collapsed .side-brand > div, .sidebar-collapsed .side-nav-foot span:not(.nav-status-dot) { display:none; }
+  .sidebar-collapsed .nav-link { justify-content:center; padding-inline:6px; }
+  .sidebar-collapsed .side-brand { justify-content:center; }
+  .sidebar-collapsed .nav-sub .nav-link { padding-inline-start:6px; }
+
+  /* ============ MAIN CONTENT ============ */
+  .main-content { min-width:0; padding:10px; background:#e7e5d5; }
+  .home-dashboard, .classic-panel {
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius);
+    padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 0 #fff inset, 0 1px 3px #00000012;
+  }
+  .dashboard-heading, .section-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; flex-wrap:wrap; }
+  .dashboard-heading h2, .section-heading h2 { margin:0; font-size:14px; font-weight:bold; color:#2a3318; }
+  .dashboard-heading p, .section-hint { margin:0; font-size:10.5px; color:var(--muted); }
+  .eyebrow { display:none; }
+  .kpi-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
   .kpi-box {
-    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3);
-    padding: 6px 12px; border-radius: 6px; text-align: center; min-width: 110px;
+    background:linear-gradient(#fffdf0,#f2f0da); border:1px solid var(--line);
+    border-radius:var(--radius); padding:7px 10px; box-shadow:inset 0 1px 0 #fff;
   }
-  .kpi-box small { display: block; font-size: 11px; opacity: 0.85; }
-  .kpi-box strong { font-size: 16px; color: #fde047; }
-  .clock-boxes { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
-  .clock-box {
-    background: var(--red-accent); color: #fff; text-align: center;
-    padding: 6px 10px; font-weight: bold; font-size: 16px; border: 2px solid #7f1d1d; border-radius: 4px;
+  .kpi-box small { display:block; font-size:10px; color:var(--muted); }
+  .kpi-box strong { font-size:16px; color:#22450f; }
+  .kpi-box.warn strong { color:var(--danger); }
+  .sales-chart {
+    display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; align-items:end;
+    min-height:150px; padding:8px; background:repeating-linear-gradient(to bottom,transparent 0 35px,#00000010 35px 36px);
+    border:1px solid var(--line-soft); border-radius:var(--radius);
   }
-
-  .classic-panel {
-    margin: 8px; background: #d7f3f5; border: 2px solid var(--teal-dark);
-    padding: 8px; border-radius: 6px; display: block;
+  .chart-day { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; min-width:0; }
+  .chart-value { font-size:10px; font-weight:bold; white-space:nowrap; }
+  .chart-track { height:92px; width:min(34px,72%); display:flex; align-items:flex-end; }
+  .chart-bar { display:block; width:100%; min-height:3px; background:linear-gradient(#7ab35a,#3b7323); border:1px solid #2b5417; border-radius:1px; }
+  .chart-label { font-size:10px; color:var(--muted); }
+  .system-alerts {
+    display:flex; align-items:flex-start; gap:8px; margin-top:9px; padding:6px 8px;
+    border:1px solid var(--line); border-radius:var(--radius); background:#fffdf2;
   }
-  .classic-top-row {
-    display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 6px;
-    margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--teal-dark);
-  }
-  .classic-grid {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
-  }
-  @media (max-width: 900px) {
-    .classic-top-row { grid-template-columns: repeat(2, 1fr); }
-    .classic-grid { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (max-width: 550px) {
-    .classic-grid { grid-template-columns: repeat(2, 1fr); }
-  }
+  .system-alerts h3 { margin:0; font-size:11px; white-space:nowrap; }
+  .system-alerts ul { display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none; }
+  .system-alerts li { font-size:10.5px; }
+  .system-alerts li button { border:1px solid var(--line); border-radius:2px; background:#fff; padding:2px 7px; font-size:10.5px; }
+  .system-alerts li.alert-danger button { color:var(--danger); border-color:#e0a39f; background:#fff1f0; }
+  .system-alerts li.alert-good { color:#2f6a1d; padding:3px 4px; }
+  .action-group { border-top:1px solid var(--line-soft); padding:9px 0 3px; }
+  .action-group h3 { display:flex; align-items:center; gap:6px; margin:0 0 8px; font-size:12px; color:#2f3a1d; }
+  .action-groups-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 16px; }
+  .classic-top-row, .classic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:7px; }
   .c-btn {
-    background: var(--teal-main); color: #fff; border: 2px solid var(--red-accent);
-    padding: 9px 6px; font-size: 13px; font-weight: bold; cursor: pointer;
-    border-radius: 4px; text-align: center; transition: 0.15s;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    display:flex; align-items:center; gap:8px; padding:7px 9px; text-align:right; min-height:44px;
+    border:1px solid var(--line-dark); border-radius:var(--radius);
+    background:linear-gradient(#fefdf4,var(--btn) 65%,var(--btn-2)); color:#26301a;
+    font-size:11.5px; font-weight:bold; box-shadow:inset 0 1px 0 #fff, 0 1px 1px #00000012;
   }
-  .c-btn:hover, .c-btn.active { background: #044347; border-color: #fde047; transform: translateY(-1px); }
-  .c-btn.tall { grid-row: span 2; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .c-btn:hover { background:linear-gradient(#fffefa,#f9f7e4); border-color:#8a8560; }
+  .c-btn:active { transform:translateY(1px); box-shadow:inset 0 1px 3px #0000002a; }
+  .c-btn .button-icon {
+    display:grid; place-items:center; width:26px; height:26px; flex:0 0 26px;
+    border-radius:3px; background:var(--g-soft); border:1px solid #cdd9bd; font-size:14px;
+  }
+  .c-btn .button-label { line-height:1.3; }
+  .c-btn.tall { min-height:58px; }
 
+  /* ============ CLASSIC WINDOW ============ */
+  .window-layer {
+    display:none; position:fixed; inset:0; z-index:5000; padding:14px;
+    background:#0b1b0738; align-items:center; justify-content:center;
+  }
+  .window-layer.open { display:flex; }
   .workspace {
-    margin: 8px; background: #fff; border: 3px solid var(--blue-win);
-    border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width:min(1420px,100%); max-height:calc(100vh - 26px); display:flex; flex-direction:column;
+    background:var(--panel); border:2px solid var(--line-dark); border-radius:4px;
+    box-shadow:var(--shadow); overflow:hidden;
   }
   .win-header {
-    background: linear-gradient(to left, #1e5c85, var(--blue-win), #3b8ec2);
-    color: #fff; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 6px 4px 10px;
+    background:linear-gradient(180deg,#f6f5ea,#e4e1cc); border-bottom:1px solid var(--line-dark);
   }
-  .win-header h2 { margin: 0; font-size: 19px; }
-  .win-body { padding: 12px; }
+  .win-header h2 { margin:0; font-size:13px; font-weight:bold; color:#2b3320; display:flex; align-items:center; gap:7px; }
+  .win-header h2::before { content:'▣'; color:var(--g-bar); font-size:12px; }
+  .win-header-actions { display:flex; gap:5px; align-items:center; }
+  .win-close {
+    width:24px; height:21px; padding:0; display:grid; place-items:center;
+    border:1px solid #a09b80; background:linear-gradient(#fdfcf4,#eae7d3); font-size:11px; font-weight:bold;
+  }
+  .win-close:hover { background:#ffdcd8; border-color:#b3261e; }
+  .win-body { padding:9px; overflow:auto; background:#e9e7d8; }
+  .window-layer.maximized { padding:4px; }
+  .window-layer.maximized .workspace { width:100%; height:calc(100vh - 8px); max-height:none; }
+  .window-layer.minimized { pointer-events:none; background:transparent; }
+  .window-layer.minimized .workspace { display:none; }
+  .window-dock {
+    position:fixed; z-index:6000; bottom:14px; inset-inline-start:16px; display:flex; align-items:center; gap:10px;
+    padding:7px 12px; background:var(--panel); border:1px solid var(--line-dark); border-radius:4px;
+    box-shadow:0 8px 22px #00000040; font-size:11.5px;
+  }
+  .window-dock[hidden] { display:none !important; }
 
-  .form-grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
-  @media (max-width: 850px) { .form-grid-2 { grid-template-columns: 1fr; } }
+  /* ============ PANELS / FORMS ============ */
+  .form-grid-2 { display:grid; grid-template-columns:1.05fr 1fr; gap:9px; }
   .panel-box {
-    background: var(--blue-light); border: 2px solid var(--blue-win);
-    border-radius: 6px; padding: 10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:8px 10px 10px; margin-bottom:9px; box-shadow:inset 0 1px 0 #fff;
   }
   .panel-title {
-    font-weight: bold; color: #fff; background: var(--blue-win);
-    padding: 4px 10px; margin: -10px -10px 10px -10px; font-size: 13px;
+    font-weight:bold; font-size:11.5px; color:#2c3519; background:linear-gradient(#f0eeda,#e5e2ca);
+    margin:-8px -10px 8px; padding:4px 9px; border-bottom:1px solid var(--line);
   }
-  .f-row { display: flex; align-items: center; margin-bottom: 7px; gap: 6px; flex-wrap: wrap; }
-  .f-row label { min-width: 95px; font-weight: bold; font-size: 13px; color: #0f172a; }
-  .f-row input, .f-row select, .f-row textarea {
-    flex: 1; padding: 6px 8px; border: 1px solid #94a3b8; border-radius: 4px;
-    font-size: 13px; font-weight: bold; background: #fff; min-width: 80px;
+  .f-row { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+  .f-row > label { font-weight:bold; font-size:11.5px; color:#3b442b; min-width:78px; }
+  .f-row input, .f-row select, .f-row textarea, .plain-input {
+    flex:1 1 90px; min-width:70px; padding:3px 6px; height:25px;
+    border:1px solid #a9a48a; border-radius:2px; background:#fffef8; font-weight:bold;
+    box-shadow:inset 1px 1px 2px #0000000f;
   }
-  .f-row input:focus, .f-row select:focus { outline: 2px solid var(--blue-win); background: #fefce8; }
+  .f-row input[readonly] { background:#f2f0e2; color:#3c4a2b; }
+  .f-row input:focus, .f-row select:focus, .f-row textarea:focus { background:#fff; border-color:var(--g-bar); box-shadow:0 0 0 2px #3b732322; }
+  .f-row small, .keyboard-hint { font-size:10px; color:var(--muted); width:100%; }
+  .scope-note { font-size:10.5px; color:var(--muted); line-height:1.7; margin:5px 0; }
+  .appearance-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:6px 0 10px; }
+  .theme-choice {
+    text-align:right; padding:7px 8px; border:1px solid var(--line); border-radius:2px;
+    background:linear-gradient(#fefdf5,#f0eedb); font-size:11px; font-weight:bold; color:#2f3920;
+  }
+  .theme-choice[aria-pressed="true"] { border:2px solid var(--g-bar); background:#fffdf0; box-shadow:0 0 0 1px #3b732333; }
+  .theme-swatches { display:flex; gap:4px; margin-top:6px; }
+  .theme-swatches i { width:20px; height:8px; display:block; border:1px solid #00000020; }
 
+  /* ============ ACTION BAR / BUTTONS ============ */
   .action-bar {
-    display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0;
-    padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;
+    display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:8px 0;
+    padding:6px; background:linear-gradient(#f7f5e6,#eae7d2); border:1px solid var(--line); border-radius:var(--radius);
   }
   .act-btn {
-    border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold;
-    font-size: 13px; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 5px;
+    display:inline-flex; align-items:center; gap:4px; padding:4px 9px; min-height:25px;
+    border:1px solid #7d7960; border-radius:2px; font-size:11px; font-weight:bold; color:#1f2714;
+    background:linear-gradient(#fefdf4,var(--btn) 60%,var(--btn-2));
+    box-shadow:inset 0 1px 0 #fff, 0 1px 1px #00000018;
   }
-  .bg-green { background: var(--green-btn); }
-  .bg-red { background: var(--red-accent); }
-  .bg-blue { background: var(--blue-win); }
-  .bg-teal { background: var(--teal-dark); }
-  .bg-orange { background: var(--orange-btn); }
-  .bg-purple { background: var(--purple-btn); }
+  .act-btn:hover { background:linear-gradient(#fffefa,#f7f5e1); }
+  .act-btn:active { transform:translateY(1px); box-shadow:inset 0 1px 3px #0000002e; }
+  .bg-green { background:linear-gradient(#4f9c36,var(--ok) 55%,var(--ok-dark)); color:#fff; border-color:#1d4d15; }
+  .bg-green:hover { background:linear-gradient(#5aab3e,#338a36); }
+  .bg-red { background:linear-gradient(#d05046,#b1251d 60%,#8c1a14); color:#fff; border-color:#6f1310; }
+  .bg-red:hover { background:linear-gradient(#da5a50,#bb2b22); }
+  .bg-blue { background:linear-gradient(#4b82b5,var(--info) 60%,#1f4a72); color:#fff; border-color:#173c5c; }
+  .bg-blue:hover { background:linear-gradient(#558cc0,#30689a); }
+  .bg-teal { background:linear-gradient(#3f9187,#237a70 60%,#17594f); color:#fff; border-color:#10453d; }
+  .bg-orange { background:linear-gradient(#d69343,var(--warn) 60%,#83500f); color:#fff; border-color:#6d420b; }
+  .bg-purple { background:linear-gradient(#8b6cbd,var(--purple) 60%,#503778); color:#fff; border-color:#402c60; }
+  .bg-teal:hover, .bg-orange:hover, .bg-purple:hover { filter:brightness(1.07); }
 
-  .table-wrap { overflow-x: auto; max-height: 400px; border: 1px solid #94a3b8; border-radius: 4px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th {
-    background: #e2e8f0; color: #0f172a; padding: 8px 6px;
-    border: 1px solid #cbd5e1; position: sticky; top: 0; z-index: 2;
+  /* ============ TABLES ============ */
+  .table-wrap { overflow:auto; max-height:380px; border:1px solid var(--line-dark); border-radius:2px; background:#fff; }
+  table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  thead th {
+    position:sticky; top:0; z-index:2; background:linear-gradient(#f0eeda,#e2dfc4);
+    border:1px solid var(--line); padding:4px 5px; font-size:11px; font-weight:bold; color:#333c22; white-space:nowrap;
   }
-  td { padding: 6px; border: 1px solid #cbd5e1; text-align: center; }
-  tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody tr:hover { background: #dbeafe; }
+  tbody td { border:1px solid #ded9be; padding:3px 5px; text-align:center; }
+  tbody tr:nth-child(even) { background:var(--row-alt); }
+  tbody tr:hover { background:var(--row-hover); }
+  tbody tr.selected-row { background:var(--row-sel) !important; box-shadow:inset 0 0 0 2px #e0b000; }
+  .table-wrap input { max-width:100%; }
+  td input, td select {
+    width:100%; padding:1px 4px; height:22px; border:1px solid #b6b198; background:#fffdf5;
+    text-align:center; font-size:11px; font-weight:bold;
+  }
   .t-foot-bar {
-    display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;
-    background: #e2e8f0; padding: 8px; border: 1px solid #94a3b8; margin-top: 6px; font-weight: bold;
+    display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;
+    background:linear-gradient(#f2f0dc,#e6e3cb); border:1px solid var(--line-dark);
+    border-top:0; padding:4px 8px; font-size:11px; font-weight:bold;
   }
-  .t-foot-bar span { background: #fff; padding: 4px 12px; border: 1px solid #94a3b8; border-radius: 4px; }
+  .t-foot-bar span { background:#fffdf3; border:1px solid var(--line-soft); padding:2px 8px; border-radius:2px; }
+  .empty-row { padding:16px; color:var(--muted); }
+  .badge { padding:1px 5px; border-radius:2px; font-size:10px; color:#fff; font-weight:bold; }
+  .badge.bg-green { color:#fff; }
 
-  .sec-view { display: none; }
-  .sec-view.active { display: block; }
-  .badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #fff; font-weight: bold; }
-
-  #printAreaA5 { display: none; }
-  @media print {
-    @page { size: A5 portrait; margin: 6mm; }
-    body * { visibility: hidden; }
-    #printAreaA5, #printAreaA5 * { visibility: visible; }
-    #printAreaA5 {
-      display: block !important; position: absolute; left: 0; top: 0; width: 100%;
-      font-size: 12px; color: #000; background: #fff;
-    }
-    .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px; }
-    .p-header h2 { margin: 0; font-size: 18px; }
-    .p-header p { margin: 2px 0; font-size: 12px; }
-    .p-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; border: 1px solid #000; padding: 5px; }
-    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-    .p-table th, .p-table td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 11px; }
-    .p-totals { display: flex; justify-content: space-between; border: 1px solid #000; padding: 6px; font-weight: bold; }
+  /* ============ POS SCREEN ============ */
+  .pos-wrap { display:flex; flex-direction:column; gap:8px; }
+  .pos-head {
+    display:grid; grid-template-columns:repeat(5,minmax(0,1fr)) 210px; gap:6px;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius); padding:6px;
   }
+  .pos-field { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .pos-field label { font-size:10px; font-weight:bold; color:var(--muted); }
+  .pos-field select, .pos-field input {
+    height:27px; padding:2px 6px; border:1px solid #a9a48a; background:#fffef8; font-weight:bold;
+    border-radius:2px; box-shadow:inset 1px 1px 2px #0000000f;
+  }
+  .pos-total-box {
+    background:linear-gradient(#22331b,#16240f); color:#fff; border:1px solid #0d160a; border-radius:3px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3px;
+  }
+  .pos-total-box small { font-size:9.5px; opacity:.8; }
+  .pos-total-box strong { font-size:24px; color:#a8f07f; letter-spacing:1px; line-height:1.1; font-family:'Segoe UI',Tahoma,sans-serif; }
+  .pos-main { display:grid; grid-template-columns:minmax(0,1fr) 316px; gap:8px; align-items:start; }
+  .pos-entry { display:flex; flex-direction:column; gap:8px; }
+  .entry-card { background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius); padding:8px; }
+  .entry-card .panel-title { margin:-8px -8px 8px; border-radius:0; }
+  .barcode-row { display:flex; gap:5px; }
+  .barcode-row input { flex:1; height:30px; font-size:13px; letter-spacing:.5px; }
+  .qty-row { display:flex; align-items:center; gap:5px; margin-top:6px; }
+  .qty-row input { width:70px; height:30px; text-align:center; font-size:16px; font-weight:bold; border:1px solid #a9a48a; background:#fffef8; }
+  .stepper { display:flex; flex-direction:column; gap:2px; }
+  .stepper button { width:26px; height:14px; padding:0; font-size:9px; line-height:1; border:1px solid #8d8869; background:linear-gradient(#fdfcf3,#e8e5d0); }
+  .sell-btn {
+    flex:1; height:56px; display:flex; align-items:center; justify-content:center; gap:7px;
+    border:1px solid #17400f; border-radius:3px; font-size:15px; font-weight:bold; color:#fff;
+    background:linear-gradient(#5bb03c,#2f7d32 55%,#1e5b18); box-shadow:inset 0 1px 0 #ffffff55, 0 2px 4px #0000002e;
+  }
+  .sell-btn:hover { filter:brightness(1.07); }
+  .sell-btn:active { transform:translateY(1px); }
+  .tiles-head { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
+  .tiles-head h3 { margin:0; font-size:11.5px; }
+  .groups-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  .group-btn {
+    padding:6px 5px; border:1px solid #a9a48a; border-radius:2px; font-size:11px; font-weight:bold;
+    background:linear-gradient(#fefdf3,#eeecd7); text-align:center; min-height:34px;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+  }
+  .group-btn:hover { background:#fffde9; }
+  .group-btn.active { background:linear-gradient(#fdf3ae,#f5e58a); border-color:#b58a00; box-shadow:inset 0 0 0 1px #fff59e; }
+  .group-btn small { font-size:9.5px; color:var(--muted); }
+  .quick-items { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; max-height:186px; overflow:auto; margin-top:6px; }
+  .item-tile {
+    padding:4px; border:1px solid #b1ac92; border-radius:2px; background:linear-gradient(#fffef6,#f1efdc);
+    font-size:10px; text-align:center; line-height:1.4; overflow:hidden; min-height:44px;
+  }
+  .item-tile b { display:block; font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item-tile span { color:#2f6a1d; font-weight:bold; }
+  .item-tile i { display:block; font-style:normal; color:var(--muted); font-size:9px; }
+  .item-tile:hover { background:#fffde9; border-color:#8a8560; }
+  .item-tile:active { transform:translateY(1px); }
+  .pos-table { max-height:330px; }
+  .pos-table table { font-size:11.5px; }
+  .pos-table tbody tr { cursor:pointer; }
+  .sum-bar {
+    display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px;
+    background:linear-gradient(#f4f2df,#e7e4cc); border:1px solid var(--line-dark);
+    border-radius:var(--radius); padding:6px;
+  }
+  .sum-cell { display:flex; flex-direction:column; gap:2px; }
+  .sum-cell label { font-size:10px; font-weight:bold; color:var(--muted); }
+  .sum-cell input { height:26px; padding:2px 5px; border:1px solid #a9a48a; background:#fffef8; text-align:center; font-weight:bold; border-radius:2px; }
+  .sum-cell.net input { background:#eef9e6; border-color:#6aa64a; color:#1d5b12; font-size:14px; }
+  .sum-cell.paid input, .sum-cell.remain input { background:#fff9e4; }
+  .pos-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .big-action {
+    display:flex; align-items:center; gap:6px; padding:5px 12px; min-height:34px; border-radius:3px;
+    border:1px solid #7d7960; background:linear-gradient(#fefdf4,var(--btn) 60%,var(--btn-2));
+    font-size:12px; font-weight:bold;
+  }
+  .big-action.green { background:linear-gradient(#5bb03c,#2f7d32 55%,#20591f); color:#fff; border-color:#17400f; }
+  .big-action.blue { background:linear-gradient(#4b82b5,#2b5c8a 60%,#1f4a72); color:#fff; border-color:#173c5c; }
+  .big-action.red { background:linear-gradient(#d05046,#b1251d 60%,#8c1a14); color:#fff; border-color:#6f1310; }
+  .big-action.orange { background:linear-gradient(#d69343,#a5641a 60%,#83500f); color:#fff; border-color:#6d420b; }
+  .big-action.blue:hover, .big-action.orange:hover, .big-action.green:hover, .big-action.red:hover { filter:brightness(1.07); }
+  .fn-strip { display:flex; gap:4px; flex-wrap:wrap; padding:4px 6px; background:#22281a; border-radius:3px; }
+  .fn-btn {
+    flex:1 1 88px; display:flex; align-items:center; justify-content:center; gap:5px; padding:4px 6px;
+    border:1px solid #4b5340; border-radius:2px; background:linear-gradient(#3b4433,#2a3123);
+    color:#e8ecd9; font-size:10.5px; font-weight:bold;
+  }
+  .fn-btn:hover { background:linear-gradient(#4b5642,#333b2b); color:#fff; }
+  .fn-btn b { color:#ffe98a; font-size:10px; }
+
+  /* ============ STATUS BAR ============ */
+  .app-status {
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:4px 12px; background:linear-gradient(#f3f1e0,#e4e1cb); border-top:1px solid var(--line-dark);
+    font-size:10.5px; color:#3f4732;
+  }
+  .app-status .st-item { display:flex; align-items:center; gap:6px; }
+  .app-status b { color:#1f2a12; }
+
+  /* ============ KEYPAD / MODALS ============ */
+  .mini-modal {
+    display:none; position:fixed; inset:0; z-index:8000; background:#0b1b0755;
+    align-items:center; justify-content:center; padding:14px;
+  }
+  .mini-modal.open { display:flex; }
+  .keypad-card {
+    width:330px; max-width:100%; background:var(--panel); border:2px solid var(--line-dark);
+    border-radius:4px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .kpad-title {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:4px 8px; background:linear-gradient(#f6f5ea,#e4e1cc); border-bottom:1px solid var(--line-dark);
+    font-size:12px; font-weight:bold;
+  }
+  .kpad-body { padding:9px; }
+  .kpad-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; margin-bottom:7px; }
+  .kpad-tab { padding:4px 2px; border:1px solid var(--line); background:linear-gradient(#fdfcf2,#eae7d2); font-size:10px; font-weight:bold; }
+  .kpad-tab.active { background:linear-gradient(#fdf3ae,#f3e080); border-color:#b58a00; }
+  .kpad-screen {
+    background:#eef3e6; border:1px solid #9aa786; border-radius:2px; padding:6px 8px; margin-bottom:7px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px; box-shadow:inset 1px 1px 3px #00000018;
+  }
+  .kpad-screen span { font-size:10.5px; color:#4b5a3a; }
+  .kpad-screen input {
+    width:120px; height:28px; text-align:center; font-size:16px; font-weight:bold;
+    border:1px solid #9aa786; background:#fbfff4; border-radius:2px;
+  }
+  .kpad-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+  .kpad-key {
+    padding:10px 4px; border:1px solid #a8a389; border-radius:2px; font-size:15px; font-weight:bold;
+    background:linear-gradient(#fefdf5,#eae7d3); box-shadow:inset 0 1px 0 #fff;
+  }
+  .kpad-key:hover { background:#fffde9; }
+  .kpad-key:active { transform:translateY(1px); }
+  .kpad-key.c { background:linear-gradient(#fdf4c4,#f4e39a); color:#6b4e00; }
+  .kpad-key.ok { background:linear-gradient(#5bb03c,#2f7d32 60%,#20591f); color:#fff; border-color:#17400f; }
+  .kpad-key.cancel { background:linear-gradient(#d05046,#b1251d 60%,#8c1a14); color:#fff; border-color:#6f1310; }
+  .kpad-foot { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
+  .kpad-foot button { padding:8px; border-radius:3px; border:1px solid #7d7960; font-size:12px; font-weight:bold; }
+  .kpad-foot .ok-btn { background:linear-gradient(#5bb03c,#2f7d32 60%,#20591f); color:#fff; border-color:#17400f; }
+  .kpad-foot .cancel-btn { background:linear-gradient(#d05046,#b1251d 60%,#8c1a14); color:#fff; border-color:#6f1310; }
 
   #lockModal {
-    display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.92);
-    z-index: 9999; align-items: center; justify-content: center;
+    display:none; position:fixed; inset:0; background:#11200a99; z-index:9999;
+    align-items:center; justify-content:center; padding:14px;
   }
-  .lock-card { background: #fff; padding: 24px; border-radius: 8px; width: 320px; text-align: center; }
-  button:disabled, input:disabled, select:disabled { opacity: .6; cursor: not-allowed; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
-  .scope-note { font-size: 12px; line-height: 1.7; color: #475569; margin: 6px 0; }
-  .empty-row { padding: 20px; color: #475569; }
-  #appNotice { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 10000; max-width: 720px; margin: auto; background: #fff7ed; color: #7c2d12; border: 2px solid #d97706; border-radius: 6px; padding: 12px 16px; box-shadow: 0 4px 16px #0002; line-height: 1.7; }
-  #appNotice button { float: left; border: 0; background: transparent; cursor: pointer; font-size: 18px; }
-  .table-wrap input { max-width: 100%; }
-  .lock-card { max-width: calc(100vw - 24px); }
-  @media (max-width: 550px) {
-    .banner-info h1 { font-size: 20px; }
-    .banner-kpis { justify-content: center; width: 100%; }
-    .clock-boxes { width: 100%; flex-direction: row; }
-    .clock-box { flex: 1; }
-    .win-header { gap: 8px; flex-wrap: wrap; }
-    .f-row label { min-width: 85px; }
-    .util-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+  .lock-card {
+    width:330px; max-width:100%; background:var(--panel); border:2px solid var(--line-dark);
+    border-radius:4px; padding:0 0 14px; text-align:center; box-shadow:var(--shadow); overflow:hidden;
   }
-  @media print {
-    body > :not(#printAreaA5) { display: none !important; }
-    body > #printAreaA5 { position: static !important; width: 100% !important; }
-    #appNotice { display: none !important; }
-    #printAreaA5 { direction: rtl; }
-    #printAreaA5 table { width: 100%; border-collapse: collapse; }
-    #printAreaA5 th, #printAreaA5 td { border: 1px solid #000; padding: 4px; font-size: 11px; text-align: center; }
-    #printAreaA5 thead { display: table-header-group; }
-    #printAreaA5 tr { break-inside: avoid; }
-    #printAreaA5 .p-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 8px; }
-    #printAreaA5 .p-meta, #printAreaA5 .p-totals { display: flex; justify-content: space-between; gap: 6px; margin: 6px 0; }
-    .no-print { display: none !important; }
+  .lock-card .lock-head { background:linear-gradient(#f6f5ea,#e4e1cc); border-bottom:1px solid var(--line-dark); padding:5px; font-weight:bold; font-size:12px; }
+  .lock-card h3 { margin:12px 0 4px; font-size:14px; }
+  .lock-card p { margin:0 10px 10px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .lock-card label { font-size:11px; font-weight:bold; }
+  .lock-card input, .lock-card select { width:calc(100% - 24px); margin:4px 12px 8px; padding:6px; border:1px solid #a9a48a; border-radius:2px; background:#fffef8; }
+  .lock-card input { text-align:center; font-size:16px; }
+  .lock-card button { width:calc(100% - 24px); margin:0 12px; }
+
+  #appNotice {
+    position:fixed; bottom:12px; inset-inline-start:12px; z-index:10000; max-width:640px;
+    background:#fffbe6; color:#5a3b00; border:1px solid #b58a00; border-left:4px solid #b58a00;
+    border-radius:3px; padding:8px 12px; box-shadow:0 6px 20px #00000033; line-height:1.7; font-size:11.5px;
   }
+  #appNotice button { float:left; border:0; background:transparent; font-size:16px; line-height:1; margin-inline-start:8px; }
 
-  /* Modern Cairo interface and six selectable Windows-inspired palettes. */
-  :root { --teal-dark:#164e63; --teal-main:#0e7490; --teal-light:#ecfeff; --blue-win:#2563eb; --blue-light:#eff6ff; --red-accent:#dc2626; --green-btn:#059669; --orange-btn:#d97706; --purple-btn:#7c3aed; --bg-main:#f1f5f9; --text-dark:#172033; --surface:#fff; --line:#dbe3ee; --accent:var(--blue-win); --accent-soft:#eff6ff; --shadow:0 18px 55px rgba(15,23,42,.15); }
-  * { font-family:'Cairo',Tahoma,sans-serif !important; }
-  body { background:radial-gradient(ellipse at 12% 0%,#dbeafe 0,transparent 35%),var(--bg-main); color:var(--text-dark); }
-  body[data-theme="vista-blue"] { --bg-main:#e9f4f8; --text-dark:#173247; --surface:#f8fdff; --accent:#1687bd; --accent-soft:#e4f6fc; --blue-win:#1878a5; --teal-dark:#075c78; --teal-main:#1286a8; --green-btn:#2f9e73; --orange-btn:#d98b25; --purple-btn:#7860b7; --line:#b9dce9; }
-  body[data-theme="vista-emerald"] { --bg-main:#edf6ef; --text-dark:#17392b; --surface:#fbfffc; --accent:#27865c; --accent-soft:#e4f4e9; --blue-win:#27865c; --teal-dark:#185b42; --teal-main:#328c63; --green-btn:#218653; --orange-btn:#cf8428; --purple-btn:#6e60a6; --line:#c7dfce; }
-  body[data-theme="vista-rose"] { --bg-main:#f8eff3; --text-dark:#482638; --surface:#fffafd; --accent:#a34f78; --accent-soft:#f8eaf1; --blue-win:#a34f78; --teal-dark:#713653; --teal-main:#a9577d; --green-btn:#368768; --orange-btn:#c97935; --purple-btn:#8057a3; --line:#ead1dd; }
-  body[data-theme="win11-indigo"] { --bg-main:#f3f5fb; --text-dark:#1d2438; --surface:#fff; --accent:#5b5bd6; --accent-soft:#efefff; --blue-win:#5b5bd6; --teal-dark:#343b81; --teal-main:#555bc4; --green-btn:#258b68; --orange-btn:#d2812d; --purple-btn:#7956bd; --line:#dfe2f0; }
-  body[data-theme="win11-mint"] { --bg-main:#eff7f5; --text-dark:#193a36; --surface:#fff; --accent:#188b7a; --accent-soft:#e6f7f2; --blue-win:#188b7a; --teal-dark:#0b6259; --teal-main:#15947f; --green-btn:#218e66; --orange-btn:#cc8236; --purple-btn:#7062b0; --line:#cfe6df; }
-  body[data-theme="win11-sunset"] { --bg-main:#faf3f0; --text-dark:#3c2b2b; --surface:#fff; --accent:#d0644e; --accent-soft:#fff0eb; --blue-win:#d0644e; --teal-dark:#873f3c; --teal-main:#c45b4b; --green-btn:#40866c; --orange-btn:#d17b2d; --purple-btn:#8458a0; --line:#eedbd5; }
-  .top-utility-bar { background:rgba(15,23,42,.94); padding:10px max(18px,calc((100vw - 1500px)/2)); border-bottom:1px solid #ffffff18; }
-  .top-utility-bar > div:first-child { font-size:13px; }
-  .top-utility-bar .util-btns button { padding:8px 14px; border-radius:10px; margin:2px; transition:transform .18s,filter .18s; }
-  .top-utility-bar .util-btns button:hover,.act-btn:hover { transform:translateY(-2px); filter:brightness(1.06); }
-  .main-banner { margin:18px auto; max-width:1500px; border:0; border-radius:20px; padding:22px 26px; background:linear-gradient(120deg,var(--teal-dark),var(--accent),#4772b8); box-shadow:0 18px 40px color-mix(in srgb,var(--accent) 26%,transparent); gap:18px; }
-  .banner-info { text-align:right; }
-  .banner-info h1 { font-size:clamp(21px,2.2vw,32px); font-weight:900; }
-  .banner-info p { font-size:14px; font-weight:600; }
-  .banner-kpis { gap:8px; }
-  .kpi-box { background:#ffffff1b; border:1px solid #ffffff45; backdrop-filter:blur(8px); padding:9px 13px; border-radius:13px; }
-  .kpi-box strong { color:#fff; font-size:17px; }
-  .clock-box { border:1px solid #ffffff4d; border-radius:11px; background:#07172b55; }
-  .classic-panel { max-width:1500px; margin:18px auto 30px; padding:18px; background:transparent; border:0; }
-  .classic-top-row { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; border:0; padding:0; margin:0 0 14px; }
-  .classic-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
-  .c-btn { color:var(--text-dark); background:var(--surface); border:1px solid var(--line); padding:14px 12px; border-radius:14px; text-align:center; box-shadow:0 4px 14px #0f172a0b; min-height:54px; font-size:13px; transition:all .18s ease; }
-  .c-btn::before { content:'›'; display:inline-grid; place-items:center; width:23px; height:23px; margin-left:8px; border-radius:8px; color:var(--accent); background:var(--accent-soft); font-size:20px; vertical-align:middle; }
-  .c-btn:hover,.c-btn.active { color:var(--accent); background:var(--surface); border-color:color-mix(in srgb,var(--accent) 45%,white); box-shadow:0 9px 22px color-mix(in srgb,var(--accent) 12%,transparent); transform:translateY(-2px); }
-  .c-btn.tall { grid-row:auto; display:block; font-size:14px; }
-  @media(max-width:950px){.classic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.classic-top-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
-  @media(max-width:580px){.classic-grid,.classic-top-row{grid-template-columns:repeat(2,minmax(0,1fr))}.main-banner{margin:12px;padding:16px}.banner-info{text-align:center}.classic-panel{margin:12px;padding:8px}}
-  .window-layer { display:none; position:fixed; inset:0; z-index:5000; padding:22px; background:rgba(15,23,42,.48); backdrop-filter:blur(7px); align-items:center; justify-content:center; }
-  .window-layer.open { display:flex; animation:layerIn .16s ease-out; }
-  @keyframes layerIn { from{opacity:0} to{opacity:1} }
-  .workspace { width:min(1440px,100%); max-height:calc(100vh - 44px); margin:0; background:var(--surface); border:1px solid #ffffffaa; border-radius:20px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column; }
-  .win-header { background:linear-gradient(110deg,var(--teal-dark),var(--accent)); min-height:66px; padding:12px 20px; }
-  .win-header h2 { font-size:20px; font-weight:800; }
-  .win-header-actions { display:flex; gap:8px; align-items:center; }
-  .win-body { padding:20px; overflow:auto; }
-  .win-close { background:#ffffff20!important; border:1px solid #ffffff65!important; padding:8px 13px!important; border-radius:10px!important; color:#fff!important; }
-  .panel-box { background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:16px; box-shadow:0 5px 18px #0f172a08; }
-  .panel-title { background:var(--accent-soft); color:var(--accent); margin:-16px -16px 16px; padding:10px 16px; border-radius:14px 14px 0 0; font-size:14px; }
-  .f-row { gap:9px; margin-bottom:11px; }
-  .f-row label { color:#334155; }
-  .f-row input,.f-row select,.f-row textarea { border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-weight:500; }
-  .f-row input:focus,.f-row select:focus { outline:3px solid color-mix(in srgb,var(--accent) 20%,transparent); border-color:var(--accent); background:white; }
-  .act-btn { padding:9px 15px; border-radius:10px; transition:all .16s ease; }
-  .action-bar { background:var(--accent-soft); border:1px solid var(--line); border-radius:12px; }
-  .table-wrap { border:1px solid var(--line); border-radius:12px; }
-  th { background:var(--accent-soft); color:var(--text-dark); border-color:var(--line); }
-  td { border-color:var(--line); }
-  tbody tr:nth-child(even) { background:color-mix(in srgb,var(--accent-soft) 36%,white); }
-  tbody tr:hover { background:var(--accent-soft); }
-  .t-foot-bar { background:var(--accent-soft); border:1px solid var(--line); border-radius:12px; }
-  .t-foot-bar span { border:1px solid var(--line); border-radius:9px; }
-  .appearance-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:10px 0 16px; }
-  .theme-choice { text-align:right; color:var(--text-dark); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; }
-  .theme-choice[aria-pressed="true"] { border:2px solid var(--accent); background:var(--accent-soft); }
-  .theme-swatches { display:flex; gap:5px; margin-top:8px; }
-  .theme-swatches i { width:24px; height:10px; border-radius:5px; display:block; }
-  .store-details { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:10px; }
-  .store-details p { background:#ffffff18; border:1px solid #ffffff42; border-radius:9px; padding:4px 11px; }
-  @media(max-width:700px){.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.window-layer{padding:8px}.workspace{max-height:calc(100vh - 16px);border-radius:15px}.win-body{padding:12px}.win-header{padding:10px 14px}}
-
-
-  body[data-theme="night"] { --bg-main:#0b1220; --text-dark:#e5eaf3; --surface:#151e2f; --accent:#818cf8; --accent-soft:#202a42; --blue-win:#818cf8; --teal-dark:#27345c; --teal-main:#5365c9; --green-btn:#15936e; --orange-btn:#c8782c; --purple-btn:#9671d0; --line:#303c50; --shadow:0 22px 70px #0008; }
-  body[data-theme="night"] .top-utility-bar { background:#070d18; }
-  body[data-theme="night"] .main-banner { background:linear-gradient(120deg,#121b31,#27345c,#343a73); }
-  body[data-theme="night"] .panel-title { background:var(--accent-soft); color:#c3c9ff; }
-  body[data-theme="night"] .f-row label,body[data-theme="night"] .scope-note { color:#c4cede; }
-  body[data-theme="night"] .f-row input,body[data-theme="night"] .f-row select,body[data-theme="night"] .f-row textarea { background:#0f1726;color:#e5eaf3;border-color:var(--line); }
-  body[data-theme="night"] th { color:#e8ecf6; }
-  body[data-theme="night"] tbody tr:nth-child(even) { background:#1b2639; }
-  body[data-theme="night"] tbody tr:hover { background:#283450; }
-  body[data-theme="night"] .t-foot-bar span { background:#1b2639;color:#e5eaf3; }
-  .app-shell { display:grid; grid-template-columns:260px minmax(0,1fr); direction:rtl; max-width:1580px; margin:0 auto 36px; padding:0 18px; gap:20px; align-items:start; transition:grid-template-columns .2s ease; }
-  .app-shell.sidebar-collapsed { grid-template-columns:82px minmax(0,1fr); }
-  .side-nav { position:sticky; top:14px; min-height:calc(100vh - 28px); padding:16px 12px; background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:0 8px 28px #0f172a0b; display:flex; flex-direction:column; gap:5px; overflow:hidden; z-index:5; }
-  .side-brand { display:flex; align-items:center; gap:11px; padding:7px 10px 20px; margin-bottom:8px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  .side-brand strong,.side-brand small { display:block; }.side-brand strong {font-size:15px}.side-brand small {color:#8490a4;font-size:11px}
-  .brand-mark { display:grid; place-items:center; width:42px;height:42px;border-radius:14px;background:var(--accent-soft);font-size:22px;flex:0 0 auto; }
-  .nav-link { width:100%; display:flex; align-items:center; gap:12px; border:0; background:transparent; color:var(--text-dark); padding:11px 12px; border-radius:12px; font-weight:700; text-align:right; cursor:pointer; transition:background .16s,color .16s; white-space:nowrap; }
-  .nav-link:hover,.nav-link.selected { background:var(--accent-soft); color:var(--accent); }
-  .nav-icon { display:grid;place-items:center;width:26px;flex:0 0 26px;font-size:17px; }
-  .nav-caption { padding:13px 12px 4px;color:#8b96a8;font-size:11px;font-weight:800;white-space:nowrap; }
-  .side-nav-foot { margin-top:auto;padding:14px 10px 4px;border-top:1px solid var(--line);color:#7d899a;font-size:11px;display:flex;align-items:center;gap:9px;white-space:nowrap; }
-  .nav-status-dot { display:block;width:9px;height:9px;border-radius:50%;background:#17a673;box-shadow:0 0 0 4px #17a67322;flex:0 0 auto; }
-  .sidebar-collapsed .side-nav { padding-inline:9px;align-items:center; }.sidebar-collapsed .side-brand { padding-inline:8px; }.sidebar-collapsed .side-brand>div,.sidebar-collapsed .nav-caption,.sidebar-collapsed .nav-label { display:none; }.sidebar-collapsed .nav-link { justify-content:center;padding-inline:8px; }.sidebar-collapsed .side-nav-foot { justify-content:center;width:100%; }
-  .main-content { min-width:0; }
-  .main-banner { max-width:1580px; }
-  .home-dashboard,.classic-panel { background:var(--surface); border:1px solid var(--line);border-radius:20px;padding:20px;margin:0 0 18px;box-shadow:0 8px 28px #0f172a0a; }
-  .dashboard-heading,.section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px; }
-  .dashboard-heading h2,.section-heading h2 { margin:2px 0;font-size:20px;font-weight:900; }.dashboard-heading p { margin:0;color:#8792a4;font-size:12px; }
-  .eyebrow { color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.04em; }
-  .sales-chart { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;align-items:end;min-height:190px;padding:14px 10px 2px;border-radius:14px;background:linear-gradient(to bottom,transparent 24%,var(--line) 25%,transparent 25.5%,transparent 49%,var(--line) 50%,transparent 50.5%,transparent 74%,var(--line) 75%,transparent 75.5%); }
-  .chart-day { height:170px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0; }
-  .chart-value { color:var(--text-dark);font-size:11px;font-weight:800;white-space:nowrap; }
-  .chart-track { height:112px;width:min(42px,70%);display:flex;align-items:flex-end;justify-content:center; }
-  .chart-bar { display:block;width:100%;min-height:4px;border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#70c8d5));box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 22%,transparent);transition:height .35s ease; }
-  .chart-label { color:#8490a4;font-size:11px;white-space:nowrap; }
-  .classic-panel { padding:22px; }.section-hint {color:#929bad;font-size:12px}
-  .action-group { padding:16px 0;border-top:1px solid var(--line); }.action-group h3 { display:flex;align-items:center;gap:9px;margin:0 0 12px;color:var(--text-dark);font-size:14px;font-weight:800; }
-  .action-groups-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px; }
-  .classic-top-row,.classic-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:0;padding:0;border:0; }
-  .c-btn { position:relative;display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:54px;padding:10px 12px;text-align:right;background:color-mix(in srgb,var(--accent-soft) 30%,var(--surface));border-radius:13px;box-shadow:none;font-size:12px; }
-  .c-btn::before { content:none; }.button-icon { display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:11px;color:var(--accent);background:var(--accent-soft);font-size:17px; }.button-label { line-height:1.35; }
-  .window-layer.maximized { padding:10px; }.window-layer.maximized .workspace { width:100%;height:calc(100vh - 20px);max-height:none;border-radius:16px; }
-  .window-layer.minimized { pointer-events:none;background:transparent;backdrop-filter:none; }.window-layer.minimized .workspace { display:none; }
-  .window-dock { position:fixed;z-index:6000;bottom:18px;right:20px;display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:15px;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 34px #0f172a33;color:var(--text-dark); }
-  .window-dock[hidden] { display:none!important; }
-  .status-indicator { display:inline-flex;align-items:center;gap:7px; }.status-indicator::before { content:'';width:9px;height:9px;border-radius:50%;background:#fbbf24;box-shadow:0 0 0 3px #fbbf2428; }.status-indicator[data-state="synced"]::before { background:#34d399;box-shadow:0 0 0 3px #34d39928; }.status-indicator[data-state="error"]::before { background:#fb7185;box-shadow:0 0 0 3px #fb718528; }
+  /* ============ LABELS MAKER ============ */
+  .label-sheet {
+    display:grid; gap:6px; padding:8px; background:#fff; border:1px solid var(--line-dark);
+    border-radius:2px; min-height:220px; align-content:start;
+  }
+  .label-cell {
+    border:1px dashed #b9b6a0; padding:4px 3px; text-align:center; background:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; overflow:hidden;
+  }
+  .label-cell b { font-size:9.5px; line-height:1.2; max-height:2.4em; overflow:hidden; }
+  .label-cell span { font-size:10px; font-weight:bold; }
+  .label-cell i { font-style:normal; font-size:8px; color:#555; }
+  .label-cell svg { width:100%; height:auto; max-height:44px; }
+  .staff-audit-grid { display:grid; grid-template-columns:1.1fr 1fr; gap:9px; }
+  .staff-audit-grid .table-wrap { max-height:250px; }
+  .hotkeys { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:4px; font-size:10.5px; }
+  .hotkeys span { background:#fffdf2; border:1px solid var(--line-soft); padding:2px 6px; border-radius:2px; }
+  .hotkeys b { color:#7a2b00; }
   .mobile-nav-scrim { display:none; }
-  @media(max-width:1050px){.app-shell{grid-template-columns:220px minmax(0,1fr);gap:12px;padding:0 12px}.action-groups-grid{grid-template-columns:1fr}.app-shell.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)}}
-  @media(max-width:720px){.app-shell,.app-shell.sidebar-collapsed{display:block;padding:0 10px}.side-nav{position:fixed;top:0;bottom:0;right:0;width:min(290px,84vw);min-height:0;border-radius:0 0 0 20px;transform:translateX(110%);transition:transform .22s;z-index:7000}.app-shell.sidebar-open .side-nav{transform:translateX(0)}.sidebar-collapsed .side-brand>div,.sidebar-collapsed .nav-caption,.sidebar-collapsed .nav-label{display:block}.sidebar-collapsed .nav-link{justify-content:flex-start}.mobile-nav-scrim:not([hidden]){display:block;position:fixed;inset:0;background:#0b122077;z-index:6900}.main-banner{margin:12px}.home-dashboard,.classic-panel{padding:14px;border-radius:16px}.dashboard-heading,.section-heading{align-items:flex-start;flex-direction:column}.dashboard-heading .act-btn{align-self:stretch;justify-content:center}.chart-value{font-size:9px}.sales-chart{gap:4px;padding-inline:2px}.chart-label{font-size:9px}.chart-track{width:65%}.classic-top-row,.classic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.c-btn{min-height:62px;padding:8px;font-size:11px}.button-icon{width:30px;height:30px;flex-basis:30px}.top-utility-bar .util-btns button{padding:7px 9px}.window-dock{right:10px;left:10px;justify-content:space-between}.win-header-actions{flex-wrap:wrap}.win-header-actions .bg-teal{display:none}}
-  @media(max-width:390px){.banner-kpis{display:grid;grid-template-columns:repeat(2,1fr)}.classic-top-row,.classic-grid{grid-template-columns:1fr}.chart-value{display:none}.clock-boxes{min-width:0}}
-  .system-alerts { display:flex;align-items:flex-start;gap:12px;margin-top:15px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--accent-soft); }
-  .system-alerts h3 { margin:0;white-space:nowrap;font-size:13px; }.system-alerts ul { display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none; }.system-alerts li button { border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text-dark);padding:5px 10px;font:inherit;font-size:11px;cursor:pointer; }.system-alerts li.alert-danger button { color:#be123c;border-color:#fda4af;background:#fff1f2; }.system-alerts li.alert-good { color:#047857;font-size:12px;padding:5px 10px; }
-  .user-session-button { border:1px solid #ffffff66;background:#ffffff20;color:#fff;padding:4px 10px;border-radius:999px;font:inherit;font-size:11px;cursor:pointer;margin-inline:6px; }
-  .keyboard-hint { width:100%;color:#778399;font-size:11px; }
-  .staff-audit-grid { display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:14px; }.staff-audit-grid .table-wrap { max-height:260px; }
-  .thermal-receipt { direction:rtl;color:#111;font-family:Cairo,Arial,sans-serif; }.thermal-receipt .receipt-head{text-align:center;border-bottom:1px dashed #222;padding-bottom:7px;margin-bottom:8px}.thermal-receipt h2{font-size:16px;margin:0 0 3px}.thermal-receipt p{margin:2px 0;font-size:10px}.thermal-receipt table{width:100%;border-collapse:collapse;font-size:10px}.thermal-receipt th,.thermal-receipt td{border-bottom:1px dashed #777;padding:4px 2px;text-align:right}.thermal-receipt .receipt-totals{border-top:1px dashed #222;margin-top:8px;padding-top:6px}.thermal-receipt .receipt-totals p{display:flex;justify-content:space-between;font-size:11px}.thermal-receipt .receipt-thanks{text-align:center;border-top:1px dashed #222;margin-top:8px;padding-top:7px}
-  body[data-theme="night"] .system-alerts li.alert-danger button { background:#351e2d;color:#fecdd3;border-color:#76374b; }
-  @media(max-width:700px){.staff-audit-grid{grid-template-columns:1fr}.system-alerts{display:block}.system-alerts h3{margin-bottom:8px}.keyboard-hint{font-size:10px}}
 
+  /* ============ RECEIPT / PRINT ============ */
+  #printAreaA5 { display:none; }
+  .thermal-receipt { direction:rtl; color:#111; font-family:Tahoma,Arial,sans-serif; }
+  .thermal-receipt .receipt-head { text-align:center; border-bottom:1px dashed #222; padding-bottom:6px; margin-bottom:7px; }
+  .thermal-receipt h2 { font-size:15px; margin:0 0 3px; }
+  .thermal-receipt p { margin:1px 0; font-size:10px; }
+  .thermal-receipt table { width:100%; border-collapse:collapse; font-size:10px; }
+  .thermal-receipt th, .thermal-receipt td { border-bottom:1px dashed #777; padding:3px 2px; text-align:right; }
+  .thermal-receipt .receipt-totals { border-top:1px dashed #222; margin-top:6px; padding-top:5px; }
+  .thermal-receipt .receipt-totals p { display:flex; justify-content:space-between; font-size:11px; }
+  .thermal-receipt .receipt-thanks { text-align:center; border-top:1px dashed #222; margin-top:6px; padding-top:6px; }
+
+  @media print {
+    @page { size:A5 portrait; margin:6mm; }
+    body > :not(#printAreaA5) { display:none !important; }
+    #printAreaA5 { display:block !important; position:static !important; width:100% !important; direction:rtl; font-size:11px; color:#000; background:#fff; }
+    #printAreaA5 table { width:100%; border-collapse:collapse; }
+    #printAreaA5 th, #printAreaA5 td { border:1px solid #000; padding:3px; font-size:10.5px; text-align:center; }
+    #printAreaA5 thead { display:table-header-group; }
+    #printAreaA5 tr { break-inside:avoid; }
+    #printAreaA5 .p-header { text-align:center; border-bottom:2px solid #000; margin-bottom:6px; padding-bottom:5px; }
+    #printAreaA5 .p-header h2 { margin:0; font-size:17px; }
+    #printAreaA5 .p-header p { margin:2px 0; font-size:10.5px; }
+    #printAreaA5 .p-meta, #printAreaA5 .p-totals { display:flex; justify-content:space-between; gap:6px; margin:5px 0; }
+    #printAreaA5 .p-meta { border:1px solid #000; padding:4px; font-weight:bold; }
+    #printAreaA5 .p-totals { border:1px solid #000; padding:4px; font-weight:bold; }
+    #printAreaA5 .p-sign { display:flex; justify-content:space-between; margin-top:12px; font-size:10px; }
+    #printAreaA5 .p-foot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; }
+    .no-print { display:none !important; }
+    #appNotice { display:none !important; }
+    body.print-labels #printAreaA5 { page-break-inside:auto; }
+    body.print-labels #printAreaA5 .label-sheet { border:0; gap:0; padding:0; }
+    body.print-labels #printAreaA5 .label-cell { border:1px dashed #999; }
+  }
+
+  /* night / theme variations keep the classic chrome but recolour surfaces */
+  body[data-theme="night"] {
+    --paper:#20241c; --paper-2:#1a1e16; --panel:#262b21; --panel-2:#20251b;
+    --ink:#e9eedd; --muted:#a9b39a; --line:#434a39; --line-dark:#5a6349; --line-soft:#39402f;
+    --thead:#39412f; --row-alt:#2b3126; --row-sel:#4d4a22; --row-hover:#333a2b;
+    --btn:#333a2b; --btn-2:#2b3123; --btn-hover:#3d4534; --g-soft:#33402a;
+    background:#141810;
+  }
+  body[data-theme="night"] .main-content { background:#181c14; }
+  body[data-theme="night"] tbody td { border-color:#3b4233; }
+  body[data-theme="night"] .pos-total-box { background:linear-gradient(#101a0b,#0a1207); }
+  body[data-theme="night"] .fn-strip { background:#0d120a; }
+  body[data-theme="night"] .kpi-box, body[data-theme="night"] .c-btn, body[data-theme="night"] .act-btn,
+  body[data-theme="night"] .pos-field select, body[data-theme="night"] .pos-field input,
+  body[data-theme="night"] .f-row input, body[data-theme="night"] .f-row select { background:#2c3325; color:#e9eedd; }
+  body[data-theme="night"] .top-bar { background:linear-gradient(180deg,#33451f,#253317); }
+  body[data-theme="night"] .table-wrap, body[data-theme="night"] td input { background:#22271d; color:#e9eedd; border-color:#4a5340; }
+  body[data-theme="night"] .label-sheet, body[data-theme="night"] .label-cell { background:#fff; color:#111; }
+  body[data-theme="night-vista"] { --accent:#2b5c8a; }
+
+  @media (max-width:1100px) {
+    .app-shell { grid-template-columns:214px minmax(0,1fr); }
+    .pos-main { grid-template-columns:minmax(0,1fr); }
+    .pos-head { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .action-groups-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width:760px) {
+    .app-shell, .app-shell.sidebar-collapsed { display:block; }
+    .side-nav {
+      position:fixed; top:0; bottom:0; inset-inline-start:0; width:min(280px,86vw); z-index:7000; max-height:100vh;
+      transform:translateX(-110%); transition:transform .2s; border-radius:0;
+    }
+    [dir="rtl"] .side-nav { transform:translateX(110%); }
+    .app-shell.sidebar-open .side-nav { transform:translateX(0); }
+    .mobile-nav-scrim:not([hidden]) { display:block; position:fixed; inset:0; background:#0b1b0766; z-index:6900; }
+    .top-bar { flex-wrap:wrap; gap:8px; padding:8px 10px; }
+    .top-bar .store-title { order:3; flex-basis:100%; font-size:16px; }
+    .brand-text, .top-meta .clock-pill { display:none; }
+    .main-content { padding:6px; }
+    .kpi-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .pos-head { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .sum-bar { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .window-layer { padding:4px; }
+    .window-layer .workspace { max-height:calc(100vh - 8px); }
+    .win-header { flex-wrap:wrap; }
+    .staff-audit-grid, .form-grid-2 { grid-template-columns:1fr; }
+    .appearance-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .fn-btn { flex:1 1 44%; }
+  }
+  @media (max-width:420px) {
+    .pos-head, .sum-bar, .kpi-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .quick-items { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
 </style>
 <style id="thermalPrintStyle"></style>
 </head>
-<body>
+<body data-theme="vista-classic">
 
-<div class="top-utility-bar">
-  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" class="status-indicator" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span> <button type="button" class="user-session-button" id="activeUserBadge" onclick="lockApp()" title="تبديل المستخدم">المدير · مدير</button></div>
-  <div class="util-btns">
-    <button type="button" class="btn-view-mode" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰ القائمة</button>
-    <button type="button" class="btn-view-mode" id="darkModeButton" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
-    <button type="button" class="btn-sync" onclick="syncToCloud('push')">⬆️ رفع لقاعدة بيانات Neon</button>
-    <button type="button" class="btn-sync" style="background:#0284c7" onclick="syncToCloud('pull')">⬇️ سحب من Neon</button>
-    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء مجموعات الأزرار</button>
-    <button type="button" class="btn-lock" onclick="lockApp()">🔒 قفل الشاشة</button>
+<!-- ================= TOP GREEN BANNER ================= -->
+<header class="top-bar">
+  <div class="brand">
+    <span class="brand-badge">YZ</span>
+    <div class="brand-text"><strong>YAZSYS</strong><small>نقاط البيع وإدارة المكتبات</small></div>
   </div>
+  <h1 class="store-title" id="lblStoreName">اسم المتجر | Store Name</h1>
+  <div class="top-meta">
+    <div class="clock-pill" id="liveDate">2025/01/01</div>
+    <div class="clock-pill" id="liveTime">12:00:00</div>
+    <button type="button" class="user-session-button" id="activeUserBadge" onclick="lockApp()" title="تبديل المستخدم">المدير · مدير</button>
+  </div>
+</header>
+
+<!-- ================= TOOL STRIP ================= -->
+<div class="tool-strip">
+  <button type="button" class="y-btn" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰ القائمة</button>
+  <button type="button" class="y-btn" id="darkModeButton" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+  <button type="button" class="y-btn" onclick="openInvoiceSec('sale')">🛒 شاشة البيع (F2)</button>
+  <button type="button" class="y-btn" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">🏷️ ملصقات الباركود</button>
+  <button type="button" class="y-btn" onclick="openInvLog('sale')">📑 سجل الفواتير</button>
+  <button type="button" class="y-btn" onclick="openTreasury('all')">💰 الخزنة</button>
+  <button type="button" class="y-btn" onclick="lockApp()">🔒 قفل الشاشة</button>
+  <span class="strip-label">
+    <span id="syncStatusBadge" class="status-indicator" role="status" title="حالة حفظ البيانات"><i class="status-dot"></i>محفوظ على هذا الجهاز</span>
+    <span id="lblStorePhone" style="display:none">01000000000</span>
+    <span id="lblStoreAddress" style="display:none">العنوان</span>
+  </span>
 </div>
 
-<div class="main-banner">
-  <div class="banner-kpis">
-    <div class="kpi-box"><small>رصيد الخزنة</small><strong id="kpiCash">0.00</strong></div>
-    <div class="kpi-box"><small>مبيعات اليوم</small><strong id="kpiSalesToday">0.00</strong></div>
-    <div class="kpi-box"><small>صافي الأرباح</small><strong id="kpiNetProfit">0.00</strong></div>
-    <div class="kpi-box"><small>نواقص المكتبة</small><strong id="kpiLowStock">0</strong></div>
-  </div>
-  <div class="banner-info">
-    <h1 id="lblStoreName">مكتبة النور للأدوات المدرسية والكتب الخارجية</h1>
-    <div class="store-details"><p id="lblStoreAddress">📍 الشارع الرئيسي - بجوار المدرسة</p><p id="lblStorePhone">☎️ 01000000000</p></div>
-  </div>
-  <div class="clock-boxes">
-    <div class="clock-box" id="liveDate">2025/01/01</div>
-    <div class="clock-box" id="liveTime">12:00:00</div>
-  </div>
-</div>
-
+<!-- ================= SHELL ================= -->
 <div class="app-shell" id="appShell">
+
   <aside class="side-nav" id="sideNav" aria-label="القائمة الرئيسية">
-    <div class="side-brand"><span class="brand-mark">📚</span><div><strong>مكتبة النور</strong><small>نظام الإدارة</small></div></div>
-    <button class="nav-link selected" type="button" onclick="showHome()"><span class="nav-icon">⌂</span><span class="nav-label">الرئيسية</span></button>
-    <div class="nav-caption">العمليات اليومية</div>
-    <button class="nav-link" type="button" onclick="openInvoiceSec('sale')"><span class="nav-icon">🛒</span><span class="nav-label">فاتورة مبيعات</span></button>
-    <button class="nav-link" type="button" onclick="openInvoiceSec('purchase')"><span class="nav-icon">📥</span><span class="nav-label">فاتورة مشتريات</span></button>
-    <button class="nav-link" type="button" onclick="openPartySec('customer')"><span class="nav-icon">👥</span><span class="nav-label">العملاء</span></button>
-    <button class="nav-link" type="button" onclick="openPartySec('supplier')"><span class="nav-icon">🚚</span><span class="nav-label">الموردون</span></button>
-    <div class="nav-caption">الإدارة والتقارير</div>
-    <button class="nav-link" type="button" onclick="openSec('sec-items','📦 بيانات الأصناف')"><span class="nav-icon">📦</span><span class="nav-label">المخزون والأصناف</span></button>
-    <button class="nav-link" type="button" onclick="openTreasury('all')"><span class="nav-icon">💳</span><span class="nav-label">الخزنة والحسابات</span></button>
-    <button class="nav-link" type="button" onclick="openProfitSec('general')"><span class="nav-icon">📈</span><span class="nav-label">التقارير والأرباح</span></button>
-    <button class="nav-link" type="button" onclick="openSec('sec-settings','⚙️ إعدادات البرنامج')"><span class="nav-icon">⚙️</span><span class="nav-label">الإعدادات</span></button>
-    <div class="side-nav-foot"><span class="nav-status-dot"></span><span class="nav-label">البيانات محفوظة محلياً</span></div>
+    <div class="side-brand"><span class="brand-mark">📚</span><div><strong>YAZSYS POS</strong><small>الإصدار 4.34</small></div></div>
+
+    <div class="nav-caption">الرئيسية</div>
+    <div class="nav-group">
+      <button class="nav-link selected" type="button" onclick="showHome()"><span class="nav-icon">⌂</span><span class="nav-label">الرئيسية | لوحة المتابعة</span></button>
+    </div>
+
+    <div class="nav-caption">المبيعات</div>
+    <div class="nav-group">
+      <button class="nav-link accent" type="button" onclick="openInvoiceSec('sale')"><span class="nav-icon">🛒</span><span class="nav-label">شاشة البيع والاستعلام</span></button>
+      <div class="nav-sub">
+        <button class="nav-link" type="button" onclick="openInvoiceSec('sale')"><span class="nav-label">فاتورة مبيعات</span></button>
+        <button class="nav-link" type="button" onclick="openInvoiceSec('sale_return')"><span class="nav-label">مرتجع مبيعات</span></button>
+        <button class="nav-link" type="button" onclick="openInvoiceSec('quote')"><span class="nav-label">عرض أسعار</span></button>
+        <button class="nav-link" type="button" onclick="openInvLog('sale')"><span class="nav-label">فواتير المبيعات</span></button>
+        <button class="nav-link" type="button" onclick="openInvLog('sale',true)"><span class="nav-label">مبيعات فترة</span></button>
+      </div>
+    </div>
+
+    <div class="nav-caption">المشتريات والموردون</div>
+    <div class="nav-group">
+      <button class="nav-link accent" type="button" onclick="openInvoiceSec('purchase')"><span class="nav-icon">📥</span><span class="nav-label">فواتير المشتريات</span></button>
+      <div class="nav-sub">
+        <button class="nav-link" type="button" onclick="openInvoiceSec('purchase_return')"><span class="nav-label">مرتجع مشتريات</span></button>
+        <button class="nav-link" type="button" onclick="openInvLog('purchase')"><span class="nav-label">فواتير مشتريات محفوظة</span></button>
+        <button class="nav-link" type="button" onclick="openPartySec('supplier')"><span class="nav-label">إدارة الموردين</span></button>
+      </div>
+    </div>
+
+    <div class="nav-caption">المخزون والأصناف</div>
+    <div class="nav-group">
+      <button class="nav-link accent" type="button" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')"><span class="nav-icon">📦</span><span class="nav-label">الأصناف والمخزون</span></button>
+      <div class="nav-sub">
+        <button class="nav-link" type="button" onclick="openSec('sec-categories','📁 بيانات المجموعات')"><span class="nav-label">المجموعات</span></button>
+        <button class="nav-link" type="button" onclick="openStockFilter('all')"><span class="nav-label">جرد المخزن</span></button>
+        <button class="nav-link" type="button" onclick="openStockFilter('low')"><span class="nav-label">حد الطلب</span></button>
+        <button class="nav-link" type="button" onclick="openStockFilter('zero')"><span class="nav-label">النواقص</span></button>
+        <button class="nav-link" type="button" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')"><span class="nav-label">ملصقات الباركود</span></button>
+      </div>
+    </div>
+
+    <div class="nav-caption">الحسابات</div>
+    <div class="nav-group">
+      <button class="nav-link accent" type="button" onclick="openPartySec('customer')"><span class="nav-icon">👥</span><span class="nav-label">إدارة العملاء</span></button>
+      <div class="nav-sub">
+        <button class="nav-link" type="button" onclick="openPartyReport('customer','balances')"><span class="nav-label">أرصدة العملاء</span></button>
+        <button class="nav-link" type="button" onclick="openPartyReport('supplier','balances')"><span class="nav-label">أرصدة الموردين</span></button>
+        <button class="nav-link" type="button" onclick="openTreasury('in')"><span class="nav-label">وارد الخزنة</span></button>
+        <button class="nav-link" type="button" onclick="openTreasury('out')"><span class="nav-label">منصرف الخزنة</span></button>
+        <button class="nav-link" type="button" onclick="openTreasury('expense')"><span class="nav-label">المصروفات</span></button>
+      </div>
+    </div>
+
+    <div class="nav-caption">التقارير</div>
+    <div class="nav-group">
+      <button class="nav-link accent" type="button" onclick="openProfitSec('general')"><span class="nav-icon">📈</span><span class="nav-label">التقرير العام والأرباح</span></button>
+      <div class="nav-sub">
+        <button class="nav-link" type="button" onclick="openProfitSec('item')"><span class="nav-label">أرباح صنف</span></button>
+        <button class="nav-link" type="button" onclick="openProfitSec('net')"><span class="nav-label">صافي الأرباح</span></button>
+        <button class="nav-link" type="button" onclick="openProfitSec('period')"><span class="nav-label">أرباح فترة</span></button>
+      </div>
+    </div>
+
+    <div class="nav-caption">البرنامج</div>
+    <div class="nav-group">
+      <button class="nav-link" type="button" onclick="openSec('sec-settings','⚙️ إعدادات النظام')"><span class="nav-icon">⚙️</span><span class="nav-label">إعدادات النظام</span></button>
+      <button class="nav-link" type="button" onclick="lockApp()"><span class="nav-icon">🔐</span><span class="nav-label">المستخدمون والصلاحيات</span></button>
+    </div>
+    <div class="side-nav-foot"><span class="nav-status-dot"></span><span class="nav-label">البيانات محفوظة على هذا الجهاز</span></div>
   </aside>
+
   <main class="main-content" id="mainContent">
+
+    <!-- ============ HOME ============ -->
     <section class="home-dashboard" id="homeDashboard" aria-label="ملخص المبيعات الأسبوعية">
-      <div class="dashboard-heading"><div><span class="eyebrow">نظرة عامة</span><h2>ملخص نشاط المكتبة</h2><p>صافي المبيعات اليومية خلال آخر سبعة أيام</p></div><button class="act-btn bg-blue" type="button" onclick="openInvLog('sale',true)">عرض تقرير المبيعات ←</button></div>
+      <div class="dashboard-heading">
+        <div><h2>لوحة المتابعة اليومية</h2><p>صافي المبيعات خلال آخر سبعة أيام — انقر أي عمود للانتقال إلى سجل الفواتير</p></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="act-btn bg-green" type="button" onclick="openInvoiceSec('sale')">🛒 فاتورة جديدة</button>
+          <button class="act-btn bg-blue" type="button" onclick="openInvLog('sale',true)">📑 تقرير المبيعات</button>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-box"><small>رصيد الخزنة</small><strong id="kpiCash">0.00</strong></div>
+        <div class="kpi-box"><small>مبيعات اليوم</small><strong id="kpiSalesToday">0.00</strong></div>
+        <div class="kpi-box"><small>صافي الأرباح</small><strong id="kpiNetProfit">0.00</strong></div>
+        <div class="kpi-box warn"><small>أصناف تحت حد الطلب</small><strong id="kpiLowStock">0</strong></div>
+      </div>
       <div id="salesChart" class="sales-chart" role="img" aria-label="رسم بياني لمبيعات آخر سبعة أيام"></div>
       <div class="system-alerts" id="systemAlerts" aria-live="polite"><h3>🔔 التنبيهات</h3><ul id="systemAlertsList"></ul></div>
     </section>
+
+    <!-- ============ QUICK ACCESS ============ -->
     <div class="classic-panel" id="classicPanel">
-      <div class="section-heading"><div><span class="eyebrow">وصول سريع</span><h2>كل أدواتك في مكان واحد</h2></div><span class="section-hint">اضغط على أي بطاقة لفتح شاشة عائمة</span></div>
-      <section class="action-group"><h3><span>⚡</span> المهام السريعة</h3><div class="classic-top-row">
-        <button type="button" class="c-btn" onclick="openInvoiceSec('sale')">🛒 فاتورة مبيعات</button>
-        <button type="button" class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
-        <button type="button" class="c-btn" onclick="openSec('sec-items','📦 إضافة الأصناف')">📦 إضافة الأصناف</button>
-        <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 إضافة مجموعة')">📁 إضافة مجموعة</button>
-        <button type="button" class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
-        <button type="button" class="c-btn" onclick="openPartySec('supplier')">🚚 الموردون</button>
-        <button type="button" class="c-btn" onclick="openSec('sec-settings','🏢 بيانات المنشأة والإعدادات')">🏢 بيانات المنشأة</button>
-        <button type="button" class="c-btn" onclick="lockApp()">🔐 قفل الشاشة</button>
-      </div></section>
+      <div class="section-heading">
+        <div><h2>شاشات البرنامج</h2><span class="section-hint">اختر الشاشة المطلوبة — تُفتح في نافذة عائمة قابلة للتكبير والتصغير</span></div>
+        <span class="section-hint">الإصدار 4.34</span>
+      </div>
+      <section class="action-group" style="border-top:0;padding-top:0">
+        <h3><span>⚡</span> المهام السريعة</h3>
+        <div class="classic-top-row">
+          <button type="button" class="c-btn" onclick="openInvoiceSec('sale')">🛒 شاشة البيع</button>
+          <button type="button" class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
+          <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')">📦 الأصناف</button>
+          <button type="button" class="c-btn" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">🏷️ ملصقات الباركود</button>
+          <button type="button" class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
+          <button type="button" class="c-btn" onclick="openPartySec('supplier')">🚚 الموردون</button>
+          <button type="button" class="c-btn" onclick="openTreasury('all')">💰 الخزنة</button>
+          <button type="button" class="c-btn" onclick="lockApp()">🔐 قفل الشاشة</button>
+        </div>
+      </section>
       <div class="action-groups-grid">
         <section class="action-group"><h3><span>📦</span> المخزون والأصناف</h3><div class="classic-grid">
           <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف')">بيانات الأصناف</button>
           <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 بيانات المجموعات')">بيانات المجموعات</button>
           <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
           <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
-          <button type="button" class="c-btn" onclick="openStockFilter('all')">المخزن</button>
+          <button type="button" class="c-btn" onclick="openStockFilter('all')">جرد المخزن</button>
         </div></section>
         <section class="action-group"><h3><span>🧾</span> الفواتير والحركة</h3><div class="classic-grid">
           <button type="button" class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
@@ -430,45 +769,203 @@
         </div></section>
       </div>
     </div>
+
   </main>
 </div>
 <div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
 
+<!-- ================= FLOATING WINDOW ================= -->
 <div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
 <div class="workspace">
   <div class="win-header">
-    <h2 id="winTitle">📦 شاشة الأصناف والمخازن</h2>
+    <h2 id="winTitle">📦 بيانات الأصناف والمخزون</h2>
     <div class="win-header-actions">
-      <button type="button" class="act-btn win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة">－</button>
-      <button type="button" class="act-btn win-close" id="maximizeWindowButton" onclick="maximizeWorkspace()" aria-label="تكبير النافذة">□</button>
-      <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
-      <button type="button" class="act-btn win-close" onclick="closeWorkspace()" aria-label="إغلاق الصفحة العائمة">✕ إغلاق</button>
+      <button type="button" class="act-btn no-print" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
+      <button type="button" class="win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة" title="تصغير">－</button>
+      <button type="button" class="win-close" id="maximizeWindowButton" onclick="maximizeWorkspace()" aria-label="تكبير النافذة" title="تكبير">□</button>
+      <button type="button" class="win-close" onclick="closeWorkspace()" aria-label="إغلاق الصفحة العائمة" title="إغلاق">✕</button>
     </div>
   </div>
 
   <div class="win-body">
-    <!-- 1. ITEMS SCREEN -->
+
+    <!-- ==================== 1. POINT OF SALE ==================== -->
+    <div id="sec-invoice" class="sec-view">
+      <div class="pos-wrap">
+
+        <!-- invoice header -->
+        <div class="entry-card" style="padding-bottom:5px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-soft);padding-bottom:5px;margin-bottom:6px">
+            <div style="display:flex;gap:4px;flex-wrap:wrap" id="invTabs">
+              <button type="button" class="act-btn" data-inv-tab="details" onclick="switchInvoiceTab('details')">تفاصيل الفاتورة</button>
+              <button type="button" class="act-btn" data-inv-tab="discount" onclick="switchInvoiceTab('discount')">الخصم</button>
+              <button type="button" class="act-btn" data-inv-tab="party" onclick="switchInvoiceTab('party')">العميل والحساب</button>
+              <button type="button" class="act-btn" data-inv-tab="notes" onclick="switchInvoiceTab('notes')">ملاحظات وطباعة</button>
+            </div>
+            <strong id="invPanelTitle" style="font-size:12.5px;color:#2b5417">فاتورة مبيعات</strong>
+          </div>
+
+          <div class="pos-head">
+            <div class="pos-field">
+              <label for="invMode">نوع الفاتورة / العملية</label>
+              <select id="invMode" onchange="changeInvoiceMode(this.value)">
+                <option value="sale">فاتورة مبيعات</option>
+                <option value="sale_return">مرتجع مبيعات</option>
+                <option value="purchase">فاتورة مشتريات</option>
+                <option value="purchase_return">مرتجع مشتريات</option>
+                <option value="quote">عرض أسعار</option>
+              </select>
+            </div>
+            <div class="pos-field">
+              <label for="invPartySelect" id="lblInvParty">العميل / المورد</label>
+              <select id="invPartySelect"></select>
+            </div>
+            <div class="pos-field">
+              <label for="invPayType">طريقة الدفع</label>
+              <select id="invPayType" onchange="calcInvoiceTotals()">
+                <option value="cash">نقدي (كاش)</option>
+                <option value="credit">آجل (على الحساب)</option>
+                <option value="partial">دفع جزئي</option>
+              </select>
+            </div>
+            <div class="pos-field" data-inv-group="details">
+              <label for="invPriceTier">شريحة التسعير</label>
+              <select id="invPriceTier" onchange="updateCartPricesByTier()">
+                <option value="retail">قطاعي</option>
+                <option value="wholesale">جملة</option>
+              </select>
+            </div>
+            <div class="pos-field" id="invReturnSourceRow" style="display:none">
+              <label for="invReturnSource">الفاتورة الأصلية للمرتجع</label>
+              <select id="invReturnSource" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
+            </div>
+            <div class="pos-total-box">
+              <small>صافي المبلغ المطلوب</small>
+              <strong id="posNetDisplay">0.00</strong>
+              <small id="posItemsCount" style="opacity:.9">0 مادة</small>
+            </div>
+          </div>
+
+          <!-- barcode / quantity / sell -->
+          <div class="barcode-row" style="margin-top:6px">
+            <input type="text" id="invBarcodeInp" placeholder="اقرأ الباركود أو اكتب كود/اسم الصنف ثم Enter" list="itemsDatalist" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addInvItemFromInput();}">
+            <datalist id="itemsDatalist"></datalist>
+            <div class="qty-row" style="margin:0">
+              <button type="button" class="y-btn" style="height:30px" onclick="bumpInvoiceQty(-1)" title="تقليل الكمية">−</button>
+              <input type="number" id="invAddQty" value="1" min="0.001" step="any" aria-label="الكمية المطلوب إضافتها">
+              <button type="button" class="y-btn" style="height:30px" onclick="bumpInvoiceQty(1)" title="زيادة الكمية">+</button>
+            </div>
+            <button type="button" class="sell-btn" style="max-width:190px" onclick="addInvItemFromInput()">🛒 بيع / إضافة</button>
+          </div>
+
+          <!-- discount fields (visible on their tab) -->
+          <div class="f-row" data-inv-group="discount" hidden style="margin-top:6px">
+            <label for="invDiscAmount">خصم إضافي (مبلغ)</label>
+            <input type="number" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
+            <label for="invDiscPct" style="min-width:auto">خصم (%)</label>
+            <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
+            <small>يوزَّع الخصم الإضافي على بنود الفاتورة تلقائياً ولا يغيّر تكلفة المخزن.</small>
+          </div>
+          <div class="f-row" data-inv-group="notes" hidden style="margin-top:6px">
+            <label for="invPrintNote">ملاحظات تُطبع على الفاتورة</label>
+            <input type="text" id="invPrintNote" placeholder="مثال: الاستبدال خلال أسبوع بشرط الفاتورة" maxlength="120">
+            <small class="keyboard-hint">اختصارات: F2 شاشة البيع · Enter إضافة · F3 فاتورة جديدة · F4 حفظ · Ctrl+Enter حفظ وطباعة · F6 تعليق · F8 استعادة · F9 تعديل السعر · F11 سجل الفواتير</small>
+          </div>
+        </div>
+
+        <!-- groups + quick items -->
+        <div class="pos-main">
+          <div class="pos-entry">
+            <div class="entry-card">
+              <div class="panel-title">مجموعات وأصناف سريعة — اضغط الصنف لإضافته للفاتورة</div>
+              <div class="tiles-head">
+                <h3>المجموعات</h3>
+                <input type="text" id="posQuickSearch" class="plain-input" style="max-width:190px;flex:0 0 190px;height:24px" placeholder="🔍 بحث سريع في الأصناف" oninput="renderPosTiles()">
+              </div>
+              <div class="groups-grid" id="posGroups"></div>
+              <div class="quick-items" id="posQuickItems"></div>
+            </div>
+
+            <!-- cart -->
+            <div class="entry-card" style="padding-bottom:4px">
+              <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+                <span>بنود الفاتورة الحالية</span>
+                <span style="font-weight:normal;font-size:10.5px" id="posCartHint">لا توجد بنود بعد</span>
+              </div>
+              <div class="table-wrap pos-table">
+                <table>
+                  <thead>
+                    <tr><th style="width:30px">#</th><th>كود الصنف</th><th style="min-width:150px">المادة / الوصف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>المجموع</th><th>الصافي</th><th style="width:34px">حذف</th></tr>
+                  </thead>
+                  <tbody id="invCartTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="pos-entry">
+            <div class="entry-card">
+              <div class="panel-title">ملخص الفاتورة</div>
+              <div class="sum-bar" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                <div class="sum-cell"><label for="invSubTotal">إجمالي البنود</label><input type="text" id="invSubTotal" readonly value="0.00"></div>
+                <div class="sum-cell"><label>خصم إضافي</label><input type="text" id="invDiscTotalView" readonly value="0.00" tabindex="-1"></div>
+                <div class="sum-cell net"><label for="invNetTotal">الصافي المطلوب</label><input type="text" id="invNetTotal" readonly value="0.00"></div>
+                <div class="sum-cell paid"><label for="invPaidAmount">المدفوع</label><input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()"></div>
+                <div class="sum-cell remain" style="grid-column:span 2"><label for="invRemainAmount">المتبقي (آجل)</label><input type="text" id="invRemainAmount" readonly value="0.00"></div>
+                <div class="sum-cell paid" style="grid-column:span 2"><label for="invPaidWithKeypad">دفع بالمبلغ</label><input type="text" id="invPaidWithKeypad" readonly value="اضغط لفتح لوحة الأرقام" onclick="openKeypad({mode:'cart',index:-1,field:'pay'})" style="cursor:pointer"></div>
+              </div>
+              <div class="action-bar" style="margin-bottom:0">
+                <button type="button" class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة (A5)</button>
+                <button type="button" class="act-btn bg-teal" onclick="saveInvoice('thermal')">🧾 طباعة حرارية</button>
+                <button type="button" class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط</button>
+                <button type="button" class="act-btn bg-orange" onclick="holdCurrentInvoice()">⏸️ تعليق (F6)</button>
+                <button type="button" class="act-btn bg-purple" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled>↩ استعادة معلقة (0)</button>
+                <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none" onclick="convertQuoteToSale()">🔄 تحويل العرض لفاتورة</button>
+                <button type="button" class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
+              </div>
+            </div>
+            <div class="entry-card">
+              <div class="panel-title">مفاتيح الوظائف</div>
+              <div class="fn-strip">
+                <button type="button" class="fn-btn" onclick="openInvoiceSec('sale')"><b>F2</b> بيع</button>
+                <button type="button" class="fn-btn" onclick="openInvoiceSec('sale')"><b>F3</b> فاتورة جديدة</button>
+                <button type="button" class="fn-btn" onclick="saveInvoice(false)"><b>F4</b> حفظ</button>
+                <button type="button" class="fn-btn" onclick="restoreHeldInvoice()"><b>F5</b> المعلقة</button>
+                <button type="button" class="fn-btn" onclick="clearInvCart()"><b>F6</b> إغلاق البنود</button>
+                <button type="button" class="fn-btn" onclick="focusCartField('qty')"><b>F8</b> تعديل الكمية</button>
+                <button type="button" class="fn-btn" onclick="focusCartField('price')"><b>F9</b> تعديل السعر</button>
+                <button type="button" class="fn-btn" onclick="saveInvoice(true)"><b>F10</b> طباعة الفاتورة</button>
+                <button type="button" class="fn-btn" onclick="openInvLog('sale')"><b>F11</b> فواتير سابقة</button>
+                <button type="button" class="fn-btn" onclick="openTreasury('all')"><b>F1</b> الخزنة</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 2. ITEMS & STOCK ==================== -->
     <div id="sec-items" class="sec-view active">
       <div class="form-grid-2">
         <div class="panel-box">
-          <div class="panel-title">بيانات الصنف (الكتاب / الأداة المدرسية / الهدية)</div>
+          <div class="panel-title">بيانات الصنف — الكتاب / الأداة المدرسية / الهدية</div>
           <input type="hidden" id="itemEditId">
           <div class="f-row">
-            <label>المخزن:</label>
+            <label for="itemWarehouse">المخزن</label>
             <select id="itemWarehouse"><option value="الرئيسي">الرئيسي</option><option value="مخزن الكتب">مخزن الكتب</option><option value="الفرعي">الفرعي</option></select>
-            <label style="min-width:65px">كود الصنف:</label>
+            <label for="itemCode" style="min-width:auto">كود الصنف</label>
             <input type="text" id="itemCode" placeholder="باركود / كود">
-            <button type="button" class="act-btn bg-orange" style="padding:5px 10px" onclick="generateNewCode()">كود جديد</button>
+            <button type="button" class="act-btn bg-orange" onclick="generateNewCode()">كود جديد</button>
           </div>
           <div class="f-row">
-            <label>اسم الصنف:</label>
+            <label for="itemName">اسم الصنف</label>
             <input type="text" id="itemName" placeholder="مثال: كتاب المعاصر رياضيات 3ع / قلم جاف روتو">
           </div>
           <div class="f-row">
-            <label>المجموعة:</label>
+            <label for="itemCategory">المجموعة</label>
             <select id="itemCategory"></select>
-            <button type="button" class="act-btn bg-green" style="padding:4px 9px" onclick="quickAddCategory()">+</button>
-            <label style="min-width:65px">نوع الصنف:</label>
+            <button type="button" class="act-btn bg-green" onclick="quickAddCategory()" title="إضافة مجموعة">+</button>
+            <label for="itemType" style="min-width:auto">نوع الصنف</label>
             <select id="itemType">
               <option value="كتاب خارجي">كتاب خارجي</option>
               <option value="أدوات مدرسية">أدوات مدرسية</option>
@@ -479,11 +976,11 @@
             </select>
           </div>
           <div class="f-row">
-            <label>الوحدة:</label>
+            <label for="itemUnit">الوحدة</label>
             <select id="itemUnit"><option value="عدد">عدد / قطعة</option><option value="دستة">دستة</option><option value="علبة">علبة</option><option value="باكو">باكو</option></select>
-            <label style="min-width:65px">الكمية:</label>
+            <label for="itemQty" style="min-width:auto">الكمية</label>
             <input type="number" id="itemQty" value="10" step="any">
-            <label style="min-width:65px">حد الطلب:</label>
+            <label for="itemMinQty" style="min-width:auto">حد الطلب</label>
             <input type="number" id="itemMinQty" value="3" step="any">
           </div>
         </div>
@@ -491,23 +988,21 @@
         <div class="panel-box">
           <div class="panel-title">بيانات السعر والربح</div>
           <div class="f-row">
-            <label>سعر الشراء:</label>
+            <label for="itemBuyPrice">سعر الشراء</label>
             <input type="number" id="itemBuyPrice" value="0" step="any" oninput="calcPriceFromProfit()">
-            <label style="min-width:75px">نسبة الربح %:</label>
+            <label for="itemProfitPct" style="min-width:auto">نسبة الربح %</label>
             <input type="number" id="itemProfitPct" value="20" step="any" oninput="calcPriceFromProfit()">
           </div>
           <div class="f-row">
-            <label>سعر البيع:</label>
+            <label for="itemSellPrice">سعر البيع</label>
             <input type="number" id="itemSellPrice" value="0" step="any" oninput="calcProfitFromPrice()">
-            <label style="min-width:75px">سعر الجملة:</label>
+            <label for="itemWholesale" style="min-width:auto">سعر الجملة</label>
             <input type="number" id="itemWholesale" value="0" step="any">
           </div>
           <div class="f-row">
-            <label>الحد الأدنى للبيع:</label>
+            <label for="itemMinSell">أقل سعر بيع</label>
             <input type="number" id="itemMinSell" value="0" step="any">
-          </div>
-          <div class="f-row">
-            <label>ملاحظات الصنف:</label>
+            <label for="itemNotes" style="min-width:auto">ملاحظات</label>
             <input type="text" id="itemNotes" placeholder="طبعة 2025 / بدون خصم / الرف الأول...">
           </div>
         </div>
@@ -519,17 +1014,18 @@
         <button type="button" class="act-btn bg-blue" onclick="showSingleItemProfit()">📊 ربح صنف</button>
         <button type="button" class="act-btn bg-teal" onclick="printItemsReportA5()">🖨️ طباعة البيانات (A5)</button>
         <button type="button" class="act-btn bg-orange" onclick="toggleQuickEditItems()">✏️ التعديل السريع بالجدول</button>
-        <button type="button" class="act-btn bg-purple" onclick="exportItemsCSV()">📤 تصدير إكسيل (CSV)</button>
-        <input type="text" id="itemSearchInp" placeholder="🔍 ابحث بالاسم أو الكود أو المجموعة..." oninput="renderItemsTable()" style="flex:1; padding:6px 10px; border:1px solid #94a3b8; border-radius:4px;">
+        <button type="button" class="act-btn bg-purple" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">🏷️ ملصقات الباركود</button>
+        <button type="button" class="act-btn bg-blue" onclick="exportItemsCSV()">📤 تصدير إكسيل (CSV)</button>
+        <input type="text" id="itemSearchInp" class="plain-input" style="flex:1 1 200px" placeholder="🔍 ابحث بالاسم أو الكود أو المجموعة..." oninput="renderItemsTable()">
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>كود الصنف</th><th>اسم الصنف</th><th>المجموعة</th><th>الكمية</th><th>الوحدة</th>
-              <th>سعر الشراء</th><th>سعر البيع</th><th>سعر الجملة</th><th>الحد الأدنى</th>
-              <th>الملاحظات</th><th>تعديل</th><th>حذف</th><th>باركود</th>
+              <th>كود الصنف</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الكمية</th><th>الوحدة</th>
+              <th>سعر الشراء</th><th>سعر البيع</th><th>سعر الجملة</th><th>أقل سعر</th>
+              <th>الملاحظات</th><th class="no-print">تعديل</th><th class="no-print">حذف</th><th class="no-print">باركود</th>
             </tr>
           </thead>
           <tbody id="itemsTbody"></tbody>
@@ -537,186 +1033,140 @@
       </div>
       <div class="t-foot-bar">
         <span>إجمالي عدد الأصناف: <strong id="totItemsCount">0</strong></span>
-        <span>إجمالي قيمة الشراء بالمخزن: <strong id="totItemsBuy">0.00</strong></span>
-        <span>إجمالي قيمة البيع بالمخزن: <strong id="totItemsSell">0.00</strong></span>
+        <span>قيمة الشراء بالمخزن: <strong id="totItemsBuy">0.00</strong></span>
+        <span>قيمة البيع بالمخزن: <strong id="totItemsSell">0.00</strong></span>
       </div>
     </div>
 
-    <!-- 2. INVOICES -->
-    <div id="sec-invoice" class="sec-view">
-      <div class="panel-box" style="margin-bottom:10px;">
-        <div class="panel-title" id="invPanelTitle">فاتورة مبيعات</div>
-        <div class="f-row">
-          <label>نوع العملية:</label>
-          <select id="invMode" onchange="changeInvoiceMode(this.value)">
-            <option value="sale">فاتورة مبيعات</option>
-            <option value="sale_return">مرتجع مبيعات</option>
-            <option value="purchase">فاتورة مشتريات</option>
-            <option value="purchase_return">مرتجع مشتريات</option>
-            <option value="quote">عرض أسعار</option>
-          </select>
-          <label id="lblInvParty">العميل:</label>
-          <select id="invPartySelect"></select>
-          <label>طريقة الدفع:</label>
-          <select id="invPayType" onchange="calcInvoiceTotals()">
-            <option value="cash">نقدي (كاش)</option>
-            <option value="credit">آجل (على الحساب)</option>
-            <option value="partial">دفع جزئي</option>
-          </select>
-          <label>التسعير:</label>
-          <select id="invPriceTier" onchange="updateCartPricesByTier()">
-            <option value="retail">قطاعي</option>
-            <option value="wholesale">جملة</option>
-          </select>
-        </div>
-        <div class="f-row" id="invReturnSourceRow" style="display:none;">
-          <label for="invReturnSource">الفاتورة الأصلية:</label>
-          <select id="invReturnSource" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
-          <small>المرتجعات بالكميات والأسعار والتكلفة الأصلية، وبحد أقصى الكمية غير المرتجعة سابقاً.</small>
-        </div>
-        <div class="f-row" style="border-top:1px dashed #94a3b8; padding-top:8px; margin-top:6px;">
-          <label>إضافة صنف:</label>
-          <input type="text" id="invBarcodeInp" placeholder="🔫 اقرأ الباركود أو اختر الصنف ثم اضغط Enter أو (+ أضف للفاتورة)..." list="itemsDatalist" onkeydown="if(event.key==='Enter'){event.preventDefault();addInvItemFromInput();}">
-          <datalist id="itemsDatalist"></datalist>
-          <label style="min-width:50px">الكمية:</label>
-          <input type="number" id="invAddQty" value="1" min="0.001" step="any" style="max-width:70px">
-          <button type="button" class="act-btn bg-green" onclick="addInvItemFromInput()">+ أضف للفاتورة</button>
-          <small class="keyboard-hint">اختصارات: F2 بيع · Enter إضافة · F4 حفظ · Ctrl+Enter حفظ وطباعة · F6 تعليق · F8 استعادة</small>
-        </div>
-      </div>
-
-      <div class="table-wrap" style="max-height:260px;">
-        <table>
-          <thead>
-            <tr><th>#</th><th>الكود</th><th>اسم الصنف</th><th>الكمية</th><th>السعر</th><th>خصم %</th><th>الإجمالي</th><th>حذف</th></tr>
-          </thead>
-          <tbody id="invCartTbody"></tbody>
-        </table>
-      </div>
-
-      <div class="panel-box" style="margin-top:10px;">
-        <div class="f-row">
-          <label>إجمالي الفاتورة:</label>
-          <input type="text" id="invSubTotal" readonly value="0.00">
-          <label>خصم إضافي (مبلغ):</label>
-          <input type="number" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
-          <label>خصم (%):</label>
-          <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
-        </div>
-        <div class="f-row">
-          <label style="color:var(--red-accent); font-size:15px;">الصافي المطلوب:</label>
-          <input type="text" id="invNetTotal" readonly value="0.00" style="font-size:16px; color:var(--red-accent); background:#fef2f2;">
-          <label>المدفوع حالياً:</label>
-          <input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()">
-          <label>المتبقي (آجل):</label>
-          <input type="text" id="invRemainAmount" readonly value="0.00">
-        </div>
-      </div>
-
-      <div class="action-bar">
-        <button type="button" class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة فاتورة (A5)</button>
-        <button type="button" class="act-btn bg-teal" onclick="saveInvoice('thermal')">🧾 حفظ وطباعة حرارية</button>
-        <button type="button" class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط بدون طباعة</button>
-        <button type="button" class="act-btn bg-orange" onclick="holdCurrentInvoice()">⏸️ تعليق الفاتورة (F6)</button>
-        <button type="button" class="act-btn bg-purple" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled>↩ استعادة فاتورة معلقة (0)</button>
-        <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تجهيز عرض السعر كفاتورة مبيعات</button>
-        <button type="button" class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
-      </div>
-    </div>
-
-    <!-- 3. CATEGORIES -->
+    <!-- ==================== 3. CATEGORIES ==================== -->
     <div id="sec-categories" class="sec-view">
-      <div class="panel-box" style="max-width:550px; margin-bottom:12px;">
+      <div class="panel-box" style="max-width:620px">
         <div class="panel-title">إضافة وتعديل مجموعات الأصناف</div>
         <div class="f-row">
-          <label>اسم المجموعة:</label>
+          <label for="catNameInp">اسم المجموعة</label>
           <input type="text" id="catNameInp" placeholder="مثال: كتب خارجية ثانوي / أدوات هندسية / هدايا">
           <button type="button" class="act-btn bg-green" onclick="addCategory()">+ حفظ المجموعة</button>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>اسم المجموعة</th><th>عدد الأصناف بها</th><th>حذف</th></tr></thead>
+          <thead><tr><th>#</th><th>اسم المجموعة</th><th>عدد الأصناف</th><th class="no-print">حذف</th></tr></thead>
           <tbody id="catsTbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 4. STOCK -->
+    <!-- ==================== 4. STOCK ==================== -->
     <div id="sec-stock" class="sec-view">
       <div class="action-bar">
         <button type="button" class="act-btn bg-blue" onclick="openStockFilter('all')">📦 كل المخزن</button>
-        <button type="button" class="act-btn bg-red" onclick="openStockFilter('zero')">🚨 النواقص (رصيد صفر أو أقل)</button>
-        <button type="button" class="act-btn bg-orange" onclick="openStockFilter('low')">⚠️ أصناف وصلت لحد الطلب</button>
+        <button type="button" class="act-btn bg-red" onclick="openStockFilter('zero')">🚨 النواقص (صفر أو أقل)</button>
+        <button type="button" class="act-btn bg-orange" onclick="openStockFilter('low')">⚠️ وصلت لحد الطلب</button>
+        <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الجرد</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr><th>الكود</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الرصيد الحالي</th><th>حد الطلب</th><th>سعر الشراء</th><th>إجمالي التكلفة</th></tr>
-          </thead>
+          <thead><tr><th>الكود</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الرصيد</th><th>حد الطلب</th><th>سعر الشراء</th><th>إجمالي التكلفة</th></tr></thead>
           <tbody id="stockTbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 5. CUSTOMERS & SUPPLIERS -->
+    <!-- ==================== 5. BARCODE LABELS ==================== -->
+    <div id="sec-labels" class="sec-view">
+      <div class="form-grid-2">
+        <div class="panel-box">
+          <div class="panel-title">🏷️ إعداد ملصقات الباركود</div>
+          <div class="f-row">
+            <label for="labelCategory">المجموعة</label>
+            <select id="labelCategory" onchange="renderLabels()"><option value="all">كل الأصناف</option></select>
+            <label for="labelCopies" style="min-width:auto">نسخ لكل صنف</label>
+            <input type="number" id="labelCopies" value="3" min="1" max="40" step="1" oninput="renderLabels()">
+          </div>
+          <div class="f-row">
+            <label for="labelCols">أعمدة الورقة</label>
+            <select id="labelCols" onchange="renderLabels()"><option value="2">2 عمود</option><option value="3" selected>3 أعمدة</option><option value="4">4 أعمدة</option></select>
+            <label for="labelBarHeight" style="min-width:auto">ارتفاع الباركود</label>
+            <input type="number" id="labelBarHeight" value="44" min="24" max="80" step="2" oninput="renderLabels()">
+          </div>
+          <div class="f-row">
+            <label for="labelStoreName" style="min-width:auto"><input type="checkbox" id="labelStoreName" onchange="renderLabels()"> اسم المتجر</label>
+            <label for="labelShowName" style="min-width:auto"><input type="checkbox" id="labelShowName" checked onchange="renderLabels()"> اسم الصنف</label>
+            <label for="labelShowPrice" style="min-width:auto"><input type="checkbox" id="labelShowPrice" checked onchange="renderLabels()"> السعر</label>
+            <label for="labelShowCode" style="min-width:auto"><input type="checkbox" id="labelShowCode" checked onchange="renderLabels()"> رقم الكود</label>
+          </div>
+          <div class="action-bar" style="margin-bottom:0">
+            <button type="button" class="act-btn bg-green" onclick="printLabels()">🖨️ طباعة الملصقات</button>
+            <button type="button" class="act-btn bg-blue" onclick="renderLabels()">🔄 تحديث المعاينة</button>
+            <span id="labelCount" class="scope-note" style="margin:0">—</span>
+          </div>
+          <p class="scope-note">الملصقات تُطبع بنمط Code 39 الحقيقي. جرّب ملصقاً واحداً على طابعتك قبل طباعة كمية كبيرة، وتأكد أن قارئ الباركود يقرأ الأرقام الإنجليزية.</p>
+        </div>
+        <div class="panel-box">
+          <div class="panel-title">معاينة الورقة</div>
+          <div class="label-sheet" id="labelPreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 6. PARTIES ==================== -->
     <div id="sec-parties" class="sec-view">
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title" id="partyFormTitle">بيانات العميل / المورد</div>
           <input type="hidden" id="partyType" value="customer">
           <input type="hidden" id="partyEditId">
-          <div class="f-row"><label>الاسم:</label><input type="text" id="partyName" placeholder="اسم العميل أو دار النشر/المورد"></div>
+          <div class="f-row"><label for="partyName">الاسم</label><input type="text" id="partyName" placeholder="اسم العميل أو دار النشر / المورد"></div>
           <div class="f-row">
-            <label>رقم الهاتف:</label><input type="text" id="partyPhone" placeholder="01xxxxxxxxx">
-            <label style="min-width:75px">الرصيد الافتتاحي:</label><input type="number" id="partyBalance" value="0" step="any">
+            <label for="partyPhone">رقم الهاتف</label><input type="text" id="partyPhone" placeholder="01xxxxxxxxx">
+            <label for="partyBalance" style="min-width:auto">الرصيد الافتتاحي</label><input type="number" id="partyBalance" value="0" step="any">
           </div>
           <div class="f-row">
-            <label>العنوان / ملاحظات:</label><input type="text" id="partyNotes">
+            <label for="partyNotes">العنوان / ملاحظات</label><input type="text" id="partyNotes">
             <button type="button" class="act-btn bg-green" onclick="saveParty()">💾 حفظ</button>
             <button type="button" class="act-btn bg-red" onclick="resetPartyForm()">إلغاء</button>
           </div>
         </div>
 
         <div class="panel-box">
-          <div class="panel-title">تسجيل دفعة نقدية (سند قبض من عميل / سند صرف لمورد)</div>
-          <div class="f-row"><label>اختر الاسم:</label><select id="voucherPartyId"></select></div>
+          <div class="panel-title">تسجيل دفعة نقدية — سند قبض من عميل / سند صرف لمورد</div>
+          <div class="f-row"><label for="voucherPartyId">اختر الاسم</label><select id="voucherPartyId"></select></div>
           <div class="f-row">
-            <label>المبلغ المسدد:</label><input type="number" id="voucherAmount" value="0" step="any">
-            <label style="min-width:55px">بيان:</label><input type="text" id="voucherNote" placeholder="دفعة من الحساب">
-            <button type="button" class="act-btn bg-teal" onclick="savePartyVoucher()">💵 تسجيل السند وطباعة A5</button>
+            <label for="voucherAmount">المبلغ المسدد</label><input type="number" id="voucherAmount" value="0" step="any">
+            <label for="voucherNote" style="min-width:auto">بيان</label><input type="text" id="voucherNote" placeholder="دفعة من الحساب">
+            <button type="button" class="act-btn bg-teal" onclick="savePartyVoucher()">💵 تسجيل السند وطباعة</button>
           </div>
         </div>
       </div>
 
       <div class="action-bar">
-        <label style="font-weight:bold;">كشف حساب تفصيلي لـ:</label>
-        <select id="statementPartySelect" onchange="renderPartyStatement()" style="padding:6px; min-width:200px;"></select>
+        <label for="statementPartySelect" style="font-weight:bold">كشف حساب تفصيلي لـ</label>
+        <select id="statementPartySelect" class="plain-input" style="flex:0 0 220px" onchange="renderPartyStatement()"></select>
         <button type="button" class="act-btn bg-teal" onclick="printPartyStatementA5()">🖨️ طباعة كشف الحساب (A5)</button>
       </div>
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العنوان/ملاحظات</th><th>الرصيد الحالي المستحق</th><th>كشف حساب</th><th>تعديل</th><th>حذف</th></tr></thead>
+          <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العنوان / ملاحظات</th><th>الرصيد المستحق</th><th class="no-print">كشف حساب</th><th class="no-print">تعديل</th><th class="no-print">حذف</th></tr></thead>
           <tbody id="partiesTbody"></tbody>
         </table>
       </div>
-      <div id="partyStatementBox" style="margin-top:12px; display:none;" class="panel-box">
+      <div id="partyStatementBox" style="margin-top:9px; display:none" class="panel-box">
         <div class="panel-title" id="statementTitle">كشف حساب</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>إجمالي الفاتورة</th><th>المدفوع/المسدد</th><th>تأثير الحركة</th><th>الرصيد بعد الحركة</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>إجمالي الفاتورة</th><th>المدفوع / المسدد</th><th>تأثير الحركة</th><th>الرصيد بعد الحركة</th></tr></thead>
             <tbody id="statementTbody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 6. INVOICE LOGS -->
+    <!-- ==================== 7. INVOICE LOG ==================== -->
     <div id="sec-invlog" class="sec-view">
       <div class="action-bar">
-        <label>النوع:</label>
-        <select id="logTypeFilter" onchange="renderInvLog()">
+        <label for="logTypeFilter">النوع</label>
+        <select id="logTypeFilter" class="plain-input" style="flex:0 0 170px" onchange="renderInvLog()">
           <option value="all">كل الفواتير</option>
           <option value="sale">مبيعات فقط</option>
           <option value="sale_return">مرتجع مبيعات</option>
@@ -724,55 +1174,61 @@
           <option value="purchase_return">مرتجع مشتريات</option>
           <option value="quote">عروض الأسعار</option>
         </select>
-        <label>من تاريخ:</label><input type="date" id="logDateFrom" onchange="renderInvLog()">
-        <label>إلى تاريخ:</label><input type="date" id="logDateTo" onchange="renderInvLog()">
+        <label for="logDateFrom">من تاريخ</label><input type="date" id="logDateFrom" class="plain-input" style="flex:0 0 130px" onchange="renderInvLog()">
+        <label for="logDateTo">إلى تاريخ</label><input type="date" id="logDateTo" class="plain-input" style="flex:0 0 130px" onchange="renderInvLog()">
+        <button type="button" class="act-btn bg-blue" onclick="openInvLog('all')">كل الفواتير</button>
+        <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة السجل</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل/المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th>إجراءات</th></tr></thead>
+          <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل / المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th class="no-print">إجراءات</th></tr></thead>
           <tbody id="invLogTbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 7. TREASURY -->
+    <!-- ==================== 8. TREASURY ==================== -->
     <div id="sec-treasury" class="sec-view">
-      <div class="panel-box" style="margin-bottom:10px;">
-        <div class="panel-title">تسجيل حركة خزينة (وارد خزنة / منصرف خزنة / مصروفات المكتبة)</div>
+      <div class="panel-box">
+        <div class="panel-title">تسجيل حركة خزينة — وارد / منصرف / مصروفات</div>
         <div class="f-row">
-          <label>نوع الحركة:</label>
-          <select id="trType">
+          <label for="trType">نوع الحركة</label>
+          <select id="trType" class="plain-input" style="flex:0 0 240px">
             <option value="in">وارد الخزنة (إيداع / إيراد)</option>
             <option value="out">منصرف الخزنة (سحب)</option>
-            <option value="expense">مصروفات عمومية (إيجار / كهرباء / أكياس / مرتبات)</option>
+            <option value="expense">مصروفات عمومية (إيجار / كهرباء / مرتبات)</option>
           </select>
-          <label style="min-width:60px">المبلغ:</label><input type="number" id="trAmount" value="0" step="any">
-          <label style="min-width:60px">البيان:</label><input type="text" id="trNote" placeholder="تفاصيل العملية...">
+          <label for="trAmount" style="min-width:auto">المبلغ</label><input type="number" id="trAmount" value="0" step="any" style="max-width:120px">
+          <label for="trNote" style="min-width:auto">البيان</label><input type="text" id="trNote" placeholder="تفاصيل العملية...">
           <button type="button" class="act-btn bg-green" onclick="addTreasuryMove()">💾 حفظ الحركة</button>
         </div>
       </div>
+      <div class="t-foot-bar" style="border:1px solid var(--line-dark);margin-bottom:8px">
+        <span>رصيد الخزنة الحالي: <strong id="kpiCashSide">0.00</strong></span>
+      </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>وارد (+)</th><th>منصرف / مصروف (-)</th></tr></thead>
+          <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>وارد (+)</th><th>منصرف / مصروف (−)</th></tr></thead>
           <tbody id="treasuryTbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 8. PROFITS -->
+    <!-- ==================== 9. PROFITS ==================== -->
     <div id="sec-profits" class="sec-view">
       <div class="action-bar">
-        <label>من تاريخ:</label><input type="date" id="profDateFrom" onchange="renderProfits()">
-        <label>إلى تاريخ:</label><input type="date" id="profDateTo" onchange="renderProfits()">
-        <label>تصفية بصنف محدد:</label><select id="profItemFilter" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
+        <label for="profDateFrom">من تاريخ</label><input type="date" id="profDateFrom" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
+        <label for="profDateTo">إلى تاريخ</label><input type="date" id="profDateTo" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
+        <label for="profItemFilter">تصفية بصنف</label><select id="profItemFilter" class="plain-input" style="flex:0 0 200px" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
+        <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة التقرير</button>
       </div>
-      <p id="profitScopeNote" class="scope-note">الأرباح محسوبة بعد خصومات الفواتير ومرتجع المبيعات، وخصم المصروفات العامة.</p>
-      <div class="t-foot-bar" style="margin-bottom:10px; font-size:15px;">
+      <p id="profitScopeNote" class="scope-note">الأرباح محسوبة بعد خصومات الفواتير ومرتجع المبيعات وتكلفة البيع التاريخية، بعد خصم المصروفات العامة.</p>
+      <div class="t-foot-bar" style="margin-bottom:8px;font-size:11.5px">
         <span>صافي المبيعات: <strong id="profTotSales">0.00</strong></span>
         <span>تكلفة الشراء: <strong id="profTotCost">0.00</strong></span>
-        <span style="color:var(--green-btn)">مجمل ربح المبيعات: <strong id="profGross">0.00</strong></span>
-        <span style="color:var(--red-accent)">إجمالي المصروفات: <strong id="profExpenses">0.00</strong></span>
-        <span style="background:#dcfce7; color:#166534;">💰 صافي الربح النهائي: <strong id="profNet">0.00</strong></span>
+        <span style="color:#2f6a1d">مجمل الربح: <strong id="profGross">0.00</strong></span>
+        <span style="color:var(--danger)">إجمالي المصروفات: <strong id="profExpenses">0.00</strong></span>
+        <span style="background:#eaf5df;border-color:#6aa64a">💰 صافي الربح: <strong id="profNet">0.00</strong></span>
       </div>
       <div class="table-wrap">
         <table>
@@ -782,12 +1238,13 @@
       </div>
     </div>
 
-    <!-- 9. SETTINGS -->
+    <!-- ==================== 10. SETTINGS ==================== -->
     <div id="sec-settings" class="sec-view">
       <div class="form-grid-2">
         <div class="panel-box">
-          <div class="panel-title">🎨 تخصيص البرنامج — ستة ثيمات مستوحاة من ويندوز</div>
+          <div class="panel-title">🎨 مظهر البرنامج — ثيمات مستوحاة من ويندوز</div>
           <div class="appearance-grid" id="themeChoices">
+            <button type="button" class="theme-choice" data-theme-choice="vista-classic" onclick="selectTheme('vista-classic')">كلاسيكي أخضر (YAZSYS) <span class="theme-swatches"><i style="background:#3b7323"></i><i style="background:#f4f2e4"></i><i style="background:#b1251d"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-blue" onclick="selectTheme('vista-blue')">Vista — أزرق زجاجي <span class="theme-swatches"><i style="background:#1878a5"></i><i style="background:#e9f4f8"></i><i style="background:#2f9e73"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-emerald" onclick="selectTheme('vista-emerald')">Vista — أخضر طبيعي <span class="theme-swatches"><i style="background:#27865c"></i><i style="background:#edf6ef"></i><i style="background:#cf8428"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-rose" onclick="selectTheme('vista-rose')">Vista — وردي أنيق <span class="theme-swatches"><i style="background:#a34f78"></i><i style="background:#f8eff3"></i><i style="background:#8057a3"></i></span></button>
@@ -796,46 +1253,50 @@
             <button type="button" class="theme-choice" data-theme-choice="win11-sunset" onclick="selectTheme('win11-sunset')">Windows 11 — غروب دافئ <span class="theme-swatches"><i style="background:#d0644e"></i><i style="background:#faf3f0"></i><i style="background:#8458a0"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="night" onclick="selectTheme('night')">الوضع الليلي <span class="theme-swatches"><i style="background:#111827"></i><i style="background:#263349"></i><i style="background:#818cf8"></i></span></button>
           </div>
-          <div class="f-row"><label for="customAccent">لون الواجهة:</label><input type="color" id="customAccent" value="#2563eb" onchange="setCustomAccent(this.value)" style="max-width:90px;flex:0 0 90px"></div>
-          <div class="f-row"><label for="receiptWidth">عرض الطابعة الحرارية:</label><select id="receiptWidth" onchange="setReceiptWidth(this.value)"><option value="80">80 مم (موصى به)</option><option value="58">58 مم</option></select></div>
-          <p class="scope-note">اختر ثيماً ثم عدّل اللون الأساسي كما تحب. يتم حفظ شكل الواجهة وعرض الطباعة على هذا الجهاز.</p>
+          <div class="f-row"><label for="customAccent">لون الواجهة</label><input type="color" id="customAccent" value="#3b7323" onchange="setCustomAccent(this.value)" style="max-width:70px;flex:0 0 70px"></div>
+          <div class="f-row"><label for="receiptWidth">عرض الطابعة الحرارية</label><select id="receiptWidth" onchange="setReceiptWidth(this.value)"><option value="80">80 مم (موصى به)</option><option value="58">58 مم</option></select></div>
+          <p class="scope-note">الثيم الكلاسيكي هو الافتراضي ليطابق شكل البرنامج المرفق؛ يمكنك تغيير اللون الأساسي، ويُحفظ الشكل وعرض الطباعة على هذا الجهاز.</p>
         </div>
+
         <div class="panel-box">
-          <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة الـ A5)</div>
-          <div class="f-row"><label>اسم المكتبة:</label><input type="text" id="setStoreName"></div>
-          <div class="f-row"><label>العنوان:</label><input type="text" id="setStoreAddress"></div>
-          <div class="f-row"><label>رقم الهاتف:</label><input type="text" id="setStorePhone"></div>
-          <div class="f-row"><label>الرقم السري للمدير:</label><input type="password" id="setPinCode" placeholder="اتركه فارغاً للاحتفاظ بالرقم الحالي" autocomplete="new-password"></div>
+          <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة A5)</div>
+          <div class="f-row"><label for="setStoreName">اسم المكتبة</label><input type="text" id="setStoreName"></div>
+          <div class="f-row"><label for="setStoreAddress">العنوان</label><input type="text" id="setStoreAddress"></div>
+          <div class="f-row"><label for="setStorePhone">رقم الهاتف</label><input type="text" id="setStorePhone"></div>
+          <div class="f-row"><label for="setPinCode">الرقم السري للمدير</label><input type="password" id="setPinCode" placeholder="اتركه فارغاً للاحتفاظ بالرقم الحالي" autocomplete="new-password"></div>
           <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
 
         <div class="panel-box">
-          <div class="panel-title">☁️ المزامنة المباشرة مع قاعدة بيانات Neon والنسخ الاحتياطي</div>
-          <p style="margin:4px 0 10px 0; font-size:13px;">البرنامج مربوط بمسار <code>/api/sync</code> الخاص بقاعدة بيانات <strong>Neon PostgreSQL</strong> على Vercel. البيانات تُحفظ محلياً أولاً، والمزامنة تحتاج إعداد مفتاح الحماية.</p>
-          <div class="f-row"><label for="setSyncKey">مفتاح المزامنة:</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
-          <label style="display:flex;gap:8px;align-items:center;margin:8px 0;font-weight:700"><input type="checkbox" id="rememberSyncKey" checked> تذكّر كلمة مرور المزامنة على هذا الجهاز</label>
-          <p class="scope-note">عند التفعيل يُحفظ المفتاح في تخزين المتصفح على هذا الجهاز لتجنّب إدخاله كل مرة؛ لا تفعّله على جهاز مشترك. لا يدخل المفتاح في النسخ الاحتياطية. قفل الشاشة ليس حماية للخادم.</p>
-          <div class="action-bar">
-            <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات إلى Neon الآن</button>
-            <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات من Neon الآن</button>
-            <button type="button" class="act-btn bg-green" onclick="exportFullBackup()">💾 تحميل نسخة احتياطية (JSON)</button>
-            <label class="act-btn bg-orange" style="cursor:pointer;">
-              📂 استعادة نسخة <input type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
-            </label>
+          <div class="panel-title">☁️ المزامنة مع Neon والنسخ الاحتياطي</div>
+          <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية.</p>
+          <div class="f-row"><label for="setSyncKey">مفتاح المزامنة</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
+          <label style="display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:bold"><input type="checkbox" id="rememberSyncKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز</label>
+          <p class="scope-note">عند التفعيل يُحفظ المفتاح في تخزين المتصفح؛ لا تفعّله على جهاز مشترك. لا يدخل المفتاح في النسخ الاحتياطية.</p>
+          <div class="action-bar" style="margin-bottom:0">
+            <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات</button>
+            <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات</button>
+            <button type="button" class="act-btn bg-green" onclick="exportFullBackup()">💾 نسخة احتياطية (JSON)</button>
+            <label class="act-btn bg-orange" style="cursor:pointer">📂 استعادة نسخة <input type="file" accept=".json" style="display:none" onchange="importFullBackup(event)"></label>
           </div>
         </div>
       </div>
+
       <div class="staff-audit-grid">
         <div class="panel-box" id="staffManagerPanel">
           <div class="panel-title">👤 الموظفون والصلاحيات</div>
-          <p class="scope-note">أضف حسابات محلية للكاشير أو المخزن. صلاحيات الواجهة وسجل النشاط للتنظيم اليومي وليست حماية خادمية، والرقم السري محفوظ على هذا الجهاز فقط.</p>
-          <div class="f-row"><label for="staffNameInp">اسم الموظف:</label><input id="staffNameInp" type="text" autocomplete="off"></div>
-          <div class="f-row"><label for="staffPinInp">رقم سري:</label><input id="staffPinInp" type="password" autocomplete="new-password" placeholder="٤ أحرف/أرقام على الأقل"></div>
-          <div class="f-row"><label for="staffRoleInp">الصلاحية:</label><select id="staffRoleInp"><option value="cashier">كاشير — مبيعات وعملاء</option><option value="inventory">مخزن — أصناف ومشتريات</option></select><button type="button" class="act-btn bg-green" onclick="saveStaff()">إضافة موظف</button></div>
+          <p class="scope-note">حسابات محلية للكاشير أو المخزن — للتنظيم اليومي وليست حماية خادمية.</p>
+          <div class="f-row"><label for="staffNameInp">اسم الموظف</label><input id="staffNameInp" type="text" autocomplete="off"></div>
+          <div class="f-row"><label for="staffPinInp">رقم سري</label><input id="staffPinInp" type="password" autocomplete="new-password" placeholder="4 أحرف/أرقام على الأقل"></div>
+          <div class="f-row">
+            <label for="staffRoleInp">الصلاحية</label>
+            <select id="staffRoleInp"><option value="cashier">كاشير — مبيعات وعملاء</option><option value="inventory">مخزن — أصناف ومشتريات</option></select>
+            <button type="button" class="act-btn bg-green" onclick="saveStaff()">إضافة موظف</button>
+          </div>
           <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الصلاحية</th><th>النوع</th><th>إجراء</th></tr></thead><tbody id="staffTbody"></tbody></table></div>
         </div>
         <div class="panel-box">
-          <div class="panel-title">🧾 سجل النشاط (آخر ٥٠ حركة)</div>
+          <div class="panel-title">🧾 سجل النشاط (آخر 50 حركة)</div>
           <p class="scope-note">يسجل اسم الحساب ونوع التعديل دون حفظ كلمات المرور أو مفاتيح المزامنة.</p>
           <div class="table-wrap"><table><thead><tr><th>الوقت</th><th>المستخدم</th><th>النشاط</th></tr></thead><tbody id="auditTbody"></tbody></table></div>
         </div>
@@ -848,15 +1309,65 @@
 
 <div class="window-dock" id="windowDock" hidden><span>نافذة مفتوحة في الخلفية</span><button type="button" class="act-btn bg-blue" onclick="restoreWorkspace()">↗ استعادة النافذة</button></div>
 
-<div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
-  <div class="lock-card">
-    <h3 id="lockTitle">🔒 دخول المستخدم</h3>
-    <p>اختر حساب الموظف وأدخل رقمه السري لفتح النظام أو تبديل المستخدم.</p>
-    <label for="loginStaffSelect">المستخدم:</label><select id="loginStaffSelect" style="width:100%;padding:9px;margin:6px 0 10px;border-radius:9px;"></select>
-    <input type="password" id="unlockPinInp" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}" style="width:100%; padding:8px; font-size:18px; text-align:center; margin-bottom:10px;">
-    <button type="button" class="act-btn bg-green" style="width:100%; justify-content:center;" onclick="unlockApp()">دخول</button>
+<!-- ================= QUANTITY KEYPAD ================= -->
+<div class="mini-modal" id="keypadModal" role="dialog" aria-modal="true" aria-labelledby="keypadTitle">
+  <div class="keypad-card">
+    <div class="kpad-title"><span id="keypadTitle">تعديل الكمية — مادة</span><button type="button" class="win-close" onclick="closeKeypad()" aria-label="إغلاق">✕</button></div>
+    <div class="kpad-body">
+      <div class="kpad-tabs">
+        <button type="button" class="kpad-tab active" data-kpad-tab="qty" onclick="setKeypadTab('qty')">تعديل الكمية</button>
+        <button type="button" class="kpad-tab" data-kpad-tab="price" onclick="setKeypadTab('price')">تعديل السعر</button>
+        <button type="button" class="kpad-tab" data-kpad-tab="disc" onclick="setKeypadTab('disc')">تعديل الخصم</button>
+        <button type="button" class="kpad-tab" data-kpad-tab="pay" onclick="setKeypadTab('pay')">المدفوع</button>
+      </div>
+      <div class="kpad-screen"><span id="keypadFieldLabel">الكمية</span><input type="text" id="keypadValue" inputmode="decimal" aria-label="القيمة" onkeydown="if(event.key==='Enter'){event.preventDefault();applyKeypad();}"></div>
+      <div class="kpad-grid">
+        <button type="button" class="kpad-key" onclick="keypadPress('7')">7</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('8')">8</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('9')">9</button>
+        <button type="button" class="kpad-key c" onclick="keypadPress('C')">C</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('4')">4</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('5')">5</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('6')">6</button>
+        <button type="button" class="kpad-key c" onclick="keypadPress('AC')">AC</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('1')">1</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('2')">2</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('3')">3</button>
+        <button type="button" class="kpad-key ok" onclick="applyKeypad()" aria-label="تأكيد">✔</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('0')">0</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('.')">.</button>
+        <button type="button" class="kpad-key" onclick="keypadPress('back')">⌫</button>
+        <button type="button" class="kpad-key cancel" onclick="closeKeypad()" aria-label="إلغاء">✖</button>
+      </div>
+      <div class="kpad-foot">
+        <button type="button" class="ok-btn" onclick="applyKeypad()">موافق</button>
+        <button type="button" class="cancel-btn" onclick="closeKeypad()">إلغاء</button>
+      </div>
+    </div>
   </div>
 </div>
+
+<!-- ================= LOGIN / LOCK ================= -->
+<div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-card">
+    <div class="lock-head">YAZSYS POS — تسجيل الدخول</div>
+    <h3 id="lockTitle">🔒 دخول المستخدم</h3>
+    <p>اختر حساب الموظف وأدخل رقمه السري لفتح النظام أو تبديل المستخدم.</p>
+    <label for="loginStaffSelect">المستخدم:</label>
+    <select id="loginStaffSelect"></select>
+    <input type="password" id="unlockPinInp" autocomplete="current-password" placeholder="الرقم السري" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}">
+    <button type="button" class="act-btn bg-green" style="justify-content:center;padding:7px" onclick="unlockApp()">دخول</button>
+  </div>
+</div>
+
+<!-- ================= STATUS BAR ================= -->
+<footer class="app-status">
+  <div class="st-item"><b>الإصدار رقم 434</b> · <span>YAZSYS POS</span></div>
+  <div class="st-item">الفرع / المستودع: <b>الرئيسي</b> ✏️</div>
+  <div class="st-item">الصلاحيات: <b id="statusRole">مدير عام</b> ✏️</div>
+  <div class="st-item">الموظف: <b id="statusUser">مدير</b> ✏️</div>
+  <div class="st-item" id="statusClock">—</div>
+</footer>
 
 <div id="appNotice" role="alert" hidden></div>
 <div id="printAreaA5" dir="rtl"></div>
