@@ -169,16 +169,46 @@
     z-index: 9999; align-items: center; justify-content: center;
   }
   .lock-card { background: #fff; padding: 24px; border-radius: 8px; width: 320px; text-align: center; }
+  button:disabled, input:disabled, select:disabled { opacity: .6; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+  .scope-note { font-size: 12px; line-height: 1.7; color: #475569; margin: 6px 0; }
+  .empty-row { padding: 20px; color: #475569; }
+  #appNotice { position: fixed; bottom: 16px; right: 16px; left: 16px; z-index: 10000; max-width: 720px; margin: auto; background: #fff7ed; color: #7c2d12; border: 2px solid #d97706; border-radius: 6px; padding: 12px 16px; box-shadow: 0 4px 16px #0002; line-height: 1.7; }
+  #appNotice button { float: left; border: 0; background: transparent; cursor: pointer; font-size: 18px; }
+  .table-wrap input { max-width: 100%; }
+  .lock-card { max-width: calc(100vw - 24px); }
+  @media (max-width: 550px) {
+    .banner-info h1 { font-size: 20px; }
+    .banner-kpis { justify-content: center; width: 100%; }
+    .clock-boxes { width: 100%; flex-direction: row; }
+    .clock-box { flex: 1; }
+    .win-header { gap: 8px; flex-wrap: wrap; }
+    .f-row label { min-width: 85px; }
+    .util-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+  }
+  @media print {
+    body > :not(#printAreaA5) { display: none !important; }
+    body > #printAreaA5 { position: static !important; width: 100% !important; }
+    #appNotice { display: none !important; }
+    #printAreaA5 { direction: rtl; }
+    #printAreaA5 table { width: 100%; border-collapse: collapse; }
+    #printAreaA5 th, #printAreaA5 td { border: 1px solid #000; padding: 4px; font-size: 11px; text-align: center; }
+    #printAreaA5 thead { display: table-header-group; }
+    #printAreaA5 tr { break-inside: avoid; }
+    #printAreaA5 .p-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 8px; }
+    #printAreaA5 .p-meta, #printAreaA5 .p-totals { display: flex; justify-content: space-between; gap: 6px; margin: 6px 0; }
+    .no-print { display: none !important; }
+  }
 </style>
 </head>
 <body>
 
 <div class="top-utility-bar">
-  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" style="color:#fde047;">متصل وجاهز</span></div>
+  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span></div>
   <div class="util-btns">
     <button type="button" class="btn-sync" onclick="syncToCloud('push')">⬆️ رفع لقاعدة بيانات Neon</button>
     <button type="button" class="btn-sync" style="background:#0284c7" onclick="syncToCloud('pull')">⬇️ سحب من Neon</button>
-    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء لوحة الـ 28 زر</button>
+    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء لوحة الاختصارات</button>
     <button type="button" class="btn-lock" onclick="lockApp()">🔒 قفل الشاشة</button>
   </div>
 </div>
@@ -229,13 +259,13 @@
     <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
     <button type="button" class="c-btn" onclick="openPartyReport('supplier','statement')">كشف ح مورد</button>
     <button type="button" class="c-btn" onclick="openPartyReport('customer','statement')">كشف ح عميل</button>
-    <button type="button" class="c-btn" onclick="openInvLog('sale')">مبيعات فترة</button>
+    <button type="button" class="c-btn" onclick="openInvLog('sale',true)">مبيعات فترة</button>
     <button type="button" class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
     <button type="button" class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
     <button type="button" class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
     <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
     <button type="button" class="c-btn" onclick="openStockFilter('all')">المخزن</button>
-    <button type="button" class="c-btn" onclick="openInvLog('purchase')">مشتريات فترة</button>
+    <button type="button" class="c-btn" onclick="openInvLog('purchase',true)">مشتريات فترة</button>
     <button type="button" class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
     <button type="button" class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
   </div>
@@ -351,7 +381,7 @@
         <div class="panel-title" id="invPanelTitle">فاتورة مبيعات</div>
         <div class="f-row">
           <label>نوع العملية:</label>
-          <select id="invMode" onchange="updateInvoiceUI()">
+          <select id="invMode" onchange="changeInvoiceMode(this.value)">
             <option value="sale">فاتورة مبيعات</option>
             <option value="sale_return">مرتجع مبيعات</option>
             <option value="purchase">فاتورة مشتريات</option>
@@ -372,12 +402,17 @@
             <option value="wholesale">جملة</option>
           </select>
         </div>
+        <div class="f-row" id="invReturnSourceRow" style="display:none;">
+          <label for="invReturnSource">الفاتورة الأصلية:</label>
+          <select id="invReturnSource" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
+          <small>المرتجعات بالكميات والأسعار والتكلفة الأصلية، وبحد أقصى الكمية غير المرتجعة سابقاً.</small>
+        </div>
         <div class="f-row" style="border-top:1px dashed #94a3b8; padding-top:8px; margin-top:6px;">
           <label>إضافة صنف:</label>
           <input type="text" id="invBarcodeInp" placeholder="🔫 اقرأ الباركود أو اختر الصنف ثم اضغط Enter أو (+ أضف للفاتورة)..." list="itemsDatalist" onkeydown="if(event.key==='Enter'){event.preventDefault();addInvItemFromInput();}">
           <datalist id="itemsDatalist"></datalist>
           <label style="min-width:50px">الكمية:</label>
-          <input type="number" id="invAddQty" value="1" style="max-width:70px">
+          <input type="number" id="invAddQty" value="1" min="0.001" step="any" style="max-width:70px">
           <button type="button" class="act-btn bg-green" onclick="addInvItemFromInput()">+ أضف للفاتورة</button>
         </div>
       </div>
@@ -396,15 +431,15 @@
           <label>إجمالي الفاتورة:</label>
           <input type="text" id="invSubTotal" readonly value="0.00">
           <label>خصم إضافي (مبلغ):</label>
-          <input type="number" id="invDiscAmount" value="0" step="any" oninput="calcInvoiceTotals()">
+          <input type="number" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
           <label>خصم (%):</label>
-          <input type="number" id="invDiscPct" value="0" step="any" oninput="calcInvoiceTotals()">
+          <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
         </div>
         <div class="f-row">
           <label style="color:var(--red-accent); font-size:15px;">الصافي المطلوب:</label>
           <input type="text" id="invNetTotal" readonly value="0.00" style="font-size:16px; color:var(--red-accent); background:#fef2f2;">
           <label>المدفوع حالياً:</label>
-          <input type="number" id="invPaidAmount" value="0" step="any" oninput="calcInvoiceRemaining()">
+          <input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()">
           <label>المتبقي (آجل):</label>
           <input type="text" id="invRemainAmount" readonly value="0.00">
         </div>
@@ -413,7 +448,7 @@
       <div class="action-bar">
         <button type="button" class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة فاتورة (A5)</button>
         <button type="button" class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط بدون طباعة</button>
-        <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تحويل عرض السعر لفاتورة مبيعات</button>
+        <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تجهيز عرض السعر كفاتورة مبيعات</button>
         <button type="button" class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
       </div>
     </div>
@@ -459,6 +494,7 @@
         <div class="panel-box">
           <div class="panel-title" id="partyFormTitle">بيانات العميل / المورد</div>
           <input type="hidden" id="partyType" value="customer">
+          <input type="hidden" id="partyEditId">
           <div class="f-row"><label>الاسم:</label><input type="text" id="partyName" placeholder="اسم العميل أو دار النشر/المورد"></div>
           <div class="f-row">
             <label>رقم الهاتف:</label><input type="text" id="partyPhone" placeholder="01xxxxxxxxx">
@@ -467,6 +503,7 @@
           <div class="f-row">
             <label>العنوان / ملاحظات:</label><input type="text" id="partyNotes">
             <button type="button" class="act-btn bg-green" onclick="saveParty()">💾 حفظ</button>
+            <button type="button" class="act-btn bg-red" onclick="resetPartyForm()">إلغاء</button>
           </div>
         </div>
 
@@ -489,7 +526,7 @@
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العنوان/ملاحظات</th><th>الرصيد الحالي المستحق</th><th>كشف حساب</th><th>حذف</th></tr></thead>
+          <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العنوان/ملاحظات</th><th>الرصيد الحالي المستحق</th><th>كشف حساب</th><th>تعديل</th><th>حذف</th></tr></thead>
           <tbody id="partiesTbody"></tbody>
         </table>
       </div>
@@ -497,7 +534,7 @@
         <div class="panel-title" id="statementTitle">كشف حساب</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>إجمالي الفاتورة</th><th>المدفوع/المسدد</th><th>تأثير الحركة</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>إجمالي الفاتورة</th><th>المدفوع/المسدد</th><th>تأثير الحركة</th><th>الرصيد بعد الحركة</th></tr></thead>
             <tbody id="statementTbody"></tbody>
           </table>
         </div>
@@ -521,7 +558,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل/المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th>إعادة طباعة A5</th></tr></thead>
+          <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل/المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th>إجراءات</th></tr></thead>
           <tbody id="invLogTbody"></tbody>
         </table>
       </div>
@@ -558,6 +595,7 @@
         <label>إلى تاريخ:</label><input type="date" id="profDateTo" onchange="renderProfits()">
         <label>تصفية بصنف محدد:</label><select id="profItemFilter" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
       </div>
+      <p id="profitScopeNote" class="scope-note">الأرباح محسوبة بعد خصومات الفواتير ومرتجع المبيعات، وخصم المصروفات العامة.</p>
       <div class="t-foot-bar" style="margin-bottom:10px; font-size:15px;">
         <span>صافي المبيعات: <strong id="profTotSales">0.00</strong></span>
         <span>تكلفة الشراء: <strong id="profTotCost">0.00</strong></span>
@@ -581,13 +619,15 @@
           <div class="f-row"><label>اسم المكتبة:</label><input type="text" id="setStoreName"></div>
           <div class="f-row"><label>العنوان:</label><input type="text" id="setStoreAddress"></div>
           <div class="f-row"><label>رقم الهاتف:</label><input type="text" id="setStorePhone"></div>
-          <div class="f-row"><label>الرقم السري للمدير:</label><input type="password" id="setPinCode" placeholder="افتراضي: 1234"></div>
+          <div class="f-row"><label>الرقم السري للمدير:</label><input type="password" id="setPinCode" placeholder="اتركه فارغاً للاحتفاظ بالرقم الحالي" autocomplete="new-password"></div>
           <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
 
         <div class="panel-box">
           <div class="panel-title">☁️ المزامنة المباشرة مع قاعدة بيانات Neon والنسخ الاحتياطي</div>
-          <p style="margin:4px 0 10px 0; font-size:13px;">البرنامج مربوط بمسار <code>/api/sync</code> الخاص بقاعدة بيانات <strong>Neon PostgreSQL</strong> على Vercel.</p>
+          <p style="margin:4px 0 10px 0; font-size:13px;">البرنامج مربوط بمسار <code>/api/sync</code> الخاص بقاعدة بيانات <strong>Neon PostgreSQL</strong> على Vercel. البيانات تُحفظ محلياً أولاً، والمزامنة تحتاج إعداد مفتاح الحماية.</p>
+          <div class="f-row"><label for="setSyncKey">مفتاح المزامنة:</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
+          <p class="scope-note">يُحفظ المفتاح في جلسة هذا المتصفح فقط، ولا يدخل في النسخة الاحتياطية. قفل الشاشة ليس حماية للخادم؛ لا تشارك مفتاح المزامنة.</p>
           <div class="action-bar">
             <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات إلى Neon الآن</button>
             <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات من Neon الآن</button>
@@ -603,827 +643,18 @@
   </div>
 </div>
 
-<div id="lockModal">
+<div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-card">
-    <h3>🔒 شاشة دخول المدير</h3>
+    <h3 id="lockTitle">🔒 قفل شاشة التطبيق</h3>
     <p>أدخل الرقم السري لفتح النظام (الافتراضي: 1234)</p>
-    <input type="password" id="unlockPinInp" style="width:100%; padding:8px; font-size:18px; text-align:center; margin-bottom:10px;">
+    <input type="password" id="unlockPinInp" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}" style="width:100%; padding:8px; font-size:18px; text-align:center; margin-bottom:10px;">
     <button type="button" class="act-btn bg-green" style="width:100%; justify-content:center;" onclick="unlockApp()">دخول</button>
   </div>
 </div>
 
-<div id="printAreaA5"></div>
+<div id="appNotice" role="alert" hidden></div>
+<div id="printAreaA5" dir="rtl"></div>
 
-<script>
-const DB_KEY = 'BOOKSTORE_POS_COMPLETE_DB_V2';
-let db = {
-  settings: {
-    name: 'مكتبة النور للأدوات المدرسية والكتب الخارجية',
-    address: 'العنوان: الشارع الرئيسي - بجوار المدرسة',
-    phone: '01000000000',
-    pin: '1234'
-  },
-  categories: ['كتب خارجية', 'كشاكيل وكراسات', 'أقلام وأدوات كتابة', 'هدايا وألعاب', 'أدوات هندسية وفنية'],
-  items: [
-    { id: 1, code: '1001', name: 'كتاب المعاصر لغة إنجليزية 3 إعدادي', cat: 'كتب خارجية', type: 'كتاب خارجي', warehouse: 'الرئيسي', unit: 'عدد', qty: 25, minQty: 5, buy: 110, profitPct: 18.18, sell: 130, wholesale: 122, minSell: 120, notes: 'طبعة جديدة' },
-    { id: 2, code: '1002', name: 'كتاب الأضواء لغة عربية 6 ابتدائي', cat: 'كتب خارجية', type: 'كتاب خارجي', warehouse: 'الرئيسي', unit: 'عدد', qty: 20, minQty: 5, buy: 100, profitPct: 20, sell: 120, wholesale: 112, minSell: 110, notes: '' },
-    { id: 3, code: '1003', name: 'كشكول سلك 100 ورقة إكسترا', cat: 'كشاكيل وكراسات', type: 'كشاكيل وكراسات', warehouse: 'الرئيسي', unit: 'عدد', qty: 60, minQty: 15, buy: 25, profitPct: 40, sell: 35, wholesale: 30, minSell: 30, notes: '' },
-    { id: 4, code: '1004', name: 'علبة أقلام جاف روتو 12 قلم', cat: 'أقلام وأدوات كتابة', type: 'أدوات مدرسية', warehouse: 'الرئيسي', unit: 'علبة', qty: 15, minQty: 4, buy: 45, profitPct: 33.33, sell: 60, wholesale: 54, minSell: 52, notes: 'بدون خصم' }
-  ],
-  parties: [
-    { id: 1, type: 'customer', name: 'عميل نقدي', phone: '', balance: 0, notes: 'افتراضي' },
-    { id: 2, type: 'customer', name: 'أستاذ محمود (مدرس أول)', phone: '01012345678', balance: 250, notes: 'خصم خاص للكتب' },
-    { id: 3, type: 'supplier', name: 'مؤسسة التوزيع للكتب الخارجية', phone: '01122334455', balance: 1500, notes: 'مورد رئيسي' }
-  ],
-  invoices: [],
-  treasury: [
-    { id: 1, date: new Date().toISOString().slice(0,10), type: 'in', amount: 5000, note: 'رصيد افتتاحي للخزينة' }
-  ]
-};
-
-let invCart = [];
-let quickEditMode = false;
-
-function loadDB() {
-  const saved = localStorage.getItem(DB_KEY);
-  if (saved) {
-    try { db = Object.assign(db, JSON.parse(saved)); } catch(e){}
-  }
-  applySettingsUI();
-  updateDashboardKPIs();
-}
-function saveDB() {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-  updateDashboardKPIs();
-  syncToCloud('auto_push');
-}
-
-function updateClock() {
-  const now = new Date();
-  const dEl = document.getElementById('liveDate');
-  const tEl = document.getElementById('liveTime');
-  if (dEl) dEl.textContent = now.toLocaleDateString('en-GB');
-  if (tEl) tEl.textContent = now.toTimeString().slice(0,8);
-}
-setInterval(updateClock, 1000);
-
-window.addEventListener('DOMContentLoaded', function() {
-  const cp = document.getElementById('classicPanel');
-  if (cp) cp.style.display = 'block';
-  loadDB();
-  updateClock();
-  populateCategoriesSelect();
-  renderItemsTable();
-  generateNewCode();
-  updateInvoiceUI();
-});
-
-function openSec(secId, titleText) {
-  document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
-  const target = document.getElementById(secId);
-  if (target) target.classList.add('active');
-  if (titleText) document.getElementById('winTitle').textContent = titleText;
-  if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
-  if (secId === 'sec-categories') renderCategoriesTable();
-  if (secId === 'sec-settings') loadSettingsForm();
-}
-function toggleClassicGrid() {
-  const p = document.getElementById('classicPanel');
-  p.style.display = (p.style.display === 'none') ? 'block' : 'none';
-}
-
-function updateDashboardKPIs() {
-  const today = new Date().toISOString().slice(0,10);
-  let cash = 0;
-  db.treasury.forEach(t => {
-    if (t.type === 'in') cash += Number(t.amount);
-    else cash -= Number(t.amount);
-  });
-  let salesToday = 0;
-  db.invoices.forEach(inv => {
-    if (inv.date === today && inv.mode === 'sale') salesToday += Number(inv.netTotal);
-    if (inv.date === today && inv.mode === 'sale_return') salesToday -= Number(inv.netTotal);
-  });
-  const lowCount = db.items.filter(i => Number(i.qty) <= Number(i.minQty)).length;
-  const profObj = calculateTotalProfits();
-
-  document.getElementById('kpiCash').textContent = cash.toFixed(2);
-  document.getElementById('kpiSalesToday').textContent = salesToday.toFixed(2);
-  document.getElementById('kpiNetProfit').textContent = profObj.net.toFixed(2);
-  document.getElementById('kpiLowStock').textContent = lowCount;
-}
-
-function populateCategoriesSelect() {
-  const sel = document.getElementById('itemCategory');
-  if (!sel) return;
-  sel.innerHTML = db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-}
-function quickAddCategory() {
-  const name = prompt('أدخل اسم المجموعة الجديدة:');
-  if (name && name.trim()) {
-    if (!db.categories.includes(name.trim())) {
-      db.categories.push(name.trim());
-      saveDB();
-      populateCategoriesSelect();
-      document.getElementById('itemCategory').value = name.trim();
-    }
-  }
-}
-function generateNewCode() {
-  const nextCode = db.items.length ? Math.max(...db.items.map(i => Number(i.code) || 1000)) + 1 : 1001;
-  const el = document.getElementById('itemCode');
-  if (el) el.value = nextCode;
-}
-function calcPriceFromProfit() {
-  const buy = parseFloat(document.getElementById('itemBuyPrice').value) || 0;
-  const pct = parseFloat(document.getElementById('itemProfitPct').value) || 0;
-  const sell = buy + (buy * pct / 100);
-  document.getElementById('itemSellPrice').value = sell.toFixed(2);
-  if (!parseFloat(document.getElementById('itemWholesale').value)) document.getElementById('itemWholesale').value = sell.toFixed(2);
-  if (!parseFloat(document.getElementById('itemMinSell').value)) document.getElementById('itemMinSell').value = buy.toFixed(2);
-}
-function calcProfitFromPrice() {
-  const buy = parseFloat(document.getElementById('itemBuyPrice').value) || 0;
-  const sell = parseFloat(document.getElementById('itemSellPrice').value) || 0;
-  if (buy > 0) {
-    document.getElementById('itemProfitPct').value = (((sell - buy) / buy) * 100).toFixed(2);
-  }
-}
-function saveItem() {
-  const editId = document.getElementById('itemEditId').value;
-  const itemObj = {
-    id: editId ? Number(editId) : Date.now(),
-    code: document.getElementById('itemCode').value.trim() || String(Date.now()).slice(-5),
-    name: document.getElementById('itemName').value.trim(),
-    cat: document.getElementById('itemCategory').value,
-    type: document.getElementById('itemType').value,
-    warehouse: document.getElementById('itemWarehouse').value,
-    unit: document.getElementById('itemUnit').value,
-    qty: parseFloat(document.getElementById('itemQty').value) || 0,
-    minQty: parseFloat(document.getElementById('itemMinQty').value) || 0,
-    buy: parseFloat(document.getElementById('itemBuyPrice').value) || 0,
-    profitPct: parseFloat(document.getElementById('itemProfitPct').value) || 0,
-    sell: parseFloat(document.getElementById('itemSellPrice').value) || 0,
-    wholesale: parseFloat(document.getElementById('itemWholesale').value) || 0,
-    minSell: parseFloat(document.getElementById('itemMinSell').value) || 0,
-    notes: document.getElementById('itemNotes').value.trim()
-  };
-  if (!itemObj.name) return alert('يرجى كتابة اسم الصنف أولاً!');
-  if (editId) {
-    const idx = db.items.findIndex(x => x.id === Number(editId));
-    if (idx > -1) db.items[idx] = itemObj;
-  } else {
-    db.items.push(itemObj);
-  }
-  saveDB();
-  resetItemForm();
-  renderItemsTable();
-}
-function resetItemForm() {
-  document.getElementById('itemEditId').value = '';
-  document.getElementById('itemName').value = '';
-  document.getElementById('itemQty').value = 10;
-  document.getElementById('itemBuyPrice').value = 0;
-  document.getElementById('itemSellPrice').value = 0;
-  document.getElementById('itemWholesale').value = 0;
-  document.getElementById('itemMinSell').value = 0;
-  document.getElementById('itemNotes').value = '';
-  generateNewCode();
-}
-function renderItemsTable() {
-  const q = (document.getElementById('itemSearchInp').value || '').toLowerCase();
-  const list = db.items.filter(i => i.name.toLowerCase().includes(q) || String(i.code).includes(q) || (i.cat||'').toLowerCase().includes(q));
-  let totBuy = 0, totSell = 0;
-  const tbody = document.getElementById('itemsTbody');
-  if (!tbody) return;
-  tbody.innerHTML = list.map(i => {
-    totBuy += (Number(i.buy) * Number(i.qty));
-    totSell += (Number(i.sell) * Number(i.qty));
-    if (quickEditMode) {
-      return `<tr>
-        <td>${i.code}</td>
-        <td><input value="${i.name}" onchange="inlineUpdateItem(${i.id},'name',this.value)"></td>
-        <td>${i.cat}</td>
-        <td><input type="number" value="${i.qty}" style="width:60px" onchange="inlineUpdateItem(${i.id},'qty',this.value)"></td>
-        <td>${i.unit}</td>
-        <td><input type="number" value="${i.buy}" style="width:65px" onchange="inlineUpdateItem(${i.id},'buy',this.value)"></td>
-        <td><input type="number" value="${i.sell}" style="width:65px" onchange="inlineUpdateItem(${i.id},'sell',this.value)"></td>
-        <td><input type="number" value="${i.wholesale}" style="width:65px" onchange="inlineUpdateItem(${i.id},'wholesale',this.value)"></td>
-        <td>${i.minSell}</td>
-        <td>${i.notes}</td>
-        <td colspan="3"><span class="badge bg-green">حفظ تلقائي</span></td>
-      </tr>`;
-    }
-    return `<tr>
-      <td><strong>${i.code}</strong></td>
-      <td style="text-align:right; font-weight:bold;">${i.name}</td>
-      <td>${i.cat}</td>
-      <td style="font-weight:bold; color:${i.qty <= i.minQty ? 'red':'#0f172a'}">${i.qty}</td>
-      <td>${i.unit}</td>
-      <td>${Number(i.buy).toFixed(2)}</td>
-      <td style="font-weight:bold; color:var(--green-btn)">${Number(i.sell).toFixed(2)}</td>
-      <td>${Number(i.wholesale).toFixed(2)}</td>
-      <td>${Number(i.minSell).toFixed(2)}</td>
-      <td>${i.notes || '-'}</td>
-      <td><button type="button" class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(${i.id})">✏️</button></td>
-      <td><button type="button" class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(${i.id})">🗑️</button></td>
-      <td><button type="button" class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(${i.id})">|||</button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('totItemsCount').textContent = list.length;
-  document.getElementById('totItemsBuy').textContent = totBuy.toFixed(2);
-  document.getElementById('totItemsSell').textContent = totSell.toFixed(2);
-}
-function inlineUpdateItem(id, field, val) {
-  const it = db.items.find(x => x.id === id);
-  if (it) {
-    it[field] = (field === 'name') ? val : parseFloat(val) || 0;
-    saveDB();
-    renderItemsTable();
-  }
-}
-function toggleQuickEditItems() {
-  quickEditMode = !quickEditMode;
-  renderItemsTable();
-}
-function editItem(id) {
-  const i = db.items.find(x => x.id === id);
-  if (!i) return;
-  document.getElementById('itemEditId').value = i.id;
-  document.getElementById('itemCode').value = i.code;
-  document.getElementById('itemName').value = i.name;
-  document.getElementById('itemCategory').value = i.cat;
-  document.getElementById('itemType').value = i.type;
-  document.getElementById('itemWarehouse').value = i.warehouse;
-  document.getElementById('itemUnit').value = i.unit;
-  document.getElementById('itemQty').value = i.qty;
-  document.getElementById('itemMinQty').value = i.minQty;
-  document.getElementById('itemBuyPrice').value = i.buy;
-  document.getElementById('itemProfitPct').value = i.profitPct;
-  document.getElementById('itemSellPrice').value = i.sell;
-  document.getElementById('itemWholesale').value = i.wholesale;
-  document.getElementById('itemMinSell').value = i.minSell;
-  document.getElementById('itemNotes').value = i.notes;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-function deleteItem(id) {
-  if (!confirm('هل تريد حذف هذا الصنف نهائياً؟')) return;
-  db.items = db.items.filter(x => x.id !== id);
-  saveDB();
-  renderItemsTable();
-}
-function showSingleItemProfit() { openProfitSec('item'); }
-function printBarcodeLabel(id) {
-  const it = db.items.find(x => x.id === id);
-  if (!it) return;
-  const html = `
-    <div style="text-align:center; border:2px solid #000; padding:12px; width:240px; margin:20px auto;">
-      <div style="font-weight:bold; font-size:14px;">${db.settings.name}</div>
-      <div style="font-size:13px; margin:4px 0;">${it.name}</div>
-      <div style="font-family:monospace; font-size:22px; letter-spacing:4px; border:1px solid #000; padding:4px; margin:4px 0;">*${it.code}*</div>
-      <div style="font-weight:bold; font-size:15px;">السعر: ${Number(it.sell).toFixed(2)} ج.م</div>
-    </div>`;
-  triggerA5Print(html);
-}
-
-function openInvoiceSec(mode) {
-  openSec('sec-invoice', '🧾 شاشة الفواتير وعروض الأسعار');
-  document.getElementById('invMode').value = mode;
-  updateInvoiceUI();
-}
-function updateInvoiceUI() {
-  const modeEl = document.getElementById('invMode');
-  if (!modeEl) return;
-  const mode = modeEl.value;
-  const titles = {
-    sale: '🛒 فاتورة مبيعات',
-    sale_return: '↩️ فاتورة مرتجع مبيعات',
-    purchase: '📥 فاتورة مشتريات (توريد مخزن)',
-    purchase_return: '↩️ فاتورة مرتجع مشتريات',
-    quote: '📋 عرض أسعار للمدارس والعملاء'
-  };
-  document.getElementById('invPanelTitle').textContent = titles[mode];
-  document.getElementById('btnConvertQuote').style.display = (mode === 'quote') ? 'inline-flex' : 'none';
-
-  const isSupplier = mode.startsWith('purchase');
-  document.getElementById('lblInvParty').textContent = isSupplier ? 'المورد:' : 'العميل:';
-  const pList = db.parties.filter(p => p.type === (isSupplier ? 'supplier' : 'customer'));
-  document.getElementById('invPartySelect').innerHTML = pList.map(p => `<option value="${p.id}">${p.name} (رصيده: ${Number(p.balance).toFixed(2)})</option>`).join('');
-
-  document.getElementById('itemsDatalist').innerHTML = db.items.map(i => `<option value="${i.code}">${i.name} - سعر: ${i.sell}</option>`).join('');
-  renderInvCart();
-}
-function addInvItemFromInput() {
-  const inp = document.getElementById('invBarcodeInp');
-  const val = inp.value.trim();
-  if (!val) return alert('اختر الصنف أو اكتب كود/اسم الصنف أولاً!');
-  const qty = parseFloat(document.getElementById('invAddQty').value) || 1;
-  const item = db.items.find(i => String(i.code) === val || i.name === val || i.name.includes(val));
-  if (!item) return alert('لم يتم العثور على الصنف! تأكد من الكود أو الاسم.');
-
-  const mode = document.getElementById('invMode').value;
-  const tier = document.getElementById('invPriceTier').value;
-  const price = mode.startsWith('purchase') ? Number(item.buy) : (tier === 'wholesale' ? Number(item.wholesale) : Number(item.sell));
-
-  const existing = invCart.find(c => c.id === item.id);
-  if (existing) existing.qty += qty;
-  else invCart.push({ id: item.id, code: item.code, name: item.name, qty, price, discPct: 0, buyCost: Number(item.buy), minSell: Number(item.minSell) });
-
-  inp.value = '';
-  document.getElementById('invAddQty').value = 1;
-  renderInvCart();
-}
-function updateCartPricesByTier() {
-  const tier = document.getElementById('invPriceTier').value;
-  invCart.forEach(c => {
-    const it = db.items.find(x => x.id === c.id);
-    if (it) c.price = (tier === 'wholesale') ? Number(it.wholesale) : Number(it.sell);
-  });
-  renderInvCart();
-}
-function renderInvCart() {
-  const tbody = document.getElementById('invCartTbody');
-  if (!tbody) return;
-  tbody.innerHTML = invCart.map((c, idx) => {
-    const rowTotal = c.qty * c.price * (1 - (c.discPct || 0)/100);
-    return `<tr>
-      <td>${idx + 1}</td><td>${c.code}</td><td style="text-align:right; font-weight:bold;">${c.name}</td>
-      <td><input type="number" value="${c.qty}" style="width:60px" onchange="updateCartRow(${idx},'qty',this.value)"></td>
-      <td><input type="number" value="${c.price}" style="width:70px" onchange="updateCartRow(${idx},'price',this.value)"></td>
-      <td><input type="number" value="${c.discPct}" style="width:55px" onchange="updateCartRow(${idx},'discPct',this.value)"></td>
-      <td style="font-weight:bold;">${rowTotal.toFixed(2)}</td>
-      <td><button type="button" class="act-btn bg-red" style="padding:2px 8px" onclick="invCart.splice(${idx},1);renderInvCart();">✖</button></td>
-    </tr>`;
-  }).join('');
-  calcInvoiceTotals();
-}
-function updateCartRow(idx, field, val) {
-  const v = parseFloat(val) || 0;
-  const row = invCart[idx];
-  const mode = document.getElementById('invMode').value;
-  if (mode === 'sale' && field === 'price' && v < row.minSell) {
-    alert(`تنبيه: السعر أقل من الحد الأدنى المسموح للبيع (${row.minSell})!`);
-  }
-  row[field] = v;
-  renderInvCart();
-}
-function calcInvoiceTotals() {
-  const sub = invCart.reduce((s, c) => s + (c.qty * c.price * (1 - (c.discPct||0)/100)), 0);
-  document.getElementById('invSubTotal').value = sub.toFixed(2);
-  const dAmt = parseFloat(document.getElementById('invDiscAmount').value) || 0;
-  const dPct = parseFloat(document.getElementById('invDiscPct').value) || 0;
-  const net = Math.max(0, sub - dAmt - (sub * dPct / 100));
-  document.getElementById('invNetTotal').value = net.toFixed(2);
-
-  const payType = document.getElementById('invPayType').value;
-  if (payType === 'cash') document.getElementById('invPaidAmount').value = net.toFixed(2);
-  else if (payType === 'credit') document.getElementById('invPaidAmount').value = 0;
-  calcInvoiceRemaining();
-}
-function calcInvoiceRemaining() {
-  const net = parseFloat(document.getElementById('invNetTotal').value) || 0;
-  const paid = parseFloat(document.getElementById('invPaidAmount').value) || 0;
-  document.getElementById('invRemainAmount').value = (net - paid).toFixed(2);
-}
-function clearInvCart() {
-  invCart = [];
-  document.getElementById('invDiscAmount').value = 0;
-  document.getElementById('invDiscPct').value = 0;
-  renderInvCart();
-}
-function convertQuoteToSale() {
-  document.getElementById('invMode').value = 'sale';
-  updateInvoiceUI();
-  alert('تم تحويل عرض السعر إلى فاتورة مبيعات، اضغط حفظ لإتمام البيع!');
-}
-function saveInvoice(doPrint) {
-  if (!invCart.length) return alert('الفاتورة فارغة! أضف أصنافاً أولاً بالضغط على (+ أضف للفاتورة).');
-  const mode = document.getElementById('invMode').value;
-  const partyId = Number(document.getElementById('invPartySelect').value);
-  const party = db.parties.find(p => p.id === partyId) || { name: 'نقدي', balance: 0 };
-  const prevBalance = Number(party.balance) || 0;
-  const netTotal = parseFloat(document.getElementById('invNetTotal').value) || 0;
-  const paidAmount = parseFloat(document.getElementById('invPaidAmount').value) || 0;
-  const remainAmount = netTotal - paidAmount;
-
-  if (mode !== 'quote') {
-    invCart.forEach(c => {
-      const it = db.items.find(x => x.id === c.id);
-      if (it) {
-        if (mode === 'sale') it.qty -= c.qty;
-        else if (mode === 'sale_return') it.qty += c.qty;
-        else if (mode === 'purchase') { it.qty += c.qty; it.buy = c.price; }
-        else if (mode === 'purchase_return') it.qty -= c.qty;
-      }
-    });
-    if (party && party.id) {
-      if (mode === 'sale' || mode === 'purchase') party.balance = prevBalance + remainAmount;
-      else if (mode === 'sale_return' || mode === 'purchase_return') party.balance = prevBalance - remainAmount;
-    }
-    if (paidAmount > 0) {
-      const isIn = (mode === 'sale' || mode === 'purchase_return');
-      db.treasury.push({
-        id: Date.now(),
-        date: new Date().toISOString().slice(0,10),
-        type: isIn ? 'in' : 'out',
-        amount: paidAmount,
-        note: `${document.getElementById('invPanelTitle').textContent} - ${party.name}`
-      });
-    }
-  }
-
-  const invObj = {
-    id: db.invoices.length + 1,
-    date: new Date().toISOString().slice(0,10),
-    time: new Date().toTimeString().slice(0,5),
-    mode, partyId, partyName: party.name, prevBalance, netTotal, paidAmount, remainAmount,
-    newBalance: party ? Number(party.balance) : 0,
-    items: JSON.parse(JSON.stringify(invCart))
-  };
-  db.invoices.push(invObj);
-  saveDB();
-  if (doPrint) printInvoiceA5(invObj);
-  else alert('✅ تم حفظ الفاتورة بنجاح!');
-  clearInvCart();
-  updateInvoiceUI();
-}
-function printInvoiceById(invId) {
-  const inv = db.invoices.find(x => x.id === Number(invId));
-  if (inv) printInvoiceA5(inv);
-}
-function printInvoiceA5(inv) {
-  const typeNames = { sale: 'فاتورة مبيعات', sale_return: 'فاتورة مرتجع مبيعات', purchase: 'فاتورة مشتريات', purchase_return: 'مرتجع مشتريات', quote: 'عرض أسعار' };
-  const rows = inv.items.map((c, idx) => `
-    <tr>
-      <td>${idx+1}</td><td>${c.name}</td><td>${c.qty}</td>
-      <td>${Number(c.price).toFixed(2)}</td><td>${c.discPct || 0}%</td>
-      <td>${(c.qty * c.price * (1 - (c.discPct||0)/100)).toFixed(2)}</td>
-    </tr>`).join('');
-  const html = `
-    <div class="p-header">
-      <h2>${db.settings.name}</h2>
-      <p>${db.settings.address} | هاتف: ${db.settings.phone}</p>
-      <h3 style="margin:4px 0; text-decoration:underline;">${typeNames[inv.mode]} رقم (#${inv.id})</h3>
-    </div>
-    <div class="p-meta">
-      <span>التاريخ: ${inv.date} (${inv.time || ''})</span>
-      <span>السيد / ${inv.partyName}</span>
-    </div>
-    <table class="p-table">
-      <thead><tr><th>م</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>خصم</th><th>الإجمالي</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="p-totals">
-      <div>صافي الفاتورة: ${Number(inv.netTotal).toFixed(2)} ج.م</div>
-      <div>المدفوع: ${Number(inv.paidAmount).toFixed(2)} ج.م</div>
-      <div>المتبقي: ${Number(inv.remainAmount).toFixed(2)} ج.م</div>
-    </div>
-    <div class="p-totals" style="margin-top:4px; background:#f8fafc;">
-      <div>الحساب السابق: ${Number(inv.prevBalance).toFixed(2)}</div>
-      <div>الفاتورة الحالية: ${Number(inv.remainAmount).toFixed(2)}</div>
-      <div>إجمالي الرصيد الحالي: ${Number(inv.newBalance).toFixed(2)} ج.م</div>
-    </div>
-    <p style="text-align:center; margin-top:10px; font-size:11px;">شكراً لتعاملكم معنا</p>
-  `;
-  triggerA5Print(html);
-}
-
-function renderCategoriesTable() {
-  document.getElementById('catsTbody').innerHTML = db.categories.map((c, idx) => {
-    const count = db.items.filter(i => i.cat === c).length;
-    return `<tr><td>${idx+1}</td><td><strong>${c}</strong></td><td>${count}</td>
-      <td><button type="button" class="act-btn bg-red" style="padding:2px 8px" onclick="db.categories.splice(${idx},1);saveDB();renderCategoriesTable();">حذف</button></td></tr>`;
-  }).join('');
-}
-function addCategory() {
-  const v = document.getElementById('catNameInp').value.trim();
-  if (!v) return;
-  if (!db.categories.includes(v)) db.categories.push(v);
-  document.getElementById('catNameInp').value = '';
-  saveDB();
-  renderCategoriesTable();
-}
-function openStockFilter(filter) {
-  openSec('sec-stock', filter === 'zero' ? '🚨 كشف النواقص' : (filter === 'low' ? '⚠️ أصناف وصلت لحد الطلب' : '🏢 جرد المخزن العام'));
-  let list = db.items;
-  if (filter === 'zero') list = db.items.filter(i => Number(i.qty) <= 0);
-  else if (filter === 'low') list = db.items.filter(i => Number(i.qty) <= Number(i.minQty));
-  document.getElementById('stockTbody').innerHTML = list.map(i => `
-    <tr>
-      <td>${i.code}</td><td style="text-align:right; font-weight:bold;">${i.name}</td><td>${i.cat}</td><td>${i.warehouse}</td>
-      <td style="color:${i.qty<=i.minQty?'red':'green'}; font-weight:bold;">${i.qty} ${i.unit}</td>
-      <td>${i.minQty}</td><td>${Number(i.buy).toFixed(2)}</td><td>${(i.qty*i.buy).toFixed(2)}</td>
-    </tr>`).join('');
-}
-
-function openPartySec(type) {
-  openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس');
-  document.getElementById('partyType').value = type;
-  document.getElementById('partyFormTitle').textContent = type === 'supplier' ? 'إضافة مورد جديد' : 'إضافة عميل جديد';
-  renderPartiesTable();
-}
-function openPartyReport(type, repMode) {
-  openPartySec(type);
-  if (repMode === 'statement') {
-    document.getElementById('partyStatementBox').style.display = 'block';
-    renderPartyStatement();
-  }
-}
-function saveParty() {
-  const type = document.getElementById('partyType').value;
-  const name = document.getElementById('partyName').value.trim();
-  if (!name) return alert('أدخل الاسم!');
-  db.parties.push({
-    id: Date.now(), type, name,
-    phone: document.getElementById('partyPhone').value.trim(),
-    balance: parseFloat(document.getElementById('partyBalance').value) || 0,
-    notes: document.getElementById('partyNotes').value.trim()
-  });
-  document.getElementById('partyName').value = '';
-  document.getElementById('partyPhone').value = '';
-  document.getElementById('partyBalance').value = 0;
-  saveDB();
-  renderPartiesTable();
-}
-function renderPartiesTable() {
-  const type = document.getElementById('partyType').value;
-  const list = db.parties.filter(p => p.type === type);
-  document.getElementById('voucherPartyId').innerHTML = list.map(p => `<option value="${p.id}">${p.name} (${Number(p.balance).toFixed(2)})</option>`).join('');
-  document.getElementById('statementPartySelect').innerHTML = list.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('partiesTbody').innerHTML = list.map((p, idx) => `
-    <tr>
-      <td>${idx+1}</td><td style="font-weight:bold;">${p.name}</td><td>${p.phone || '-'}</td><td>${p.notes || '-'}</td>
-      <td style="font-weight:bold; color:${p.balance>0?'var(--red-accent)':'var(--green-btn)'}">${Number(p.balance).toFixed(2)}</td>
-      <td><button type="button" class="act-btn bg-blue" style="padding:3px 8px" onclick="showStatementFor(${p.id})">📄 كشف حساب</button></td>
-      <td><button type="button" class="act-btn bg-red" style="padding:3px 8px" onclick="deleteParty(${p.id})">🗑️</button></td>
-    </tr>`).join('');
-}
-function deleteParty(id) {
-  if (!confirm('حذف هذا الحساب؟')) return;
-  db.parties = db.parties.filter(p => p.id !== id);
-  saveDB();
-  renderPartiesTable();
-}
-function savePartyVoucher() {
-  const id = Number(document.getElementById('voucherPartyId').value);
-  const amt = parseFloat(document.getElementById('voucherAmount').value) || 0;
-  const note = document.getElementById('voucherNote').value.trim() || 'دفعة نقدية من الحساب';
-  if (amt <= 0) return alert('أدخل المبلغ!');
-  const p = db.parties.find(x => x.id === id);
-  if (!p) return;
-  p.balance = Number(p.balance) - amt;
-  db.treasury.push({
-    id: Date.now(), date: new Date().toISOString().slice(0,10),
-    type: p.type === 'customer' ? 'in' : 'out', amount: amt, partyId: p.id,
-    note: `سند ${p.type === 'customer' ? 'قبض من عميل' : 'صرف لمورد'}: ${p.name} - ${note}`
-  });
-  saveDB();
-  renderPartiesTable();
-  const html = `
-    <div class="p-header"><h2>${db.settings.name}</h2><h3>إيصال ${p.type === 'customer' ? 'قبض نقدية من عميل' : 'صرف نقدية لمورد'}</h3></div>
-    <div class="p-meta"><span>التاريخ: ${new Date().toISOString().slice(0,10)}</span><span>الاسم: ${p.name}</span></div>
-    <div class="p-totals"><div>المبلغ المسدد: ${amt.toFixed(2)} ج.م</div><div>الرصيد المتبقي عليه: ${Number(p.balance).toFixed(2)} ج.م</div></div>
-    <p>البيان: ${note}</p>`;
-  triggerA5Print(html);
-}
-function showStatementFor(id) {
-  document.getElementById('statementPartySelect').value = id;
-  document.getElementById('partyStatementBox').style.display = 'block';
-  renderPartyStatement();
-}
-function renderPartyStatement() {
-  const id = Number(document.getElementById('statementPartySelect').value);
-  const p = db.parties.find(x => x.id === id);
-  if (!p) return;
-  document.getElementById('statementTitle').textContent = `كشف حساب تفصيلي: ${p.name} (الرصيد الحالي: ${Number(p.balance).toFixed(2)} ج.م)`;
-  const invMoves = db.invoices.filter(i => i.partyId === id && i.mode !== 'quote').map(i => ({
-    date: i.date, type: i.mode, note: `فاتورة رقم #${i.id}`, total: i.netTotal, paid: i.paidAmount, diff: i.remainAmount
-  }));
-  const trMoves = db.treasury.filter(t => t.partyId === id).map(t => ({
-    date: t.date, type: 'سند نقدية', note: t.note, total: 0, paid: t.amount, diff: -t.amount
-  }));
-  const all = [...invMoves, ...trMoves];
-  document.getElementById('statementTbody').innerHTML = all.map(m => `
-    <tr><td>${m.date}</td><td>${m.type}</td><td>${m.note}</td><td>${Number(m.total).toFixed(2)}</td><td>${Number(m.paid).toFixed(2)}</td><td>${Number(m.diff).toFixed(2)}</td></tr>
-  `).join('');
-}
-function printPartyStatementA5() {
-  renderPartyStatement();
-  const title = document.getElementById('statementTitle').textContent;
-  const tableHtml = document.getElementById('partyStatementBox').querySelector('table').outerHTML;
-  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>${title}</h3></div>${tableHtml}`);
-}
-
-function openInvLog(type) {
-  openSec('sec-invlog', '📑 سجل الفواتير ومبيعات ومشتريات الفترة');
-  document.getElementById('logTypeFilter').value = type;
-  renderInvLog();
-}
-function renderInvLog() {
-  const f = document.getElementById('logTypeFilter').value;
-  const dFrom = document.getElementById('logDateFrom').value;
-  const dTo = document.getElementById('logDateTo').value;
-  const list = db.invoices.filter(i => {
-    if (f !== 'all' && i.mode !== f) return false;
-    if (dFrom && i.date < dFrom) return false;
-    if (dTo && i.date > dTo) return false;
-    return true;
-  });
-  document.getElementById('invLogTbody').innerHTML = list.map(i => `
-    <tr>
-      <td>#${i.id}</td><td>${i.date}</td><td>${i.mode}</td><td>${i.partyName}</td>
-      <td><strong>${Number(i.netTotal).toFixed(2)}</strong></td><td>${Number(i.paidAmount).toFixed(2)}</td><td>${Number(i.remainAmount).toFixed(2)}</td>
-      <td><button type="button" class="act-btn bg-teal" style="padding:3px 8px" onclick="printInvoiceById(${i.id})">🖨️ طباعة A5</button></td>
-    </tr>`).join('');
-}
-function openTreasury(filter) {
-  openSec('sec-treasury', '💰 إدارة الخزينة والوارد والمنصرف والمصروفات');
-  if (filter !== 'all') document.getElementById('trType').value = filter;
-  renderTreasury();
-}
-function addTreasuryMove() {
-  const type = document.getElementById('trType').value;
-  const amount = parseFloat(document.getElementById('trAmount').value) || 0;
-  const note = document.getElementById('trNote').value.trim();
-  if (amount <= 0 || !note) return alert('أدخل المبلغ والبيان!');
-  db.treasury.push({ id: Date.now(), date: new Date().toISOString().slice(0,10), type, amount, note });
-  document.getElementById('trAmount').value = 0;
-  document.getElementById('trNote').value = '';
-  saveDB();
-  renderTreasury();
-}
-function renderTreasury() {
-  document.getElementById('treasuryTbody').innerHTML = db.treasury.slice().reverse().map(t => `
-    <tr>
-      <td>${t.date}</td>
-      <td>${t.type === 'in' ? 'وارد خزنة' : (t.type === 'expense' ? 'مصروفات' : 'منصرف خزنة')}</td>
-      <td>${t.note}</td>
-      <td style="color:green; font-weight:bold;">${t.type === 'in' ? Number(t.amount).toFixed(2) : '-'}</td>
-      <td style="color:red; font-weight:bold;">${t.type !== 'in' ? Number(t.amount).toFixed(2) : '-'}</td>
-    </tr>`).join('');
-}
-
-function calculateTotalProfits(dFrom, dTo, itemFilter) {
-  let sales = 0, cost = 0, expenses = 0;
-  const itemMap = {};
-  db.invoices.forEach(inv => {
-    if (dFrom && inv.date < dFrom) return;
-    if (dTo && inv.date > dTo) return;
-    if (inv.mode === 'sale' || inv.mode === 'sale_return') {
-      const sign = inv.mode === 'sale' ? 1 : -1;
-      inv.items.forEach(c => {
-        if (itemFilter && itemFilter !== 'all' && String(c.id) !== String(itemFilter)) return;
-        const rev = c.qty * c.price * (1 - (c.discPct||0)/100) * sign;
-        const cst = c.qty * (c.buyCost || 0) * sign;
-        sales += rev; cost += cst;
-        if (!itemMap[c.id]) itemMap[c.id] = { code: c.code, name: c.name, qty: 0, rev: 0, cst: 0 };
-        itemMap[c.id].qty += (c.qty * sign);
-        itemMap[c.id].rev += rev;
-        itemMap[c.id].cst += cst;
-      });
-    }
-  });
-  db.treasury.forEach(t => {
-    if (dFrom && t.date < dFrom) return;
-    if (dTo && t.date > dTo) return;
-    if (t.type === 'expense') expenses += Number(t.amount);
-  });
-  const gross = sales - cost;
-  return { sales, cost, gross, expenses, net: gross - expenses, itemRows: Object.values(itemMap) };
-}
-function openProfitSec() {
-  openSec('sec-profits', '📈 تقارير الأرباح وصافي الربح وأرباح الأصناف');
-  document.getElementById('profItemFilter').innerHTML = `<option value="all">كل الأصناف</option>` + db.items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-  renderProfits();
-}
-function renderProfits() {
-  const dFrom = document.getElementById('profDateFrom').value;
-  const dTo = document.getElementById('profDateTo').value;
-  const itemF = document.getElementById('profItemFilter').value;
-  const res = calculateTotalProfits(dFrom, dTo, itemF);
-  document.getElementById('profTotSales').textContent = res.sales.toFixed(2);
-  document.getElementById('profTotCost').textContent = res.cost.toFixed(2);
-  document.getElementById('profGross').textContent = res.gross.toFixed(2);
-  document.getElementById('profExpenses').textContent = res.expenses.toFixed(2);
-  document.getElementById('profNet').textContent = res.net.toFixed(2);
-  document.getElementById('profitsTbody').innerHTML = res.itemRows.map(r => `
-    <tr>
-      <td>${r.code}</td><td style="font-weight:bold;">${r.name}</td><td>${r.qty}</td>
-      <td>${r.rev.toFixed(2)}</td><td>${r.cst.toFixed(2)}</td>
-      <td style="font-weight:bold; color:var(--green-btn)">${(r.rev - r.cst).toFixed(2)}</td>
-    </tr>`).join('');
-}
-
-function applySettingsUI() {
-  document.getElementById('lblStoreName').textContent = db.settings.name;
-  document.getElementById('lblStoreAddress').textContent = db.settings.address;
-  document.getElementById('lblStorePhone').textContent = 'رقم الهاتف: ' + db.settings.phone;
-}
-function loadSettingsForm() {
-  document.getElementById('setStoreName').value = db.settings.name;
-  document.getElementById('setStoreAddress').value = db.settings.address;
-  document.getElementById('setStorePhone').value = db.settings.phone;
-  document.getElementById('setPinCode').value = db.settings.pin;
-}
-function saveSettings() {
-  db.settings.name = document.getElementById('setStoreName').value.trim();
-  db.settings.address = document.getElementById('setStoreAddress').value.trim();
-  db.settings.phone = document.getElementById('setStorePhone').value.trim();
-  db.settings.pin = document.getElementById('setPinCode').value.trim() || '1234';
-  saveDB();
-  applySettingsUI();
-  alert('تم حفظ بيانات المكتبة والإعدادات بنجاح!');
-}
-
-async function syncToCloud(dir) {
-  const badge = document.getElementById('syncStatusBadge');
-  try {
-    if (dir === 'push' || dir === 'auto_push') {
-      if (badge) badge.textContent = 'جاري المزامنة...';
-      const res = await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(db)
-      });
-      if (!res.ok) throw new Error('API not ready');
-      const data = await res.json();
-      if (data.ok) {
-        if (badge) badge.textContent = 'متصل بـ Neon ✅';
-        if (dir === 'push') alert('✅ تم رفع وحفظ كل بيانات المكتبة في قاعدة بيانات Neon بنجاح!');
-      }
-    } else if (dir === 'pull') {
-      if (badge) badge.textContent = 'جاري السحب...';
-      const res = await fetch('/api/sync');
-      const remote = await res.json();
-      if (remote && remote.items) {
-        db = remote;
-        localStorage.setItem(DB_KEY, JSON.stringify(db));
-        if (badge) badge.textContent = 'تم التحديث ✅';
-        alert('✅ تم سحب أحدث البيانات من قاعدة بيانات Neon بنجاح!');
-        location.reload();
-      } else {
-        alert('ℹ️ قاعدة بيانات Neon فارغة حالياً، اضغط "رفع لقاعدة بيانات Neon" أولاً.');
-      }
-    }
-  } catch (e) {
-    if (badge) badge.textContent = 'حفظ محلي (أوفلاين)';
-    if (dir !== 'auto_push') {
-      alert('⚠️ لتفعيل مزامنة Neon، تأكد من إضافة ملف api/sync.js وملف package.json في GitHub.');
-    }
-  }
-}
-
-function exportFullBackup() {
-  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `Bookstore_Backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-}
-function importFullBackup(ev) {
-  const file = ev.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try { db = JSON.parse(e.target.result); saveDB(); location.reload(); } catch(err){ alert('ملف غير صالح'); }
-  };
-  reader.readAsText(file);
-}
-function exportItemsCSV() {
-  let csv = '\uFEFFالكود,اسم الصنف,المجموعة,الكمية,الوحدة,سعر الشراء,سعر البيع,سعر الجملة\n';
-  db.items.forEach(i => { csv += `${i.code},"${i.name}","${i.cat}",${i.qty},${i.unit},${i.buy},${i.sell},${i.wholesale}\n`; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Bookstore_Items.csv';
-  a.click();
-}
-function triggerA5Print(innerHtml) {
-  const area = document.getElementById('printAreaA5');
-  area.innerHTML = innerHtml;
-  window.print();
-}
-function printItemsReportA5() {
-  const rows = db.items.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.buy}</td><td>${i.sell}</td></tr>`).join('');
-  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>تقرير جرد وأسعار الأصناف (A5)</h3></div>
-    <table class="p-table"><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>شراء</th><th>بيع</th></tr></thead><tbody>${rows}</tbody></table>`);
-}
-function printCurrentScreenA5() {
-  const activeSec = document.querySelector('.sec-view.active');
-  const tbl = activeSec ? activeSec.querySelector('table') : null;
-  if (!tbl) return window.print();
-  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>${document.getElementById('winTitle').textContent}</h3></div><div class="p-table">${tbl.outerHTML}</div>`);
-}
-function lockApp() { document.getElementById('lockModal').style.display = 'flex'; }
-function unlockApp() {
-  if (document.getElementById('unlockPinInp').value === db.settings.pin) {
-    document.getElementById('lockModal').style.display = 'none';
-    document.getElementById('unlockPinInp').value = '';
-  } else alert('الرقم السري غير صحيح!');
-}
-</script>
+<script type="module" src="./app.js"></script>
 </body>
 </html>
-```
-
-جرب استبدال الكود في `index.html` على GitHub الآن وأخبرني بالنتيجة!
