@@ -12,7 +12,8 @@ const AUDIT_KEY = `${DB_KEY}_AUDIT`;
 const HELD_CARTS_KEY = `${DB_KEY}_HELD_CARTS`;
 const ACTIVE_STAFF_KEY = `${DB_KEY}_ACTIVE_STAFF`;
 const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'night'];
-const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1687bd', 'vista-emerald': '#27865c', 'vista-rose': '#a34f78', 'win11-indigo': '#5b5bd6', 'win11-mint': '#188b7a', 'win11-sunset': '#d0644e', night: '#818cf8' };
+const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', night: '#8fb4ff' };
+const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', night: 'الوضع الليلي' };
 
 const $ = id => document.getElementById(id);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -216,7 +217,8 @@ function updateClock() {
   const now = new Date();
   const date = localDate(now).replaceAll('-', '/');
   const time = now.toTimeString().slice(0, 8);
-  if ($('liveDate')) $('liveDate').textContent = date;
+  const weekday = new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now);
+  if ($('liveDate')) { $('liveDate').textContent = date; $('liveDate').title = weekday; }
   if ($('liveTime')) $('liveTime').textContent = time;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
@@ -322,24 +324,44 @@ function applyAppearance() {
   const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'vista-classic';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
-  if ($('darkModeButton')) $('darkModeButton').textContent = theme === 'night' ? '☀️ إيقاف الوضع الليلي' : '🌙 الوضع الليلي';
+  if ($('darkModeButton')) $('darkModeButton').textContent = theme === 'night' ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي';
+  const root = document.body.style;
   if (appearance.accent && /^#[0-9a-f]{6}$/i.test(appearance.accent)) {
-    document.body.style.setProperty('--accent', appearance.accent);
-    document.body.style.setProperty('--g-bar', appearance.accent);
+    // Keep the custom accent readable: derive bar/hover shades from the chosen colour.
+    root.setProperty('--accent', appearance.accent);
+    root.setProperty('--g-bar', appearance.accent);
+    root.setProperty('--g-dark', `color-mix(in srgb, ${appearance.accent} 82%, #000000)`);
+    root.setProperty('--g-line', `color-mix(in srgb, ${appearance.accent} 68%, #000000)`);
+    root.setProperty('--press-glow', `${appearance.accent}55`);
     if ($('customAccent')) $('customAccent').value = appearance.accent;
   } else {
-    document.body.style.removeProperty('--accent');
-    document.body.style.removeProperty('--g-bar');
+    for (const name of ['--accent', '--g-bar', '--g-dark', '--g-line', '--press-glow']) root.removeProperty(name);
     if ($('customAccent')) $('customAccent').value = ACCENT_DEFAULTS[theme];
   }
+  document.querySelectorAll('[data-theme-choice]').forEach(button => {
+    const active = button.dataset.themeChoice === theme;
+    button.title = active ? 'الثيم المفعّل حالياً' : 'اضغط لتفعيل هذا الثيم';
+  });
+  const current = $('currentThemeName');
+  if (current) current.textContent = THEME_LABELS[theme] || 'كلاسيكي أخضر';
 }
 function selectTheme(theme) {
   if (!THEMES.includes(theme)) return;
-  const appearance = getAppearance(); appearance.theme = theme; saveAppearance(appearance); applyAppearance();
+  const appearance = getAppearance();
+  appearance.theme = theme;
+  delete appearance.accent; // A theme switch must visibly change the interface, not keep a stale custom colour.
+  saveAppearance(appearance);
+  applyAppearance();
+  const label = THEME_LABELS[theme] || theme;
+  notify(`تم تفعيل الثيم: ${label}. يمكنك تغيير اللون الأساسي من الأسفل.`);
 }
 function setCustomAccent(color) {
   if (!/^#[0-9a-f]{6}$/i.test(color)) return;
   const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
+}
+function resetAccent() {
+  const appearance = getAppearance(); delete appearance.accent; saveAppearance(appearance); applyAppearance();
+  notify('تمت استعادة لون الثيم الأصلي.');
 }
 function setReceiptWidth(width) {
   if (!['58', '80'].includes(String(width))) return;
@@ -630,7 +652,7 @@ function renderInvCart() {
     return `<tr data-index="${index}" class="${index === selectedCartIndex ? 'selected-row' : ''}" onclick="selectCartRow(${index})">
       <td>${index + 1}</td>
       <td><strong>${esc(c.code)}</strong></td>
-      <td style="text-align:right">${esc(c.name)}</td>
+      <td class="cell-name">${esc(c.name)}</td>
       <td>عدد</td>
       <td><input aria-label="سعر ${esc(c.name)}" type="number" min="0" step="any" value="${esc(c.price)}" ${isReturn ? 'disabled' : ''} onchange="updateCartRow(${index},'price',this.value)"></td>
       <td><input aria-label="كمية ${esc(c.name)}" type="number" min="0.001" ${isReturn ? `max="${c.maxQty}"` : ''} step="any" value="${esc(c.qty)}" onchange="updateCartRow(${index},'qty',this.value)"></td>
@@ -830,7 +852,7 @@ function printInvoiceThermal(inv) {
   const header = `<div class="receipt-head"><h2>${esc(store.name)}</h2><p>${esc(store.address)}</p><p>${esc(store.phone)}</p><p>${esc(MODE_LABELS[inv.mode])} #${inv.id}</p><p>${esc(inv.date)} — ${esc(inv.time)}</p><p>${esc(inv.partyName)}</p></div>`;
   const receipt = `<div class="thermal-receipt">${header}<table><thead><tr><th>الصنف</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="receipt-totals"><p><span>الإجمالي</span><strong>${money(inv.subtotal ?? inv.netTotal)} ج.م</strong></p><p><span>الخصم</span><strong>${money(inv.discountTotal ?? 0)} ج.م</strong></p><p><span>الصافي</span><strong>${money(inv.netTotal)} ج.م</strong></p><p><span>المدفوع</span><strong>${money(inv.paidAmount)} ج.م</strong></p><p><span>المتبقي</span><strong>${money(inv.remainAmount)} ج.م</strong></p></div>${inv.note ? `<p style="font-size:9px;text-align:center">${esc(inv.note)}</p>` : ''}<p class="receipt-thanks">${inv.mode === 'quote' ? 'عرض سعر فقط — ليس إيصال دفع' : 'شكراً لتعاملكم معنا'}</p></div>`;
   const style = $('thermalPrintStyle');
-  style.textContent = `@media print{@page{size:${width}mm auto;margin:2mm}body.thermal-print #printAreaA5{display:block!important;position:absolute!important;top:0!important;left:0!important;width:${width - 4}mm!important;max-width:${width - 4}mm!important;padding:0!important;margin:0!important;font-size:10px!important;color:#111!important}body.thermal-print #printAreaA5 table{width:100%;border-collapse:collapse}body.thermal-print #printAreaA5 th,body.thermal-print #printAreaA5 td{font-size:10px!important;padding:3px 1px!important;border-bottom:1px dashed #555!important;text-align:right!important}body.thermal-print #printAreaA5 .receipt-totals p{display:flex!important;justify-content:space-between!important;margin:3px 0!important}body.thermal-print #printAreaA5 .receipt-head h2{font-size:14px!important}}`;
+  style.textContent = `@media print{@page{size:${width}mm auto;margin:2mm}body.thermal-print #printAreaA5{display:block!important;position:absolute!important;top:0!important;left:0!important;width:${width - 4}mm!important;max-width:${width - 4}mm!important;padding:0!important;margin:0!important;font-size:10px!important;color:#111!important}body.thermal-print #printAreaA5 table{width:100%;border-collapse:collapse}body.thermal-print #printAreaA5 th,body.thermal-print #printAreaA5 td{font-size:10px!important;padding:3px 1px!important;border-bottom:1px dashed #555!important;text-align:center!important}body.thermal-print #printAreaA5 .receipt-totals p{display:flex!important;justify-content:space-between!important;margin:3px 0!important}body.thermal-print #printAreaA5 .receipt-head h2{font-size:14px!important}}`;
   $('printAreaA5').innerHTML = receipt; document.body.classList.add('thermal-print');
   const cleanup = () => { document.body.classList.remove('thermal-print'); style.textContent = ''; window.removeEventListener('afterprint', cleanup); };
   window.addEventListener('afterprint', cleanup, { once: true }); window.print(); window.setTimeout(cleanup, 3000);
@@ -838,7 +860,7 @@ function printInvoiceThermal(inv) {
 function invoiceQrMarkup(inv) {
   const vat = 0;
   try {
-    const qr = qrCodeSvg(`YAZSYS|${db.settings.name}|INV-${inv.id}|${inv.date}|${money(inv.netTotal)}|${money(vat)}`, 92);
+    const qr = qrCodeSvg(`POS|${db.settings.name}|INV-${inv.id}|${inv.date}|${money(inv.netTotal)}|${money(vat)}`, 92);
     return `<div style="text-align:center">${qr}<div style="font-size:9px">${esc(db.settings.phone || '')}</div></div>`;
   } catch { return ''; }
 }
@@ -853,7 +875,7 @@ function printInvoiceA5(inv) {
     ${inv.mode !== 'quote' ? `<div class="p-totals"><span>الرصيد السابق: ${money(inv.prevBalance)}</span><span>الرصيد الحالي: ${money(inv.newBalance)} ج.م</span></div>` : '<p style="text-align:center">عرض أسعار فقط — ليس إيصال دفع ولا يغيّر المخزون.</p>'}
     ${inv.note ? `<p style="text-align:center">ملاحظات: ${esc(inv.note)}</p>` : ''}
     <div class="p-sign"><span>توقيع العميل: ........................</span><span>توقيع الموظف: ........................</span></div>
-    <div class="p-foot"><span style="font-size:9.5px">يعمل بنظام YAZSYS · الإصدار 4.34</span>${invoiceQrMarkup(inv)}</div>`);
+    <div class="p-foot"><span style="font-size:9.5px">نظام نقاط البيع وإدارة المكتبات</span>${invoiceQrMarkup(inv)}</div>`);
 }
 
 /* ---------------- items ---------------- */
@@ -927,7 +949,7 @@ function renderItemsTable() {
   body.innerHTML = list.map(i => {
     totBuy += i.buy * i.qty; totSell += i.sell * i.qty;
     const input = (field, width) => `<input aria-label="${esc(i.name)}: ${field}" type="${field === 'name' ? 'text' : 'number'}" ${field === 'name' ? '' : 'min="0" step="any"'} value="${esc(i[field])}" style="width:${width}px;max-width:100%" onchange="inlineUpdateItem(${i.id},'${field}',this.value)">`;
-    return `<tr><td><strong>${esc(i.code)}</strong></td><td style="text-align:right;font-weight:bold">${quickEditMode ? input('name', 170) : esc(i.name)}</td>
+    return `<tr><td><strong>${esc(i.code)}</strong></td><td class="cell-name">${quickEditMode ? input('name', 170) : esc(i.name)}</td>
       <td>${esc(i.cat)}</td><td>${esc(i.warehouse)}</td><td style="font-weight:bold;color:${i.qty <= i.minQty ? 'var(--danger)' : '#20591f'}">${quickEditMode ? input('qty', 64) : esc(i.qty)}</td><td>${esc(i.unit)}</td>
       <td>${quickEditMode ? input('buy', 72) : money(i.buy)}</td><td>${quickEditMode ? input('sell', 72) : money(i.sell)}</td><td>${quickEditMode ? input('wholesale', 72) : money(i.wholesale)}</td>
       <td>${money(i.minSell)}</td><td>${esc(i.notes || '-')}</td>
@@ -1025,7 +1047,7 @@ function openStockFilter(filter) {
   if (!ensurePermission('stock')) return;
   openSec('sec-stock', filter === 'zero' ? '🚨 كشف النواقص' : filter === 'low' ? '⚠️ أصناف وصلت لحد الطلب' : '🏢 جرد المخزن العام');
   const list = db.items.filter(i => filter === 'zero' ? i.qty <= 0 : filter === 'low' ? i.qty <= i.minQty : true);
-  $('stockTbody').innerHTML = list.map(i => `<tr><td>${esc(i.code)}</td><td style="text-align:right">${esc(i.name)}</td><td>${esc(i.cat)}</td><td>${esc(i.warehouse)}</td><td style="color:${i.qty <= i.minQty ? 'var(--danger)' : '#20591f'};font-weight:bold">${esc(i.qty)} ${esc(i.unit)}</td><td>${esc(i.minQty)}</td><td>${money(i.buy)}</td><td>${money(i.qty * i.buy)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد أصناف مطابقة.</td></tr>';
+  $('stockTbody').innerHTML = list.map(i => `<tr><td>${esc(i.code)}</td><td class="cell-name">${esc(i.name)}</td><td>${esc(i.cat)}</td><td>${esc(i.warehouse)}</td><td style="color:${i.qty <= i.minQty ? 'var(--danger)' : '#20591f'};font-weight:bold">${esc(i.qty)} ${esc(i.unit)}</td><td>${esc(i.minQty)}</td><td>${money(i.buy)}</td><td>${money(i.qty * i.buy)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد أصناف مطابقة.</td></tr>';
 }
 
 /* ---------------- parties ---------------- */
@@ -1068,7 +1090,7 @@ function renderPartiesTable() {
   $('statementPartySelect').innerHTML = options(list, p => p.name);
   if (list.some(p => String(p.id) === previousVoucher)) $('voucherPartyId').value = previousVoucher;
   if (list.some(p => String(p.id) === previousStatement)) $('statementPartySelect').value = previousStatement;
-  $('partiesTbody').innerHTML = list.map((p, index) => `<tr><td>${index + 1}</td><td style="text-align:right">${esc(p.name)}</td><td>${esc(p.phone || '-')}</td><td>${esc(p.notes || '-')}</td><td style="font-weight:bold">${money(p.balance)}</td>
+  $('partiesTbody').innerHTML = list.map((p, index) => `<tr><td>${index + 1}</td><td class="cell-name">${esc(p.name)}</td><td>${esc(p.phone || '-')}</td><td>${esc(p.notes || '-')}</td><td style="font-weight:bold">${money(p.balance)}</td>
     <td class="no-print"><button type="button" class="act-btn bg-blue" onclick="showStatementFor(${p.id})">كشف حساب</button></td><td class="no-print"><button type="button" class="act-btn bg-orange" onclick="editParty(${p.id})">تعديل</button></td><td class="no-print"><button type="button" class="act-btn bg-red" onclick="deleteParty(${p.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="8">لا توجد حسابات مسجلة.</td></tr>';
   $('partiesTbody').closest('table').querySelectorAll('thead th').forEach((th, i) => th.classList.toggle('no-print', i >= 5));
   if ($('partyStatementBox').style.display !== 'none') renderPartyStatement();
@@ -1163,7 +1185,7 @@ function addTreasuryMove() {
   }
 }
 function renderTreasury() {
-  $('treasuryTbody').innerHTML = db.treasury.slice().reverse().map(t => `<tr><td>${esc(t.date)}</td><td>${t.type === 'in' ? 'وارد خزنة' : t.type === 'expense' ? 'مصروفات' : 'منصرف خزنة'}</td><td style="text-align:right">${esc(t.note)}</td><td style="color:#20591f;font-weight:bold">${t.type === 'in' ? money(t.amount) : '-'}</td><td style="color:var(--danger);font-weight:bold">${t.type !== 'in' ? money(t.amount) : '-'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-row">لا توجد حركات خزنة.</td></tr>';
+  $('treasuryTbody').innerHTML = db.treasury.slice().reverse().map(t => `<tr><td>${esc(t.date)}</td><td>${t.type === 'in' ? 'وارد خزنة' : t.type === 'expense' ? 'مصروفات' : 'منصرف خزنة'}</td><td class="cell-name">${esc(t.note)}</td><td style="color:#20591f;font-weight:bold">${t.type === 'in' ? money(t.amount) : '-'}</td><td style="color:var(--danger);font-weight:bold">${t.type !== 'in' ? money(t.amount) : '-'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-row">لا توجد حركات خزنة.</td></tr>';
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(treasuryBalance());
 }
 function openProfitSec(mode = 'general') {
@@ -1183,7 +1205,7 @@ function renderProfits() {
     const filter = $('profItemFilter').value, result = calculateTotalProfits($('profDateFrom').value, $('profDateTo').value, filter);
     for (const [id, value] of Object.entries({ profTotSales: result.sales, profTotCost: result.cost, profGross: result.gross, profExpenses: result.expenses, profNet: result.net })) $(id).textContent = money(value);
     $('profitScopeNote').textContent = filter !== 'all' ? 'ربح الصنف بعد الخصومات والمرتجعات. المصروفات العامة لا تُخصم من صنف منفرد؛ تظهر في تقرير كل الأصناف.' : 'الأرباح بعد خصومات الفواتير ومرتجع المبيعات وتكلفة البيع التاريخية، وخصم المصروفات العامة للفترة.';
-    $('profitsTbody').innerHTML = result.itemRows.map(r => `<tr><td>${esc(r.code)}</td><td style="text-align:right">${esc(r.name)}</td><td>${esc(roundQuantity(r.qty))}</td><td>${money(r.rev)}</td><td>${money(r.cst)}</td><td style="font-weight:bold;color:${r.rev - r.cst >= 0 ? '#20591f' : 'var(--danger)'}">${money(r.rev - r.cst)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-row">لا توجد مبيعات مطابقة للفترة المحددة.</td></tr>';
+    $('profitsTbody').innerHTML = result.itemRows.map(r => `<tr><td>${esc(r.code)}</td><td class="cell-name">${esc(r.name)}</td><td>${esc(roundQuantity(r.qty))}</td><td>${money(r.rev)}</td><td>${money(r.cst)}</td><td style="font-weight:bold;color:${r.rev - r.cst >= 0 ? '#20591f' : 'var(--danger)'}">${money(r.rev - r.cst)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-row">لا توجد مبيعات مطابقة للفترة المحددة.</td></tr>';
   } catch (error) {
     $('profitScopeNote').textContent = error.message; $('profitsTbody').innerHTML = '';
     for (const id of ['profTotSales', 'profTotCost', 'profGross', 'profExpenses', 'profNet']) $(id).textContent = '—';
@@ -1194,7 +1216,7 @@ function applySettingsUI() {
   $('lblStoreName').textContent = db.settings.name;
   $('lblStoreAddress').textContent = '📍 ' + db.settings.address;
   $('lblStorePhone').textContent = '☎️ ' + db.settings.phone;
-  document.title = `YAZSYS | ${db.settings.name}`;
+  document.title = `${db.settings.name} | نقاط البيع`;
 }
 function loadSettingsForm() {
   $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone;
@@ -1294,8 +1316,8 @@ function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type })), link = document.createElement('a');
   link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportFullBackup() { if (!ensurePermission('admin')) return; download(JSON.stringify(db, null, 2), 'application/json', `YAZSYS_Backup_${localDate()}.json`); recordAudit('تصدير نسخة احتياطية'); }
-function exportRecovery() { if (recoveryRaw !== null) download(recoveryRaw, 'application/json', `YAZSYS_Recovery_${localDate()}.json`); }
+function exportFullBackup() { if (!ensurePermission('admin')) return; download(JSON.stringify(db, null, 2), 'application/json', `POS_Backup_${localDate()}.json`); recordAudit('تصدير نسخة احتياطية'); }
+function exportRecovery() { if (recoveryRaw !== null) download(recoveryRaw, 'application/json', `POS_Recovery_${localDate()}.json`); }
 async function importFullBackup(event) {
   if (!ensurePermission('admin')) { event.target.value = ''; return; }
   const file = event.target.files[0]; if (!file) return;
@@ -1314,7 +1336,7 @@ async function importFullBackup(event) {
 function exportItemsCSV() {
   const cell = value => { let string = String(value ?? ''); if (typeof value !== 'number' && /^[\s]*[=+\-@]|[\t\r]/.test(string)) string = `'${string}`; return `"${string.replaceAll('"', '""')}"`; };
   const rows = [['الكود', 'اسم الصنف', 'المجموعة', 'الكمية', 'الوحدة', 'سعر الشراء', 'سعر البيع', 'سعر الجملة'], ...db.items.map(i => [i.code, i.name, i.cat, i.qty, i.unit, i.buy, i.sell, i.wholesale])];
-  download('\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8;', 'YAZSYS_Items.csv');
+  download('\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8;', 'POS_Items.csv');
 }
 
 /* ---------------- printing ---------------- */
@@ -1358,7 +1380,7 @@ function unlockApp() {
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
-  openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, setReceiptWidth,
+  openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, resetAccent, setReceiptWidth,
   toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice,
   saveItem, resetItemForm, saveStaff, deleteStaff, renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem,
   showSingleItemProfit, printBarcodeLabel, addCategory, deleteCategory, openStockFilter, openInvoiceSec, changeInvoiceMode, updateInvoiceUI,
