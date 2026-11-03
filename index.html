@@ -267,16 +267,70 @@
   .store-details p { background:#ffffff18; border:1px solid #ffffff42; border-radius:9px; padding:4px 11px; }
   @media(max-width:700px){.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.window-layer{padding:8px}.workspace{max-height:calc(100vh - 16px);border-radius:15px}.win-body{padding:12px}.win-header{padding:10px 14px}}
 
+
+  body[data-theme="night"] { --bg-main:#0b1220; --text-dark:#e5eaf3; --surface:#151e2f; --accent:#818cf8; --accent-soft:#202a42; --blue-win:#818cf8; --teal-dark:#27345c; --teal-main:#5365c9; --green-btn:#15936e; --orange-btn:#c8782c; --purple-btn:#9671d0; --line:#303c50; --shadow:0 22px 70px #0008; }
+  body[data-theme="night"] .top-utility-bar { background:#070d18; }
+  body[data-theme="night"] .main-banner { background:linear-gradient(120deg,#121b31,#27345c,#343a73); }
+  body[data-theme="night"] .panel-title { background:var(--accent-soft); color:#c3c9ff; }
+  body[data-theme="night"] .f-row label,body[data-theme="night"] .scope-note { color:#c4cede; }
+  body[data-theme="night"] .f-row input,body[data-theme="night"] .f-row select,body[data-theme="night"] .f-row textarea { background:#0f1726;color:#e5eaf3;border-color:var(--line); }
+  body[data-theme="night"] th { color:#e8ecf6; }
+  body[data-theme="night"] tbody tr:nth-child(even) { background:#1b2639; }
+  body[data-theme="night"] tbody tr:hover { background:#283450; }
+  body[data-theme="night"] .t-foot-bar span { background:#1b2639;color:#e5eaf3; }
+  .app-shell { display:grid; grid-template-columns:260px minmax(0,1fr); direction:rtl; max-width:1580px; margin:0 auto 36px; padding:0 18px; gap:20px; align-items:start; transition:grid-template-columns .2s ease; }
+  .app-shell.sidebar-collapsed { grid-template-columns:82px minmax(0,1fr); }
+  .side-nav { position:sticky; top:14px; min-height:calc(100vh - 28px); padding:16px 12px; background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:0 8px 28px #0f172a0b; display:flex; flex-direction:column; gap:5px; overflow:hidden; z-index:5; }
+  .side-brand { display:flex; align-items:center; gap:11px; padding:7px 10px 20px; margin-bottom:8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .side-brand strong,.side-brand small { display:block; }.side-brand strong {font-size:15px}.side-brand small {color:#8490a4;font-size:11px}
+  .brand-mark { display:grid; place-items:center; width:42px;height:42px;border-radius:14px;background:var(--accent-soft);font-size:22px;flex:0 0 auto; }
+  .nav-link { width:100%; display:flex; align-items:center; gap:12px; border:0; background:transparent; color:var(--text-dark); padding:11px 12px; border-radius:12px; font-weight:700; text-align:right; cursor:pointer; transition:background .16s,color .16s; white-space:nowrap; }
+  .nav-link:hover,.nav-link.selected { background:var(--accent-soft); color:var(--accent); }
+  .nav-icon { display:grid;place-items:center;width:26px;flex:0 0 26px;font-size:17px; }
+  .nav-caption { padding:13px 12px 4px;color:#8b96a8;font-size:11px;font-weight:800;white-space:nowrap; }
+  .side-nav-foot { margin-top:auto;padding:14px 10px 4px;border-top:1px solid var(--line);color:#7d899a;font-size:11px;display:flex;align-items:center;gap:9px;white-space:nowrap; }
+  .nav-status-dot { display:block;width:9px;height:9px;border-radius:50%;background:#17a673;box-shadow:0 0 0 4px #17a67322;flex:0 0 auto; }
+  .sidebar-collapsed .side-nav { padding-inline:9px;align-items:center; }.sidebar-collapsed .side-brand { padding-inline:8px; }.sidebar-collapsed .side-brand>div,.sidebar-collapsed .nav-caption,.sidebar-collapsed .nav-label { display:none; }.sidebar-collapsed .nav-link { justify-content:center;padding-inline:8px; }.sidebar-collapsed .side-nav-foot { justify-content:center;width:100%; }
+  .main-content { min-width:0; }
+  .main-banner { max-width:1580px; }
+  .home-dashboard,.classic-panel { background:var(--surface); border:1px solid var(--line);border-radius:20px;padding:20px;margin:0 0 18px;box-shadow:0 8px 28px #0f172a0a; }
+  .dashboard-heading,.section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px; }
+  .dashboard-heading h2,.section-heading h2 { margin:2px 0;font-size:20px;font-weight:900; }.dashboard-heading p { margin:0;color:#8792a4;font-size:12px; }
+  .eyebrow { color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.04em; }
+  .sales-chart { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;align-items:end;min-height:190px;padding:14px 10px 2px;border-radius:14px;background:linear-gradient(to bottom,transparent 24%,var(--line) 25%,transparent 25.5%,transparent 49%,var(--line) 50%,transparent 50.5%,transparent 74%,var(--line) 75%,transparent 75.5%); }
+  .chart-day { height:170px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0; }
+  .chart-value { color:var(--text-dark);font-size:11px;font-weight:800;white-space:nowrap; }
+  .chart-track { height:112px;width:min(42px,70%);display:flex;align-items:flex-end;justify-content:center; }
+  .chart-bar { display:block;width:100%;min-height:4px;border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#70c8d5));box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 22%,transparent);transition:height .35s ease; }
+  .chart-label { color:#8490a4;font-size:11px;white-space:nowrap; }
+  .classic-panel { padding:22px; }.section-hint {color:#929bad;font-size:12px}
+  .action-group { padding:16px 0;border-top:1px solid var(--line); }.action-group h3 { display:flex;align-items:center;gap:9px;margin:0 0 12px;color:var(--text-dark);font-size:14px;font-weight:800; }
+  .action-groups-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px; }
+  .classic-top-row,.classic-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:0;padding:0;border:0; }
+  .c-btn { position:relative;display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:54px;padding:10px 12px;text-align:right;background:color-mix(in srgb,var(--accent-soft) 30%,var(--surface));border-radius:13px;box-shadow:none;font-size:12px; }
+  .c-btn::before { content:none; }.button-icon { display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:11px;color:var(--accent);background:var(--accent-soft);font-size:17px; }.button-label { line-height:1.35; }
+  .window-layer.maximized { padding:10px; }.window-layer.maximized .workspace { width:100%;height:calc(100vh - 20px);max-height:none;border-radius:16px; }
+  .window-layer.minimized { pointer-events:none;background:transparent;backdrop-filter:none; }.window-layer.minimized .workspace { display:none; }
+  .window-dock { position:fixed;z-index:6000;bottom:18px;right:20px;display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:15px;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 34px #0f172a33;color:var(--text-dark); }
+  .window-dock[hidden] { display:none!important; }
+  .status-indicator { display:inline-flex;align-items:center;gap:7px; }.status-indicator::before { content:'';width:9px;height:9px;border-radius:50%;background:#fbbf24;box-shadow:0 0 0 3px #fbbf2428; }.status-indicator[data-state="synced"]::before { background:#34d399;box-shadow:0 0 0 3px #34d39928; }.status-indicator[data-state="error"]::before { background:#fb7185;box-shadow:0 0 0 3px #fb718528; }
+  .mobile-nav-scrim { display:none; }
+  @media(max-width:1050px){.app-shell{grid-template-columns:220px minmax(0,1fr);gap:12px;padding:0 12px}.action-groups-grid{grid-template-columns:1fr}.app-shell.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)}}
+  @media(max-width:720px){.app-shell,.app-shell.sidebar-collapsed{display:block;padding:0 10px}.side-nav{position:fixed;top:0;bottom:0;right:0;width:min(290px,84vw);min-height:0;border-radius:0 0 0 20px;transform:translateX(110%);transition:transform .22s;z-index:7000}.app-shell.sidebar-open .side-nav{transform:translateX(0)}.sidebar-collapsed .side-brand>div,.sidebar-collapsed .nav-caption,.sidebar-collapsed .nav-label{display:block}.sidebar-collapsed .nav-link{justify-content:flex-start}.mobile-nav-scrim:not([hidden]){display:block;position:fixed;inset:0;background:#0b122077;z-index:6900}.main-banner{margin:12px}.home-dashboard,.classic-panel{padding:14px;border-radius:16px}.dashboard-heading,.section-heading{align-items:flex-start;flex-direction:column}.dashboard-heading .act-btn{align-self:stretch;justify-content:center}.chart-value{font-size:9px}.sales-chart{gap:4px;padding-inline:2px}.chart-label{font-size:9px}.chart-track{width:65%}.classic-top-row,.classic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.c-btn{min-height:62px;padding:8px;font-size:11px}.button-icon{width:30px;height:30px;flex-basis:30px}.top-utility-bar .util-btns button{padding:7px 9px}.window-dock{right:10px;left:10px;justify-content:space-between}.win-header-actions{flex-wrap:wrap}.win-header-actions .bg-teal{display:none}}
+  @media(max-width:390px){.banner-kpis{display:grid;grid-template-columns:repeat(2,1fr)}.classic-top-row,.classic-grid{grid-template-columns:1fr}.chart-value{display:none}.clock-boxes{min-width:0}}
+
 </style>
 </head>
 <body>
 
 <div class="top-utility-bar">
-  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span></div>
+  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" class="status-indicator" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span></div>
   <div class="util-btns">
+    <button type="button" class="btn-view-mode" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰ القائمة</button>
+    <button type="button" class="btn-view-mode" id="darkModeButton" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
     <button type="button" class="btn-sync" onclick="syncToCloud('push')">⬆️ رفع لقاعدة بيانات Neon</button>
     <button type="button" class="btn-sync" style="background:#0284c7" onclick="syncToCloud('pull')">⬇️ سحب من Neon</button>
-    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء لوحة الاختصارات</button>
+    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء مجموعات الأزرار</button>
     <button type="button" class="btn-lock" onclick="lockApp()">🔒 قفل الشاشة</button>
   </div>
 </div>
@@ -298,51 +352,85 @@
   </div>
 </div>
 
-<div class="classic-panel" id="classicPanel">
-  <div class="classic-top-row">
-    <button type="button" class="c-btn tall" onclick="openSec('sec-settings','⚙️ بيانات المنشأة والإعدادات')">🏢 بيانات المنشأة</button>
-    <button type="button" class="c-btn" onclick="lockApp()">🔐 شاشة الدخول</button>
-    <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 مجموعات الأصناف')">📁 إضافة مجموعة</button>
-    <button type="button" class="c-btn" onclick="openPartySec('supplier')">🚚 الموردين</button>
-    <button type="button" class="c-btn" onclick="openInvoiceSec('sale')">🛒 فاتورة مبيعات</button>
-    <button type="button" class="c-btn" onclick="openSec('sec-settings','⚙️ إعدادات البرنامج')">⚙️ إعدادات البرنامج</button>
-    <button type="button" class="c-btn" onclick="openSec('sec-items','📦 شاشة الأصناف والمخازن')">📦 إضافة الأصناف</button>
-    <button type="button" class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
-    <button type="button" class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
-  </div>
-  <div class="classic-grid">
-    <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 بيانات المجموعات')">بيانات المجموعات</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('supplier','moves')">حركة حساب مورد</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('customer','moves')">حركة حساب عميل</button>
-    <button type="button" class="c-btn" onclick="openInvLog('purchase')">عمليات الشراء</button>
-    <button type="button" class="c-btn" onclick="openTreasury('all')">الخزنة</button>
-    <button type="button" class="c-btn" onclick="openProfitSec('item')">أرباح صنف</button>
-    <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف')">بيانات الأصناف</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('supplier','balances')">أرصدة الموردين</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('customer','balances')">أرصدة العملاء</button>
-    <button type="button" class="c-btn" onclick="openInvLog('sale')">عمليات البيع</button>
-    <button type="button" class="c-btn" onclick="openTreasury('in')">وارد الخزنة</button>
-    <button type="button" class="c-btn" onclick="openProfitSec('general')">الأرباح</button>
-    <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('supplier','statement')">كشف ح مورد</button>
-    <button type="button" class="c-btn" onclick="openPartyReport('customer','statement')">كشف ح عميل</button>
-    <button type="button" class="c-btn" onclick="openInvLog('sale',true)">مبيعات فترة</button>
-    <button type="button" class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
-    <button type="button" class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
-    <button type="button" class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
-    <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
-    <button type="button" class="c-btn" onclick="openStockFilter('all')">المخزن</button>
-    <button type="button" class="c-btn" onclick="openInvLog('purchase',true)">مشتريات فترة</button>
-    <button type="button" class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
-    <button type="button" class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
-  </div>
+<div class="app-shell" id="appShell">
+  <aside class="side-nav" id="sideNav" aria-label="القائمة الرئيسية">
+    <div class="side-brand"><span class="brand-mark">📚</span><div><strong>مكتبة النور</strong><small>نظام الإدارة</small></div></div>
+    <button class="nav-link selected" type="button" onclick="showHome()"><span class="nav-icon">⌂</span><span class="nav-label">الرئيسية</span></button>
+    <div class="nav-caption">العمليات اليومية</div>
+    <button class="nav-link" type="button" onclick="openInvoiceSec('sale')"><span class="nav-icon">🛒</span><span class="nav-label">فاتورة مبيعات</span></button>
+    <button class="nav-link" type="button" onclick="openInvoiceSec('purchase')"><span class="nav-icon">📥</span><span class="nav-label">فاتورة مشتريات</span></button>
+    <button class="nav-link" type="button" onclick="openPartySec('customer')"><span class="nav-icon">👥</span><span class="nav-label">العملاء</span></button>
+    <button class="nav-link" type="button" onclick="openPartySec('supplier')"><span class="nav-icon">🚚</span><span class="nav-label">الموردون</span></button>
+    <div class="nav-caption">الإدارة والتقارير</div>
+    <button class="nav-link" type="button" onclick="openSec('sec-items','📦 بيانات الأصناف')"><span class="nav-icon">📦</span><span class="nav-label">المخزون والأصناف</span></button>
+    <button class="nav-link" type="button" onclick="openTreasury('all')"><span class="nav-icon">💳</span><span class="nav-label">الخزنة والحسابات</span></button>
+    <button class="nav-link" type="button" onclick="openProfitSec('general')"><span class="nav-icon">📈</span><span class="nav-label">التقارير والأرباح</span></button>
+    <button class="nav-link" type="button" onclick="openSec('sec-settings','⚙️ إعدادات البرنامج')"><span class="nav-icon">⚙️</span><span class="nav-label">الإعدادات</span></button>
+    <div class="side-nav-foot"><span class="nav-status-dot"></span><span class="nav-label">البيانات محفوظة محلياً</span></div>
+  </aside>
+  <main class="main-content" id="mainContent">
+    <section class="home-dashboard" id="homeDashboard" aria-label="ملخص المبيعات الأسبوعية">
+      <div class="dashboard-heading"><div><span class="eyebrow">نظرة عامة</span><h2>ملخص نشاط المكتبة</h2><p>صافي المبيعات اليومية خلال آخر سبعة أيام</p></div><button class="act-btn bg-blue" type="button" onclick="openInvLog('sale',true)">عرض تقرير المبيعات ←</button></div>
+      <div id="salesChart" class="sales-chart" role="img" aria-label="رسم بياني لمبيعات آخر سبعة أيام"></div>
+    </section>
+    <div class="classic-panel" id="classicPanel">
+      <div class="section-heading"><div><span class="eyebrow">وصول سريع</span><h2>كل أدواتك في مكان واحد</h2></div><span class="section-hint">اضغط على أي بطاقة لفتح شاشة عائمة</span></div>
+      <section class="action-group"><h3><span>⚡</span> المهام السريعة</h3><div class="classic-top-row">
+        <button type="button" class="c-btn" onclick="openInvoiceSec('sale')">🛒 فاتورة مبيعات</button>
+        <button type="button" class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
+        <button type="button" class="c-btn" onclick="openSec('sec-items','📦 إضافة الأصناف')">📦 إضافة الأصناف</button>
+        <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 إضافة مجموعة')">📁 إضافة مجموعة</button>
+        <button type="button" class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
+        <button type="button" class="c-btn" onclick="openPartySec('supplier')">🚚 الموردون</button>
+        <button type="button" class="c-btn" onclick="openSec('sec-settings','🏢 بيانات المنشأة والإعدادات')">🏢 بيانات المنشأة</button>
+        <button type="button" class="c-btn" onclick="lockApp()">🔐 قفل الشاشة</button>
+      </div></section>
+      <div class="action-groups-grid">
+        <section class="action-group"><h3><span>📦</span> المخزون والأصناف</h3><div class="classic-grid">
+          <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف')">بيانات الأصناف</button>
+          <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 بيانات المجموعات')">بيانات المجموعات</button>
+          <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
+          <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
+          <button type="button" class="c-btn" onclick="openStockFilter('all')">المخزن</button>
+        </div></section>
+        <section class="action-group"><h3><span>🧾</span> الفواتير والحركة</h3><div class="classic-grid">
+          <button type="button" class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
+          <button type="button" class="c-btn" onclick="openInvLog('sale')">عمليات البيع</button>
+          <button type="button" class="c-btn" onclick="openInvLog('purchase')">عمليات الشراء</button>
+          <button type="button" class="c-btn" onclick="openInvLog('sale',true)">مبيعات فترة</button>
+          <button type="button" class="c-btn" onclick="openInvLog('purchase',true)">مشتريات فترة</button>
+        </div></section>
+        <section class="action-group"><h3><span>🤝</span> العملاء والموردون</h3><div class="classic-grid">
+          <button type="button" class="c-btn" onclick="openPartyReport('customer','moves')">حركة حساب عميل</button>
+          <button type="button" class="c-btn" onclick="openPartyReport('supplier','moves')">حركة حساب مورد</button>
+          <button type="button" class="c-btn" onclick="openPartyReport('customer','balances')">أرصدة العملاء</button>
+          <button type="button" class="c-btn" onclick="openPartyReport('supplier','balances')">أرصدة الموردين</button>
+          <button type="button" class="c-btn" onclick="openPartyReport('customer','statement')">كشف حساب عميل</button>
+          <button type="button" class="c-btn" onclick="openPartyReport('supplier','statement')">كشف حساب مورد</button>
+        </div></section>
+        <section class="action-group"><h3><span>💰</span> الخزنة والأرباح</h3><div class="classic-grid">
+          <button type="button" class="c-btn" onclick="openTreasury('all')">الخزنة</button>
+          <button type="button" class="c-btn" onclick="openTreasury('in')">وارد الخزنة</button>
+          <button type="button" class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
+          <button type="button" class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
+          <button type="button" class="c-btn" onclick="openProfitSec('item')">أرباح صنف</button>
+          <button type="button" class="c-btn" onclick="openProfitSec('general')">الأرباح</button>
+          <button type="button" class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
+          <button type="button" class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
+        </div></section>
+      </div>
+    </div>
+  </main>
 </div>
+<div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
 
 <div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
 <div class="workspace">
   <div class="win-header">
     <h2 id="winTitle">📦 شاشة الأصناف والمخازن</h2>
     <div class="win-header-actions">
+      <button type="button" class="act-btn win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة">－</button>
+      <button type="button" class="act-btn win-close" id="maximizeWindowButton" onclick="maximizeWorkspace()" aria-label="تكبير النافذة">□</button>
       <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
       <button type="button" class="act-btn win-close" onclick="closeWorkspace()" aria-label="إغلاق الصفحة العائمة">✕ إغلاق</button>
     </div>
@@ -692,6 +780,7 @@
             <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f3f5fb"></i><i style="background:#7956bd"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-mint" onclick="selectTheme('win11-mint')">Windows 11 — نعناعي <span class="theme-swatches"><i style="background:#188b7a"></i><i style="background:#eff7f5"></i><i style="background:#218e66"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-sunset" onclick="selectTheme('win11-sunset')">Windows 11 — غروب دافئ <span class="theme-swatches"><i style="background:#d0644e"></i><i style="background:#faf3f0"></i><i style="background:#8458a0"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="night" onclick="selectTheme('night')">الوضع الليلي <span class="theme-swatches"><i style="background:#111827"></i><i style="background:#263349"></i><i style="background:#818cf8"></i></span></button>
           </div>
           <div class="f-row"><label for="customAccent">لون الواجهة:</label><input type="color" id="customAccent" value="#2563eb" onchange="setCustomAccent(this.value)" style="max-width:90px;flex:0 0 90px"></div>
           <p class="scope-note">اختر ثيماً ثم عدّل اللون الأساسي كما تحب. يتم حفظ شكل الواجهة على هذا الجهاز.</p>
@@ -726,6 +815,8 @@
   </div>
 </div>
 </div>
+
+<div class="window-dock" id="windowDock" hidden><span>نافذة مفتوحة في الخلفية</span><button type="button" class="act-btn bg-blue" onclick="restoreWorkspace()">↗ استعادة النافذة</button></div>
 
 <div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-card">

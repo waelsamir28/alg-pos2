@@ -35,7 +35,13 @@ function notify(message) {
 function sessionToken() {
   try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(REMEMBERED_TOKEN_KEY) || ''; } catch { return ''; }
 }
-function setSyncStatus(message) { $('syncStatusBadge').textContent = message; }
+function setSyncStatus(message) {
+  const badge = $('syncStatusBadge'); badge.textContent = message;
+  const state = /متزامن مع/.test(message) ? 'synced' : /غير متاحة|تعارض|يحتاج إصلاح|لم تكتمل/.test(message) ? 'error' : 'local';
+  badge.dataset.state = state;
+  const navStatus = document.querySelector('.side-nav-foot .nav-label');
+  if (navStatus) navStatus.textContent = state === 'synced' ? 'متصل ومتزامن' : state === 'error' ? 'يحتاج مراجعة' : 'محفوظ على هذا الجهاز';
+}
 function readMeta() {
   try {
     const meta = JSON.parse(localStorage.getItem(META_KEY) || 'null');
@@ -108,10 +114,15 @@ function updateClock() {
   $('liveTime').textContent = now.toTimeString().slice(0, 8);
 }
 function initializeApp() {
-  applyAppearance(); loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI();
+  applyAppearance(); applySidebarPreference(); decorateActionButtons(); loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI();
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
+  $('sideNav').addEventListener('click', event => {
+    const link = event.target.closest('.nav-link'); if (!link) return;
+    document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('selected', item === link));
+    if (window.innerWidth <= 720) toggleSidebar(false);
+  });
   $('windowLayer').addEventListener('click', event => { if (event.target === $('windowLayer')) closeWorkspace(); });
   window.addEventListener('keydown', event => { if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) closeWorkspace(); });
 }
@@ -119,6 +130,7 @@ function openSec(secId, titleText) {
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
   $(secId)?.classList.add('active');
   $('windowLayer').classList.add('open');
+  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
   document.body.style.overflow = 'hidden';
   if (titleText) $('winTitle').textContent = titleText;
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
@@ -130,8 +142,22 @@ function openSec(secId, titleText) {
   if (secId === 'sec-profits') renderProfits();
 }
 function closeWorkspace() {
-  $('windowLayer').classList.remove('open');
+  $('windowLayer').classList.remove('open', 'minimized', 'maximized'); $('windowDock').hidden = true;
+  $('maximizeWindowButton').setAttribute('aria-label', 'تكبير النافذة'); $('maximizeWindowButton').textContent = '□';
   document.body.style.overflow = '';
+}
+function minimizeWorkspace() {
+  if (!$('windowLayer').classList.contains('open')) return;
+  $('windowLayer').classList.add('minimized'); $('windowDock').hidden = false; document.body.style.overflow = '';
+}
+function restoreWorkspace() {
+  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
+  document.body.style.overflow = 'hidden';
+}
+function maximizeWorkspace() {
+  const maximized = $('windowLayer').classList.toggle('maximized');
+  $('maximizeWindowButton').setAttribute('aria-label', maximized ? 'استعادة حجم النافذة' : 'تكبير النافذة');
+  $('maximizeWindowButton').textContent = maximized ? '❐' : '□';
 }
 function getAppearance() {
   try { return JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') || {}; } catch { return {}; }
@@ -141,15 +167,16 @@ function saveAppearance(settings) {
 }
 function applyAppearance() {
   const appearance = getAppearance();
-  const theme = ['vista-blue','vista-emerald','vista-rose','win11-indigo','win11-mint','win11-sunset'].includes(appearance.theme) ? appearance.theme : 'win11-indigo';
+  const theme = ['vista-blue','vista-emerald','vista-rose','win11-indigo','win11-mint','win11-sunset','night'].includes(appearance.theme) ? appearance.theme : 'win11-indigo';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
+  if ($('darkModeButton')) $('darkModeButton').textContent = theme === 'night' ? '☀️ إيقاف الوضع الليلي' : '🌙 الوضع الليلي';
   if (appearance.accent && /^#[0-9a-f]{6}$/i.test(appearance.accent)) {
     document.body.style.setProperty('--accent', appearance.accent);
     document.body.style.setProperty('--blue-win', appearance.accent);
     if ($('customAccent')) $('customAccent').value = appearance.accent;
   } else if ($('customAccent')) {
-    const defaults = { 'vista-blue': '#1687bd', 'vista-emerald': '#27865c', 'vista-rose': '#a34f78', 'win11-indigo': '#5b5bd6', 'win11-mint': '#188b7a', 'win11-sunset': '#d0644e' };
+    const defaults = { 'vista-blue': '#1687bd', 'vista-emerald': '#27865c', 'vista-rose': '#a34f78', 'win11-indigo': '#5b5bd6', 'win11-mint': '#188b7a', 'win11-sunset': '#d0644e', night: '#818cf8' };
     $('customAccent').value = defaults[theme];
   }
 }
@@ -161,6 +188,45 @@ function setCustomAccent(color) {
   const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
 }
 function toggleClassicGrid() { const p = $('classicPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
+function applySidebarPreference() {
+  const appearance = getAppearance();
+  $('appShell').classList.toggle('sidebar-collapsed', Boolean(appearance.sidebarCollapsed));
+}
+function toggleSidebar(force) {
+  const shell = $('appShell'), isMobile = window.matchMedia ? window.matchMedia('(max-width: 720px)').matches : window.innerWidth <= 720;
+  if (isMobile) {
+    const opening = force === undefined ? !shell.classList.contains('sidebar-open') : Boolean(force);
+    shell.classList.toggle('sidebar-open', opening); $('navScrim').hidden = !opening;
+    return;
+  }
+  const collapsed = force === undefined ? !shell.classList.contains('sidebar-collapsed') : Boolean(force);
+  shell.classList.toggle('sidebar-collapsed', collapsed);
+  const appearance = getAppearance(); appearance.sidebarCollapsed = collapsed; saveAppearance(appearance);
+}
+function showHome() {
+  closeWorkspace(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('selected', link.textContent.includes('الرئيسية')));
+  $('homeDashboard').scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+}
+function decorateActionButtons() {
+  document.querySelectorAll('.c-btn').forEach(button => {
+    const label = button.textContent.trim();
+    if (!label || button.querySelector('.button-icon')) return;
+    const handler = button.getAttribute('onclick') || '';
+    const icon = label.match(/^\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u)?.[0] ||
+      (handler.includes('openProfit') ? '📈' : handler.includes('openTreasury') ? '💰' : handler.includes('openParty') ? '👥' : handler.includes('openInvoice') || handler.includes('openInvLog') ? '🧾' : handler.includes('openStock') || label.includes('أصناف') ? '📦' : handler.includes('lockApp') ? '🔐' : '◈');
+    const cleanLabel = label.replace(/^\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*\s*/u, '').trim() || label;
+    const iconEl = document.createElement('span'); iconEl.className = 'button-icon'; iconEl.setAttribute('aria-hidden', 'true'); iconEl.textContent = icon;
+    const labelEl = document.createElement('span'); labelEl.className = 'button-label'; labelEl.textContent = cleanLabel;
+    button.replaceChildren(iconEl, labelEl);
+  });
+}
+function toggleDarkMode() {
+  const appearance = getAppearance();
+  if (appearance.theme === 'night') appearance.theme = appearance.previousTheme || 'win11-indigo';
+  else { appearance.previousTheme = appearance.theme || 'win11-indigo'; appearance.theme = 'night'; }
+  saveAppearance(appearance); applyAppearance();
+}
 function calculateTotalProfits(dFrom, dTo, itemFilter) {
   if (dFrom && dTo && dFrom > dTo) throw new Error('تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.');
   let sales = 0, cost = 0, expenses = 0;
@@ -184,6 +250,20 @@ function calculateTotalProfits(dFrom, dTo, itemFilter) {
   const gross = roundMoney(sales - cost);
   return { sales, cost, gross, expenses, net: roundMoney(gross - expenses), itemRows: [...itemMap.values()] };
 }
+function renderSalesChart() {
+  const chart = $('salesChart'); if (!chart) return;
+  const days = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); return date; });
+  const totals = days.map(date => {
+    const key = localDate(date);
+    return roundMoney(db.invoices.reduce((sum, invoice) => sum + (invoice.date === key ? (invoice.mode === 'sale' ? invoice.netTotal : invoice.mode === 'sale_return' ? -invoice.netTotal : 0) : 0), 0));
+  });
+  const scale = Math.max(1, ...totals.map(Math.abs));
+  chart.innerHTML = days.map((date, index) => {
+    const amount = totals[index], height = amount > 0 ? Math.max(7, Math.round((amount / scale) * 100)) : 3;
+    const label = new Intl.DateTimeFormat('ar-EG', { weekday: 'short' }).format(date);
+    return `<div class="chart-day" title="${esc(localDate(date))}: ${money(amount)} ج.م"><span class="chart-value">${money(amount)}</span><div class="chart-track"><i class="chart-bar" style="height:${height}%" aria-hidden="true"></i></div><span class="chart-label">${esc(label)}</span></div>`;
+  }).join('');
+}
 function updateDashboardKPIs() {
   const today = localDate();
   const cash = roundMoney(db.treasury.reduce((sum, t) => sum + (t.type === 'in' ? t.amount : -t.amount), 0));
@@ -191,6 +271,7 @@ function updateDashboardKPIs() {
   $('kpiCash').textContent = money(cash); $('kpiSalesToday').textContent = money(salesToday);
   $('kpiNetProfit').textContent = money(calculateTotalProfits().net);
   $('kpiLowStock').textContent = db.items.filter(i => i.qty <= i.minQty).length;
+  renderSalesChart();
 }
 function populateCategoriesSelect() {
   const previous = $('itemCategory').value;
@@ -797,7 +878,7 @@ function unlockApp() {
 
 // Explicit public API for the existing HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
-  openSec, closeWorkspace, selectTheme, setCustomAccent, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm,
+  openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm,
   renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem, showSingleItemProfit, printBarcodeLabel,
   addCategory, deleteCategory, openStockFilter, openInvoiceSec, changeInvoiceMode, updateInvoiceUI, loadReturnSource,
   addInvItemFromInput, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
