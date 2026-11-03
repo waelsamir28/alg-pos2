@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <title>نظام إدارة المكتبات والمبيعات الشامل - POS & ERP</title>
 <style>
   :root {
@@ -199,6 +202,71 @@
     #printAreaA5 .p-meta, #printAreaA5 .p-totals { display: flex; justify-content: space-between; gap: 6px; margin: 6px 0; }
     .no-print { display: none !important; }
   }
+
+  /* Modern Cairo interface and six selectable Windows-inspired palettes. */
+  :root { --teal-dark:#164e63; --teal-main:#0e7490; --teal-light:#ecfeff; --blue-win:#2563eb; --blue-light:#eff6ff; --red-accent:#dc2626; --green-btn:#059669; --orange-btn:#d97706; --purple-btn:#7c3aed; --bg-main:#f1f5f9; --text-dark:#172033; --surface:#fff; --line:#dbe3ee; --accent:var(--blue-win); --accent-soft:#eff6ff; --shadow:0 18px 55px rgba(15,23,42,.15); }
+  * { font-family:'Cairo',Tahoma,sans-serif !important; }
+  body { background:radial-gradient(ellipse at 12% 0%,#dbeafe 0,transparent 35%),var(--bg-main); color:var(--text-dark); }
+  body[data-theme="vista-blue"] { --bg-main:#e9f4f8; --text-dark:#173247; --surface:#f8fdff; --accent:#1687bd; --accent-soft:#e4f6fc; --blue-win:#1878a5; --teal-dark:#075c78; --teal-main:#1286a8; --green-btn:#2f9e73; --orange-btn:#d98b25; --purple-btn:#7860b7; --line:#b9dce9; }
+  body[data-theme="vista-emerald"] { --bg-main:#edf6ef; --text-dark:#17392b; --surface:#fbfffc; --accent:#27865c; --accent-soft:#e4f4e9; --blue-win:#27865c; --teal-dark:#185b42; --teal-main:#328c63; --green-btn:#218653; --orange-btn:#cf8428; --purple-btn:#6e60a6; --line:#c7dfce; }
+  body[data-theme="vista-rose"] { --bg-main:#f8eff3; --text-dark:#482638; --surface:#fffafd; --accent:#a34f78; --accent-soft:#f8eaf1; --blue-win:#a34f78; --teal-dark:#713653; --teal-main:#a9577d; --green-btn:#368768; --orange-btn:#c97935; --purple-btn:#8057a3; --line:#ead1dd; }
+  body[data-theme="win11-indigo"] { --bg-main:#f3f5fb; --text-dark:#1d2438; --surface:#fff; --accent:#5b5bd6; --accent-soft:#efefff; --blue-win:#5b5bd6; --teal-dark:#343b81; --teal-main:#555bc4; --green-btn:#258b68; --orange-btn:#d2812d; --purple-btn:#7956bd; --line:#dfe2f0; }
+  body[data-theme="win11-mint"] { --bg-main:#eff7f5; --text-dark:#193a36; --surface:#fff; --accent:#188b7a; --accent-soft:#e6f7f2; --blue-win:#188b7a; --teal-dark:#0b6259; --teal-main:#15947f; --green-btn:#218e66; --orange-btn:#cc8236; --purple-btn:#7062b0; --line:#cfe6df; }
+  body[data-theme="win11-sunset"] { --bg-main:#faf3f0; --text-dark:#3c2b2b; --surface:#fff; --accent:#d0644e; --accent-soft:#fff0eb; --blue-win:#d0644e; --teal-dark:#873f3c; --teal-main:#c45b4b; --green-btn:#40866c; --orange-btn:#d17b2d; --purple-btn:#8458a0; --line:#eedbd5; }
+  .top-utility-bar { background:rgba(15,23,42,.94); padding:10px max(18px,calc((100vw - 1500px)/2)); border-bottom:1px solid #ffffff18; }
+  .top-utility-bar > div:first-child { font-size:13px; }
+  .top-utility-bar .util-btns button { padding:8px 14px; border-radius:10px; margin:2px; transition:transform .18s,filter .18s; }
+  .top-utility-bar .util-btns button:hover,.act-btn:hover { transform:translateY(-2px); filter:brightness(1.06); }
+  .main-banner { margin:18px auto; max-width:1500px; border:0; border-radius:20px; padding:22px 26px; background:linear-gradient(120deg,var(--teal-dark),var(--accent),#4772b8); box-shadow:0 18px 40px color-mix(in srgb,var(--accent) 26%,transparent); gap:18px; }
+  .banner-info { text-align:right; }
+  .banner-info h1 { font-size:clamp(21px,2.2vw,32px); font-weight:900; }
+  .banner-info p { font-size:14px; font-weight:600; }
+  .banner-kpis { gap:8px; }
+  .kpi-box { background:#ffffff1b; border:1px solid #ffffff45; backdrop-filter:blur(8px); padding:9px 13px; border-radius:13px; }
+  .kpi-box strong { color:#fff; font-size:17px; }
+  .clock-box { border:1px solid #ffffff4d; border-radius:11px; background:#07172b55; }
+  .classic-panel { max-width:1500px; margin:18px auto 30px; padding:18px; background:transparent; border:0; }
+  .classic-top-row { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; border:0; padding:0; margin:0 0 14px; }
+  .classic-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+  .c-btn { color:var(--text-dark); background:var(--surface); border:1px solid var(--line); padding:14px 12px; border-radius:14px; text-align:center; box-shadow:0 4px 14px #0f172a0b; min-height:54px; font-size:13px; transition:all .18s ease; }
+  .c-btn::before { content:'›'; display:inline-grid; place-items:center; width:23px; height:23px; margin-left:8px; border-radius:8px; color:var(--accent); background:var(--accent-soft); font-size:20px; vertical-align:middle; }
+  .c-btn:hover,.c-btn.active { color:var(--accent); background:var(--surface); border-color:color-mix(in srgb,var(--accent) 45%,white); box-shadow:0 9px 22px color-mix(in srgb,var(--accent) 12%,transparent); transform:translateY(-2px); }
+  .c-btn.tall { grid-row:auto; display:block; font-size:14px; }
+  @media(max-width:950px){.classic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.classic-top-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-width:580px){.classic-grid,.classic-top-row{grid-template-columns:repeat(2,minmax(0,1fr))}.main-banner{margin:12px;padding:16px}.banner-info{text-align:center}.classic-panel{margin:12px;padding:8px}}
+  .window-layer { display:none; position:fixed; inset:0; z-index:5000; padding:22px; background:rgba(15,23,42,.48); backdrop-filter:blur(7px); align-items:center; justify-content:center; }
+  .window-layer.open { display:flex; animation:layerIn .16s ease-out; }
+  @keyframes layerIn { from{opacity:0} to{opacity:1} }
+  .workspace { width:min(1440px,100%); max-height:calc(100vh - 44px); margin:0; background:var(--surface); border:1px solid #ffffffaa; border-radius:20px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column; }
+  .win-header { background:linear-gradient(110deg,var(--teal-dark),var(--accent)); min-height:66px; padding:12px 20px; }
+  .win-header h2 { font-size:20px; font-weight:800; }
+  .win-header-actions { display:flex; gap:8px; align-items:center; }
+  .win-body { padding:20px; overflow:auto; }
+  .win-close { background:#ffffff20!important; border:1px solid #ffffff65!important; padding:8px 13px!important; border-radius:10px!important; color:#fff!important; }
+  .panel-box { background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:16px; box-shadow:0 5px 18px #0f172a08; }
+  .panel-title { background:var(--accent-soft); color:var(--accent); margin:-16px -16px 16px; padding:10px 16px; border-radius:14px 14px 0 0; font-size:14px; }
+  .f-row { gap:9px; margin-bottom:11px; }
+  .f-row label { color:#334155; }
+  .f-row input,.f-row select,.f-row textarea { border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-weight:500; }
+  .f-row input:focus,.f-row select:focus { outline:3px solid color-mix(in srgb,var(--accent) 20%,transparent); border-color:var(--accent); background:white; }
+  .act-btn { padding:9px 15px; border-radius:10px; transition:all .16s ease; }
+  .action-bar { background:var(--accent-soft); border:1px solid var(--line); border-radius:12px; }
+  .table-wrap { border:1px solid var(--line); border-radius:12px; }
+  th { background:var(--accent-soft); color:var(--text-dark); border-color:var(--line); }
+  td { border-color:var(--line); }
+  tbody tr:nth-child(even) { background:color-mix(in srgb,var(--accent-soft) 36%,white); }
+  tbody tr:hover { background:var(--accent-soft); }
+  .t-foot-bar { background:var(--accent-soft); border:1px solid var(--line); border-radius:12px; }
+  .t-foot-bar span { border:1px solid var(--line); border-radius:9px; }
+  .appearance-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:10px 0 16px; }
+  .theme-choice { text-align:right; color:var(--text-dark); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; }
+  .theme-choice[aria-pressed="true"] { border:2px solid var(--accent); background:var(--accent-soft); }
+  .theme-swatches { display:flex; gap:5px; margin-top:8px; }
+  .theme-swatches i { width:24px; height:10px; border-radius:5px; display:block; }
+  .store-details { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:10px; }
+  .store-details p { background:#ffffff18; border:1px solid #ffffff42; border-radius:9px; padding:4px 11px; }
+  @media(max-width:700px){.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.window-layer{padding:8px}.workspace{max-height:calc(100vh - 16px);border-radius:15px}.win-body{padding:12px}.win-header{padding:10px 14px}}
+
 </style>
 </head>
 <body>
@@ -222,8 +290,7 @@
   </div>
   <div class="banner-info">
     <h1 id="lblStoreName">مكتبة النور للأدوات المدرسية والكتب الخارجية</h1>
-    <p id="lblStoreAddress">العنوان: الشارع الرئيسي - بجوار المدرسة</p>
-    <p id="lblStorePhone">رقم الهاتف: 01000000000</p>
+    <div class="store-details"><p id="lblStoreAddress">📍 الشارع الرئيسي - بجوار المدرسة</p><p id="lblStorePhone">☎️ 01000000000</p></div>
   </div>
   <div class="clock-boxes">
     <div class="clock-box" id="liveDate">2025/01/01</div>
@@ -271,11 +338,13 @@
   </div>
 </div>
 
+<div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
 <div class="workspace">
   <div class="win-header">
     <h2 id="winTitle">📦 شاشة الأصناف والمخازن</h2>
-    <div>
+    <div class="win-header-actions">
       <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
+      <button type="button" class="act-btn win-close" onclick="closeWorkspace()" aria-label="إغلاق الصفحة العائمة">✕ إغلاق</button>
     </div>
   </div>
 
@@ -615,6 +684,19 @@
     <div id="sec-settings" class="sec-view">
       <div class="form-grid-2">
         <div class="panel-box">
+          <div class="panel-title">🎨 تخصيص البرنامج — ستة ثيمات مستوحاة من ويندوز</div>
+          <div class="appearance-grid" id="themeChoices">
+            <button type="button" class="theme-choice" data-theme-choice="vista-blue" onclick="selectTheme('vista-blue')">Vista — أزرق زجاجي <span class="theme-swatches"><i style="background:#1878a5"></i><i style="background:#e9f4f8"></i><i style="background:#2f9e73"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="vista-emerald" onclick="selectTheme('vista-emerald')">Vista — أخضر طبيعي <span class="theme-swatches"><i style="background:#27865c"></i><i style="background:#edf6ef"></i><i style="background:#cf8428"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="vista-rose" onclick="selectTheme('vista-rose')">Vista — وردي أنيق <span class="theme-swatches"><i style="background:#a34f78"></i><i style="background:#f8eff3"></i><i style="background:#8057a3"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f3f5fb"></i><i style="background:#7956bd"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="win11-mint" onclick="selectTheme('win11-mint')">Windows 11 — نعناعي <span class="theme-swatches"><i style="background:#188b7a"></i><i style="background:#eff7f5"></i><i style="background:#218e66"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="win11-sunset" onclick="selectTheme('win11-sunset')">Windows 11 — غروب دافئ <span class="theme-swatches"><i style="background:#d0644e"></i><i style="background:#faf3f0"></i><i style="background:#8458a0"></i></span></button>
+          </div>
+          <div class="f-row"><label for="customAccent">لون الواجهة:</label><input type="color" id="customAccent" value="#2563eb" onchange="setCustomAccent(this.value)" style="max-width:90px;flex:0 0 90px"></div>
+          <p class="scope-note">اختر ثيماً ثم عدّل اللون الأساسي كما تحب. يتم حفظ شكل الواجهة على هذا الجهاز.</p>
+        </div>
+        <div class="panel-box">
           <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة الـ A5)</div>
           <div class="f-row"><label>اسم المكتبة:</label><input type="text" id="setStoreName"></div>
           <div class="f-row"><label>العنوان:</label><input type="text" id="setStoreAddress"></div>
@@ -627,7 +709,8 @@
           <div class="panel-title">☁️ المزامنة المباشرة مع قاعدة بيانات Neon والنسخ الاحتياطي</div>
           <p style="margin:4px 0 10px 0; font-size:13px;">البرنامج مربوط بمسار <code>/api/sync</code> الخاص بقاعدة بيانات <strong>Neon PostgreSQL</strong> على Vercel. البيانات تُحفظ محلياً أولاً، والمزامنة تحتاج إعداد مفتاح الحماية.</p>
           <div class="f-row"><label for="setSyncKey">مفتاح المزامنة:</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
-          <p class="scope-note">يُحفظ المفتاح في جلسة هذا المتصفح فقط، ولا يدخل في النسخة الاحتياطية. قفل الشاشة ليس حماية للخادم؛ لا تشارك مفتاح المزامنة.</p>
+          <label style="display:flex;gap:8px;align-items:center;margin:8px 0;font-weight:700"><input type="checkbox" id="rememberSyncKey" checked> تذكّر كلمة مرور المزامنة على هذا الجهاز</label>
+          <p class="scope-note">عند التفعيل يُحفظ المفتاح في تخزين المتصفح على هذا الجهاز لتجنّب إدخاله كل مرة؛ لا تفعّله على جهاز مشترك. لا يدخل المفتاح في النسخ الاحتياطية. قفل الشاشة ليس حماية للخادم.</p>
           <div class="action-bar">
             <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات إلى Neon الآن</button>
             <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات من Neon الآن</button>
@@ -641,6 +724,7 @@
     </div>
 
   </div>
+</div>
 </div>
 
 <div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">

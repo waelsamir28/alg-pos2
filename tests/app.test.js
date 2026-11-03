@@ -185,9 +185,22 @@ test('conflict response does not overwrite local or advance revision', async t =
   assert.equal(JSON.parse(f.window.localStorage.getItem(META_KEY)).revision, 7); assert.match(f.$('syncStatusBadge').textContent, /تعارض/);
 });
 
+test('sections open as floating windows and Windows-inspired themes persist', async t => {
+  const f = await ready(t);
+  f.window.openSec('sec-items', 'الأصناف');
+  assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  assert.equal(f.$('sec-items').classList.contains('active'), true);
+  f.window.selectTheme('vista-emerald');
+  assert.equal(f.window.document.body.dataset.theme, 'vista-emerald');
+  assert.equal(JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_APPEARANCE`)).theme, 'vista-emerald');
+  f.window.closeWorkspace();
+  assert.equal(f.$('windowLayer').classList.contains('open'), false);
+});
+
 test('settings secret stays in session, blank PIN preserves existing and backup excludes token', async t => {
   const f = await ready(t, { db: seedDatabase() }); f.window.openSec('sec-settings'); f.fill('setSyncKey', 'secret-session-value'); f.fill('setPinCode', ''); f.window.saveSettings();
   assert.equal(f.saved().settings.pin, '1234'); assert.equal(f.window.sessionStorage.getItem(TOKEN_KEY), 'secret-session-value');
+  assert.equal(f.window.localStorage.getItem(`${DB_KEY}_REMEMBERED_TOKEN`), 'secret-session-value');
   const backup = await backupObject(f); assert.equal(JSON.stringify(backup).includes('secret-session-value'), false); assert.equal(f.$('setSyncKey').value, '');
   assert.equal(localDate().length, 10);
 });

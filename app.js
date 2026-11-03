@@ -5,6 +5,8 @@ import { code39Svg } from './lib/barcode.js';
 const DB_KEY = 'BOOKSTORE_POS_COMPLETE_DB_V2';
 const META_KEY = `${DB_KEY}_SYNC_META`;
 const TOKEN_KEY = `${DB_KEY}_SESSION_TOKEN`;
+const REMEMBERED_TOKEN_KEY = `${DB_KEY}_REMEMBERED_TOKEN`;
+const APPEARANCE_KEY = `${DB_KEY}_APPEARANCE`;
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -31,7 +33,7 @@ function notify(message) {
   box.hidden = false;
 }
 function sessionToken() {
-  try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+  try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(REMEMBERED_TOKEN_KEY) || ''; } catch { return ''; }
 }
 function setSyncStatus(message) { $('syncStatusBadge').textContent = message; }
 function readMeta() {
@@ -106,14 +108,18 @@ function updateClock() {
   $('liveTime').textContent = now.toTimeString().slice(0, 8);
 }
 function initializeApp() {
-  loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI();
+  applyAppearance(); loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI();
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
+  $('windowLayer').addEventListener('click', event => { if (event.target === $('windowLayer')) closeWorkspace(); });
+  window.addEventListener('keydown', event => { if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) closeWorkspace(); });
 }
 function openSec(secId, titleText) {
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
   $(secId)?.classList.add('active');
+  $('windowLayer').classList.add('open');
+  document.body.style.overflow = 'hidden';
   if (titleText) $('winTitle').textContent = titleText;
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
@@ -122,6 +128,37 @@ function openSec(secId, titleText) {
   if (secId === 'sec-invlog') renderInvLog();
   if (secId === 'sec-treasury') renderTreasury();
   if (secId === 'sec-profits') renderProfits();
+}
+function closeWorkspace() {
+  $('windowLayer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function getAppearance() {
+  try { return JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') || {}; } catch { return {}; }
+}
+function saveAppearance(settings) {
+  try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(settings)); } catch { notify('تعذر حفظ تفضيلات المظهر في المتصفح.'); }
+}
+function applyAppearance() {
+  const appearance = getAppearance();
+  const theme = ['vista-blue','vista-emerald','vista-rose','win11-indigo','win11-mint','win11-sunset'].includes(appearance.theme) ? appearance.theme : 'win11-indigo';
+  document.body.dataset.theme = theme;
+  document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
+  if (appearance.accent && /^#[0-9a-f]{6}$/i.test(appearance.accent)) {
+    document.body.style.setProperty('--accent', appearance.accent);
+    document.body.style.setProperty('--blue-win', appearance.accent);
+    if ($('customAccent')) $('customAccent').value = appearance.accent;
+  } else if ($('customAccent')) {
+    const defaults = { 'vista-blue': '#1687bd', 'vista-emerald': '#27865c', 'vista-rose': '#a34f78', 'win11-indigo': '#5b5bd6', 'win11-mint': '#188b7a', 'win11-sunset': '#d0644e' };
+    $('customAccent').value = defaults[theme];
+  }
+}
+function selectTheme(theme) {
+  const appearance = getAppearance(); appearance.theme = theme; saveAppearance(appearance); applyAppearance();
+}
+function setCustomAccent(color) {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+  const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
 }
 function toggleClassicGrid() { const p = $('classicPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
 function calculateTotalProfits(dFrom, dTo, itemFilter) {
@@ -609,16 +646,29 @@ function renderProfits() {
     $('profitsTbody').innerHTML = result.itemRows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(roundQuantity(r.qty))}</td><td>${money(r.rev)}</td><td>${money(r.cst)}</td><td>${money(r.rev - r.cst)}</td></tr>`).join('') || '<tr><td colspan="6">لا توجد مبيعات مطابقة للفترة المحددة.</td></tr>';
   } catch (error) { $('profitScopeNote').textContent = error.message; $('profitsTbody').innerHTML = ''; for (const id of ['profTotSales', 'profTotCost', 'profGross', 'profExpenses', 'profNet']) $(id).textContent = '—'; }
 }
-function applySettingsUI() { $('lblStoreName').textContent = db.settings.name; $('lblStoreAddress').textContent = db.settings.address; $('lblStorePhone').textContent = 'رقم الهاتف: ' + db.settings.phone; }
-function loadSettingsForm() { $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone; $('setPinCode').value = ''; $('setSyncKey').value = sessionToken(); }
+function applySettingsUI() {
+  $('lblStoreName').textContent = db.settings.name;
+  $('lblStoreAddress').textContent = '📍 ' + db.settings.address;
+  $('lblStorePhone').textContent = '☎️ ' + db.settings.phone;
+}
+function loadSettingsForm() {
+  $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone;
+  $('setPinCode').value = ''; $('setSyncKey').value = sessionToken();
+  $('rememberSyncKey').checked = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)) || !sessionToken();
+  applyAppearance();
+}
 function saveSettings() {
   const name = $('setStoreName').value.trim(), pin = $('setPinCode').value.trim(), token = $('setSyncKey').value.trim();
   if (!name) return alert('اسم المكتبة مطلوب.');
   if (pin && pin.length < 4) return alert('رقم قفل الشاشة يجب أن يكون أربعة أحرف على الأقل.');
   if (!commitDB(draft => { Object.assign(draft.settings, { name, address: $('setStoreAddress').value.trim(), phone: $('setStorePhone').value.trim(), ...(pin ? { pin } : {}) }); })) return;
-  try { if (token) sessionStorage.setItem(TOKEN_KEY, token); else sessionStorage.removeItem(TOKEN_KEY); }
-  catch { notify('لم يستطع المتصفح حفظ مفتاح المزامنة في الجلسة. لن تعمل المزامنة حتى تسمح بتخزين الجلسة.'); return; }
-  $('setSyncKey').value = ''; $('setPinCode').value = ''; applySettingsUI(); scheduleAutoSync(); alert('تم حفظ الإعدادات محلياً. مفتاح المزامنة محفوظ في جلسة المتصفح فقط.');
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token); else sessionStorage.removeItem(TOKEN_KEY);
+    if (token && $('rememberSyncKey').checked) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
+    else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+  } catch { notify('تعذر حفظ مفتاح المزامنة. اسمح بتخزين بيانات الموقع أو أوقف خيار التذكر.'); return; }
+  $('setSyncKey').value = ''; $('setPinCode').value = ''; applySettingsUI(); applyAppearance(); scheduleAutoSync();
+  alert(token && $('rememberSyncKey').checked ? 'تم حفظ الإعدادات، وسيظل مفتاح المزامنة محفوظاً على هذا الجهاز.' : 'تم حفظ الإعدادات. سيبقى مفتاح المزامنة لهذه الجلسة فقط.');
 }
 
 async function apiRequest(method, body, token) {
@@ -747,7 +797,7 @@ function unlockApp() {
 
 // Explicit public API for the existing HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
-  openSec, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm,
+  openSec, closeWorkspace, selectTheme, setCustomAccent, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm,
   renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem, showSingleItemProfit, printBarcodeLabel,
   addCategory, deleteCategory, openStockFilter, openInvoiceSec, changeInvoiceMode, updateInvoiceUI, loadReturnSource,
   addInvItemFromInput, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
