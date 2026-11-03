@@ -318,13 +318,22 @@
   @media(max-width:1050px){.app-shell{grid-template-columns:220px minmax(0,1fr);gap:12px;padding:0 12px}.action-groups-grid{grid-template-columns:1fr}.app-shell.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)}}
   @media(max-width:720px){.app-shell,.app-shell.sidebar-collapsed{display:block;padding:0 10px}.side-nav{position:fixed;top:0;bottom:0;right:0;width:min(290px,84vw);min-height:0;border-radius:0 0 0 20px;transform:translateX(110%);transition:transform .22s;z-index:7000}.app-shell.sidebar-open .side-nav{transform:translateX(0)}.sidebar-collapsed .side-brand>div,.sidebar-collapsed .nav-caption,.sidebar-collapsed .nav-label{display:block}.sidebar-collapsed .nav-link{justify-content:flex-start}.mobile-nav-scrim:not([hidden]){display:block;position:fixed;inset:0;background:#0b122077;z-index:6900}.main-banner{margin:12px}.home-dashboard,.classic-panel{padding:14px;border-radius:16px}.dashboard-heading,.section-heading{align-items:flex-start;flex-direction:column}.dashboard-heading .act-btn{align-self:stretch;justify-content:center}.chart-value{font-size:9px}.sales-chart{gap:4px;padding-inline:2px}.chart-label{font-size:9px}.chart-track{width:65%}.classic-top-row,.classic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.c-btn{min-height:62px;padding:8px;font-size:11px}.button-icon{width:30px;height:30px;flex-basis:30px}.top-utility-bar .util-btns button{padding:7px 9px}.window-dock{right:10px;left:10px;justify-content:space-between}.win-header-actions{flex-wrap:wrap}.win-header-actions .bg-teal{display:none}}
   @media(max-width:390px){.banner-kpis{display:grid;grid-template-columns:repeat(2,1fr)}.classic-top-row,.classic-grid{grid-template-columns:1fr}.chart-value{display:none}.clock-boxes{min-width:0}}
+  .system-alerts { display:flex;align-items:flex-start;gap:12px;margin-top:15px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--accent-soft); }
+  .system-alerts h3 { margin:0;white-space:nowrap;font-size:13px; }.system-alerts ul { display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none; }.system-alerts li button { border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text-dark);padding:5px 10px;font:inherit;font-size:11px;cursor:pointer; }.system-alerts li.alert-danger button { color:#be123c;border-color:#fda4af;background:#fff1f2; }.system-alerts li.alert-good { color:#047857;font-size:12px;padding:5px 10px; }
+  .user-session-button { border:1px solid #ffffff66;background:#ffffff20;color:#fff;padding:4px 10px;border-radius:999px;font:inherit;font-size:11px;cursor:pointer;margin-inline:6px; }
+  .keyboard-hint { width:100%;color:#778399;font-size:11px; }
+  .staff-audit-grid { display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:14px; }.staff-audit-grid .table-wrap { max-height:260px; }
+  .thermal-receipt { direction:rtl;color:#111;font-family:Cairo,Arial,sans-serif; }.thermal-receipt .receipt-head{text-align:center;border-bottom:1px dashed #222;padding-bottom:7px;margin-bottom:8px}.thermal-receipt h2{font-size:16px;margin:0 0 3px}.thermal-receipt p{margin:2px 0;font-size:10px}.thermal-receipt table{width:100%;border-collapse:collapse;font-size:10px}.thermal-receipt th,.thermal-receipt td{border-bottom:1px dashed #777;padding:4px 2px;text-align:right}.thermal-receipt .receipt-totals{border-top:1px dashed #222;margin-top:8px;padding-top:6px}.thermal-receipt .receipt-totals p{display:flex;justify-content:space-between;font-size:11px}.thermal-receipt .receipt-thanks{text-align:center;border-top:1px dashed #222;margin-top:8px;padding-top:7px}
+  body[data-theme="night"] .system-alerts li.alert-danger button { background:#351e2d;color:#fecdd3;border-color:#76374b; }
+  @media(max-width:700px){.staff-audit-grid{grid-template-columns:1fr}.system-alerts{display:block}.system-alerts h3{margin-bottom:8px}.keyboard-hint{font-size:10px}}
 
 </style>
+<style id="thermalPrintStyle"></style>
 </head>
 <body>
 
 <div class="top-utility-bar">
-  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" class="status-indicator" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span></div>
+  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" class="status-indicator" style="color:#fde047;" role="status">محفوظ على هذا الجهاز</span> <button type="button" class="user-session-button" id="activeUserBadge" onclick="lockApp()" title="تبديل المستخدم">المدير · مدير</button></div>
   <div class="util-btns">
     <button type="button" class="btn-view-mode" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰ القائمة</button>
     <button type="button" class="btn-view-mode" id="darkModeButton" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
@@ -372,6 +381,7 @@
     <section class="home-dashboard" id="homeDashboard" aria-label="ملخص المبيعات الأسبوعية">
       <div class="dashboard-heading"><div><span class="eyebrow">نظرة عامة</span><h2>ملخص نشاط المكتبة</h2><p>صافي المبيعات اليومية خلال آخر سبعة أيام</p></div><button class="act-btn bg-blue" type="button" onclick="openInvLog('sale',true)">عرض تقرير المبيعات ←</button></div>
       <div id="salesChart" class="sales-chart" role="img" aria-label="رسم بياني لمبيعات آخر سبعة أيام"></div>
+      <div class="system-alerts" id="systemAlerts" aria-live="polite"><h3>🔔 التنبيهات</h3><ul id="systemAlertsList"></ul></div>
     </section>
     <div class="classic-panel" id="classicPanel">
       <div class="section-heading"><div><span class="eyebrow">وصول سريع</span><h2>كل أدواتك في مكان واحد</h2></div><span class="section-hint">اضغط على أي بطاقة لفتح شاشة عائمة</span></div>
@@ -571,6 +581,7 @@
           <label style="min-width:50px">الكمية:</label>
           <input type="number" id="invAddQty" value="1" min="0.001" step="any" style="max-width:70px">
           <button type="button" class="act-btn bg-green" onclick="addInvItemFromInput()">+ أضف للفاتورة</button>
+          <small class="keyboard-hint">اختصارات: F2 بيع · Enter إضافة · F4 حفظ · Ctrl+Enter حفظ وطباعة · F6 تعليق · F8 استعادة</small>
         </div>
       </div>
 
@@ -604,7 +615,10 @@
 
       <div class="action-bar">
         <button type="button" class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة فاتورة (A5)</button>
+        <button type="button" class="act-btn bg-teal" onclick="saveInvoice('thermal')">🧾 حفظ وطباعة حرارية</button>
         <button type="button" class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط بدون طباعة</button>
+        <button type="button" class="act-btn bg-orange" onclick="holdCurrentInvoice()">⏸️ تعليق الفاتورة (F6)</button>
+        <button type="button" class="act-btn bg-purple" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled>↩ استعادة فاتورة معلقة (0)</button>
         <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تجهيز عرض السعر كفاتورة مبيعات</button>
         <button type="button" class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
       </div>
@@ -783,7 +797,8 @@
             <button type="button" class="theme-choice" data-theme-choice="night" onclick="selectTheme('night')">الوضع الليلي <span class="theme-swatches"><i style="background:#111827"></i><i style="background:#263349"></i><i style="background:#818cf8"></i></span></button>
           </div>
           <div class="f-row"><label for="customAccent">لون الواجهة:</label><input type="color" id="customAccent" value="#2563eb" onchange="setCustomAccent(this.value)" style="max-width:90px;flex:0 0 90px"></div>
-          <p class="scope-note">اختر ثيماً ثم عدّل اللون الأساسي كما تحب. يتم حفظ شكل الواجهة على هذا الجهاز.</p>
+          <div class="f-row"><label for="receiptWidth">عرض الطابعة الحرارية:</label><select id="receiptWidth" onchange="setReceiptWidth(this.value)"><option value="80">80 مم (موصى به)</option><option value="58">58 مم</option></select></div>
+          <p class="scope-note">اختر ثيماً ثم عدّل اللون الأساسي كما تحب. يتم حفظ شكل الواجهة وعرض الطباعة على هذا الجهاز.</p>
         </div>
         <div class="panel-box">
           <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة الـ A5)</div>
@@ -810,6 +825,21 @@
           </div>
         </div>
       </div>
+      <div class="staff-audit-grid">
+        <div class="panel-box" id="staffManagerPanel">
+          <div class="panel-title">👤 الموظفون والصلاحيات</div>
+          <p class="scope-note">أضف حسابات محلية للكاشير أو المخزن. صلاحيات الواجهة وسجل النشاط للتنظيم اليومي وليست حماية خادمية، والرقم السري محفوظ على هذا الجهاز فقط.</p>
+          <div class="f-row"><label for="staffNameInp">اسم الموظف:</label><input id="staffNameInp" type="text" autocomplete="off"></div>
+          <div class="f-row"><label for="staffPinInp">رقم سري:</label><input id="staffPinInp" type="password" autocomplete="new-password" placeholder="٤ أحرف/أرقام على الأقل"></div>
+          <div class="f-row"><label for="staffRoleInp">الصلاحية:</label><select id="staffRoleInp"><option value="cashier">كاشير — مبيعات وعملاء</option><option value="inventory">مخزن — أصناف ومشتريات</option></select><button type="button" class="act-btn bg-green" onclick="saveStaff()">إضافة موظف</button></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الصلاحية</th><th>النوع</th><th>إجراء</th></tr></thead><tbody id="staffTbody"></tbody></table></div>
+        </div>
+        <div class="panel-box">
+          <div class="panel-title">🧾 سجل النشاط (آخر ٥٠ حركة)</div>
+          <p class="scope-note">يسجل اسم الحساب ونوع التعديل دون حفظ كلمات المرور أو مفاتيح المزامنة.</p>
+          <div class="table-wrap"><table><thead><tr><th>الوقت</th><th>المستخدم</th><th>النشاط</th></tr></thead><tbody id="auditTbody"></tbody></table></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -820,8 +850,9 @@
 
 <div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-card">
-    <h3 id="lockTitle">🔒 قفل شاشة التطبيق</h3>
-    <p>أدخل الرقم السري لفتح النظام (الافتراضي: 1234)</p>
+    <h3 id="lockTitle">🔒 دخول المستخدم</h3>
+    <p>اختر حساب الموظف وأدخل رقمه السري لفتح النظام أو تبديل المستخدم.</p>
+    <label for="loginStaffSelect">المستخدم:</label><select id="loginStaffSelect" style="width:100%;padding:9px;margin:6px 0 10px;border-radius:9px;"></select>
     <input type="password" id="unlockPinInp" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}" style="width:100%; padding:8px; font-size:18px; text-align:center; margin-bottom:10px;">
     <button type="button" class="act-btn bg-green" style="width:100%; justify-content:center;" onclick="unlockApp()">دخول</button>
   </div>
