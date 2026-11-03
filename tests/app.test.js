@@ -204,6 +204,41 @@ test('dashboard, responsive navigation, window controls and themes work', async 
   f.window.closeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('open'), false);
 });
 
+test('staff roles allow cashier sales but block inventory and manager-only settings', async t => {
+  const f = await ready(t);
+  f.window.openSec('sec-settings', 'الإعدادات');
+  f.fill('staffNameInp', 'أحمد'); f.fill('staffPinInp', '5678'); f.fill('staffRoleInp', 'cashier'); f.window.saveStaff();
+  const employee = JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_STAFF`))[0];
+  f.window.lockApp(); f.fill('loginStaffSelect', employee.id); f.fill('unlockPinInp', '5678'); f.window.unlockApp();
+  assert.match(f.$('activeUserBadge').textContent, /أحمد/);
+  f.window.openInvoiceSec('sale'); assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  f.window.openInvoiceSec('purchase'); assert.match(f.$('appNotice').textContent, /غير متاحة/);
+  f.window.openSec('sec-items', 'الأصناف'); assert.notEqual(f.$('sec-items').classList.contains('active'), true);
+  f.window.openSec('sec-settings', 'الإعدادات'); assert.notEqual(f.$('sec-settings').classList.contains('active'), true);
+});
+
+test('cashier can hold and restore a draft, thermal receipt uses configured paper width', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale'); addLine(f, '1001', 2);
+  f.window.holdCurrentInvoice(); assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+  assert.equal(f.$('restoreHeldButton').disabled, false);
+  f.window.restoreHeldInvoice(); assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+  assert.equal(f.$('restoreHeldButton').disabled, true);
+  f.window.saveInvoice('thermal');
+  assert.match(f.prints.at(-1), /thermal-receipt/);
+  assert.match(f.$('thermalPrintStyle').textContent, /80mm/);
+});
+
+test('alerts and audit history update without storing credential values', async t => {
+  const db = seedDatabase(); db.items[0].qty = 1;
+  const f = await ready(t, { db });
+  assert.match(f.$('systemAlertsList').textContent, /حد الطلب/);
+  f.fill('itemName', 'قلم رصاص'); f.window.saveItem();
+  const audit = JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_AUDIT`));
+  assert.ok(audit.length);
+  assert.equal(JSON.stringify(audit).includes('1234'), false);
+});
+
 test('settings secret stays in session, blank PIN preserves existing and backup excludes token', async t => {
   const f = await ready(t, { db: seedDatabase() }); f.window.openSec('sec-settings'); f.fill('setSyncKey', 'secret-session-value'); f.fill('setPinCode', ''); f.window.saveSettings();
   assert.equal(f.saved().settings.pin, '1234'); assert.equal(f.window.sessionStorage.getItem(TOKEN_KEY), 'secret-session-value');

@@ -7,6 +7,10 @@ const META_KEY = `${DB_KEY}_SYNC_META`;
 const TOKEN_KEY = `${DB_KEY}_SESSION_TOKEN`;
 const REMEMBERED_TOKEN_KEY = `${DB_KEY}_REMEMBERED_TOKEN`;
 const APPEARANCE_KEY = `${DB_KEY}_APPEARANCE`;
+const STAFF_KEY = `${DB_KEY}_STAFF`;
+const AUDIT_KEY = `${DB_KEY}_AUDIT`;
+const HELD_CARTS_KEY = `${DB_KEY}_HELD_CARTS`;
+const ACTIVE_STAFF_KEY = `${DB_KEY}_ACTIVE_STAFF`;
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -26,7 +30,81 @@ let syncBusy = false;
 let lastInvoiceMode = 'sale';
 let beforeLockFocus = null;
 let clockTimer;
+let activeStaffId = 'owner';
+let staffSession = null;
 
+function safeReadArray(key) {
+  try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; } catch { return []; }
+}
+function staffList() {
+  const employees = safeReadArray(STAFF_KEY).filter(user => user && user.id && user.role !== 'admin');
+  return [{ id: 'owner', name: db.settings.name || 'المدير', role: 'admin', pin: db.settings.pin || '1234' }, ...employees];
+}
+function activeStaff() { return staffList().find(user => user.id === activeStaffId) || staffList()[0]; }
+function isAdmin() { return activeStaff().role === 'admin'; }
+function can(permission) {
+  if (isAdmin()) return true;
+  const roles = {
+    cashier: ['sale', 'sale-return', 'quote', 'customer', 'sales-log', 'cash'],
+    inventory: ['inventory', 'purchase', 'supplier', 'purchase-log', 'stock']
+  };
+  return (roles[activeStaff().role] || []).includes(permission);
+}
+function ensurePermission(permission) {
+  if (can(permission)) return true;
+  notify(`هذه العملية غير متاحة لحساب «${activeStaff().name}». اطلب من المدير تغيير الصلاحية.`);
+  return false;
+}
+function updateActiveUserBadge() {
+  const badge = $('activeUserBadge'); if (badge) badge.textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
+}
+function roleLabel(role) { return ({ admin: 'مدير', cashier: 'كاشير', inventory: 'مخزن' })[role] || 'موظف'; }
+function recordAudit(action) {
+  try {
+    const entries = safeReadArray(AUDIT_KEY);
+    entries.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, time: new Date().toLocaleString('ar-EG'), user: activeStaff().name, role: activeStaff().role, action: String(action).slice(0, 180) });
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(entries.slice(0, 500)));
+  } catch { /* Audit storage must never prevent a business transaction from saving. */ }
+}
+function recordDBAudit(previous, next) {
+  const changed = [];
+  for (const [key, label] of [['items','الأصناف والمخزون'], ['invoices','الفواتير'], ['parties','حسابات العملاء والموردين'], ['treasury','حركات الخزنة'], ['categories','المجموعات'], ['settings','الإعدادات']]) {
+    if (JSON.stringify(previous[key]) !== JSON.stringify(next[key])) changed.push(label);
+  }
+  if (changed.length) recordAudit(`تعديل: ${changed.join('، ')}`);
+}
+function renderStaffTable() {
+  const body = $('staffTbody'); if (!body) return;
+  const employees = safeReadArray(STAFF_KEY);
+  body.innerHTML = `<tr><td>1</td><td>${esc(db.settings.name || 'المدير')}</td><td>مدير</td><td>حساب المالك</td><td>—</td></tr>` + employees.map((user, index) => `<tr><td>${index + 2}</td><td>${esc(user.name)}</td><td>${roleLabel(user.role)}</td><td>مستخدم محلي</td><td><button type="button" class="act-btn bg-red" onclick="deleteStaff('${encodeURIComponent(user.id)}')">حذف</button></td></tr>`).join('');
+}
+function renderAuditTable() {
+  const body = $('auditTbody'); if (!body) return;
+  body.innerHTML = safeReadArray(AUDIT_KEY).slice(0, 50).map(entry => `<tr><td>${esc(entry.time)}</td><td>${esc(entry.user)} (${roleLabel(entry.role)})</td><td>${esc(entry.action)}</td></tr>`).join('') || '<tr><td colspan="3">لا توجد حركات مسجلة بعد.</td></tr>';
+}
+function saveStaff() {
+  if (!ensurePermission('admin')) return;
+  const name = $('staffNameInp').value.trim(), pin = $('staffPinInp').value.trim(), role = $('staffRoleInp').value;
+  if (name.length < 2 || pin.length < 4) return alert('أدخل اسم الموظف ورقماً سرياً من 4 أحرف/أرقام على الأقل.');
+  if (!['cashier', 'inventory'].includes(role)) return alert('اختر صلاحية موظف صحيحة.');
+  const users = safeReadArray(STAFF_KEY), id = `staff-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  users.push({ id, name, pin, role });
+  try { localStorage.setItem(STAFF_KEY, JSON.stringify(users)); }
+  catch { return alert('تعذر حفظ بيانات الموظف في المتصفح.'); }
+  $('staffNameInp').value = ''; $('staffPinInp').value = ''; renderStaffTable(); recordAudit(`إضافة مستخدم موظف بصلاحية ${roleLabel(role)}`);
+}
+function deleteStaff(id) {
+  if (!ensurePermission('admin')) return;
+  try { id = decodeURIComponent(id); } catch { return; }
+  if (!confirm('حذف حساب الموظف؟')) return;
+  const users = safeReadArray(STAFF_KEY).filter(user => user.id !== id);
+  localStorage.setItem(STAFF_KEY, JSON.stringify(users));
+  if (activeStaffId === id) { activeStaffId = 'owner'; try { sessionStorage.setItem(ACTIVE_STAFF_KEY, 'owner'); } catch { /* Keep the local active manager session. */ } }
+  updateActiveUserBadge(); renderStaffTable(); recordAudit('حذف حساب موظف');
+}
+function renderHeldCount() {
+  const button = $('restoreHeldButton'); if (button) { const count = safeReadArray(HELD_CARTS_KEY).length; button.textContent = `↩ استعادة فاتورة معلقة (${count})`; button.disabled = !count; }
+}
 function notify(message) {
   const box = $('appNotice');
   box.innerHTML = `<button type="button" aria-label="إغلاق التنبيه" onclick="this.parentElement.hidden=true">×</button>${esc(message)}`;
@@ -41,6 +119,7 @@ function setSyncStatus(message) {
   badge.dataset.state = state;
   const navStatus = document.querySelector('.side-nav-foot .nav-label');
   if (navStatus) navStatus.textContent = state === 'synced' ? 'متصل ومتزامن' : state === 'error' ? 'يحتاج مراجعة' : 'محفوظ على هذا الجهاز';
+  renderSystemAlerts();
 }
 function readMeta() {
   try {
@@ -78,7 +157,9 @@ function persistDB(candidate, { sync = true } = {}) {
     const next = normalizeDatabase(candidate, { strict: false });
     const meta = { ...syncMeta, dirty: true };
     writeLocalState(next, meta);
+    const previousDB = db;
     db = next; localVersion += 1; syncMeta = meta;
+    recordDBAudit(previousDB, next);
     updateDashboardKPIs();
     setSyncStatus(sessionToken() ? 'محفوظ محلياً — في انتظار المزامنة' : 'محفوظ محلياً — المزامنة غير مفعلة');
     if (sync) scheduleAutoSync();
@@ -114,7 +195,7 @@ function updateClock() {
   $('liveTime').textContent = now.toTimeString().slice(0, 8);
 }
 function initializeApp() {
-  applyAppearance(); applySidebarPreference(); decorateActionButtons(); loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI();
+  applyAppearance(); applySidebarPreference(); decorateActionButtons(); loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode(); updateInvoiceUI(); updateActiveUserBadge(); renderHeldCount(); renderSystemAlerts();
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
@@ -124,9 +205,24 @@ function initializeApp() {
     if (window.innerWidth <= 720) toggleSidebar(false);
   });
   $('windowLayer').addEventListener('click', event => { if (event.target === $('windowLayer')) closeWorkspace(); });
-  window.addEventListener('keydown', event => { if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) closeWorkspace(); });
+  window.addEventListener('keydown', event => {
+    if ($('lockModal').style.display === 'flex') return;
+    if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) { closeWorkspace(); return; }
+    if (event.key === 'F2') { event.preventDefault(); openInvoiceSec('sale'); $('invBarcodeInp').focus(); return; }
+    if (event.key === 'F4' && $('windowLayer').classList.contains('open') && $('sec-invoice').classList.contains('active')) { event.preventDefault(); saveInvoice(false); return; }
+    if (event.key === 'F6' && $('windowLayer').classList.contains('open') && $('sec-invoice').classList.contains('active')) { event.preventDefault(); holdCurrentInvoice(); return; }
+    if (event.key === 'F8') { event.preventDefault(); restoreHeldInvoice(); return; }
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && $('sec-invoice').classList.contains('active')) { event.preventDefault(); saveInvoice('thermal'); }
+  });
+  let rememberedStaff = '';
+  try { rememberedStaff = sessionStorage.getItem(ACTIVE_STAFF_KEY) || ''; } catch { /* Session storage may be disabled. */ }
+  if (staffList().some(user => user.id === rememberedStaff)) { activeStaffId = rememberedStaff; updateActiveUserBadge(); }
+  else { activeStaffId = 'owner'; lockApp(); }
 }
 function openSec(secId, titleText) {
+  const permission = ({ 'sec-items': 'inventory', 'sec-categories': 'inventory', 'sec-stock': 'stock', 'sec-settings': 'admin', 'sec-profits': 'admin', 'sec-treasury': 'cash' })[secId];
+  if (permission && !ensurePermission(permission)) return;
+  if (secId === 'sec-parties' && !ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
   $(secId)?.classList.add('active');
   $('windowLayer').classList.add('open');
@@ -186,6 +282,10 @@ function selectTheme(theme) {
 function setCustomAccent(color) {
   if (!/^#[0-9a-f]{6}$/i.test(color)) return;
   const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
+}
+function setReceiptWidth(width) {
+  if (!['58', '80'].includes(String(width))) return;
+  const appearance = getAppearance(); appearance.receiptWidth = String(width); saveAppearance(appearance);
 }
 function toggleClassicGrid() { const p = $('classicPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
 function applySidebarPreference() {
@@ -264,6 +364,20 @@ function renderSalesChart() {
     return `<div class="chart-day" title="${esc(localDate(date))}: ${money(amount)} ج.م"><span class="chart-value">${money(amount)}</span><div class="chart-track"><i class="chart-bar" style="height:${height}%" aria-hidden="true"></i></div><span class="chart-label">${esc(label)}</span></div>`;
   }).join('');
 }
+function renderSystemAlerts() {
+  const list = $('systemAlertsList'); if (!list) return;
+  const low = db.items.filter(item => item.qty <= item.minQty).length;
+  const customers = db.parties.filter(party => party.type === 'customer' && party.balance > 0).length;
+  const suppliers = db.parties.filter(party => party.type === 'supplier' && party.balance > 0).length;
+  const status = $('syncStatusBadge')?.dataset.state;
+  const alerts = [];
+  if (low) alerts.push(`<li class="alert-danger"><button type="button" onclick="openStockFilter('low')">⚠️ ${low} صنف عند حد الطلب أو أقل</button></li>`);
+  if (customers) alerts.push(`<li class="alert-danger"><button type="button" onclick="openPartyReport('customer','balances')">👥 أرصدة مستحقة على ${customers} عميل</button></li>`);
+  if (suppliers) alerts.push(`<li><button type="button" onclick="openPartyReport('supplier','balances')">🚚 أرصدة ${suppliers} مورد</button></li>`);
+  if (status === 'error') alerts.push('<li class="alert-danger"><button type="button" onclick="openSec(\'sec-settings\',\'⚙️ إعدادات المزامنة\')">☁️ فشل/تعارض مزامنة — راجع الإعدادات</button></li>');
+  if (!alerts.length) alerts.push('<li class="alert-good">لا توجد تنبيهات عاجلة حالياً ✅</li>');
+  list.innerHTML = alerts.join('');
+}
 function updateDashboardKPIs() {
   const today = localDate();
   const cash = roundMoney(db.treasury.reduce((sum, t) => sum + (t.type === 'in' ? t.amount : -t.amount), 0));
@@ -279,6 +393,7 @@ function populateCategoriesSelect() {
   if (db.categories.includes(previous)) $('itemCategory').value = previous;
 }
 function quickAddCategory() {
+  if (!ensurePermission('inventory')) return;
   const name = prompt('أدخل اسم المجموعة الجديدة:')?.trim();
   if (!name) return;
   if (db.categories.some(c => c.toLocaleLowerCase() === name.toLocaleLowerCase())) return alert('المجموعة موجودة بالفعل.');
@@ -316,6 +431,7 @@ function readItemForm() {
   return item;
 }
 function saveItem() {
+  if (!ensurePermission('inventory')) return;
   try {
     const item = readItemForm();
     if (commitDB(draft => { const index = draft.items.findIndex(i => i.id === item.id); if (index < 0) draft.items.push(item); else draft.items[index] = item; })) {
@@ -345,7 +461,7 @@ function renderItemsTable() {
   $('totItemsCount').textContent = list.length; $('totItemsBuy').textContent = money(totBuy); $('totItemsSell').textContent = money(totSell);
 }
 function inlineUpdateItem(id, field, value) {
-  if (!['name', 'qty', 'buy', 'sell', 'wholesale'].includes(field)) return;
+  if (!ensurePermission('inventory') || !['name', 'qty', 'buy', 'sell', 'wholesale'].includes(field)) return;
   const item = db.items.find(i => i.id === id);
   if (!item) return;
   if (field !== 'name' && value.trim() === '') { alert('لا تترك القيمة الرقمية فارغة.'); renderItemsTable(); return; }
@@ -363,6 +479,7 @@ function editItem(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function deleteItem(id) {
+  if (!ensurePermission('inventory')) return;
   if (db.invoices.some(inv => inv.items.some(c => c.id === id))) return alert('لا يمكن حذف صنف له فواتير؛ حفاظاً على سجل المبيعات والتكلفة. يمكنك تعديل بياناته بدلاً من حذفه.');
   if (invCart.some(c => c.id === id)) return alert('احذف الصنف من الفاتورة المفتوحة أولاً.');
   if (confirm('هل تريد حذف هذا الصنف نهائياً؟') && commitDB(draft => { draft.items = draft.items.filter(i => i.id !== id); })) {
@@ -381,11 +498,13 @@ function renderCategoriesTable() {
   document.querySelector('#sec-categories th:last-child').classList.add('no-print');
 }
 function addCategory() {
+  if (!ensurePermission('inventory')) return;
   const name = $('catNameInp').value.trim(); if (!name) return alert('أدخل اسم المجموعة.');
   if (db.categories.some(c => c.toLocaleLowerCase() === name.toLocaleLowerCase())) return alert('المجموعة موجودة بالفعل.');
   if (commitDB(draft => { draft.categories.push(name); })) { $('catNameInp').value = ''; renderCategoriesTable(); populateCategoriesSelect(); }
 }
 function deleteCategory(index) {
+  if (!ensurePermission('inventory')) return;
   const category = db.categories[index]; if (!category) return;
   if (db.items.some(i => i.cat === category)) return alert('لا يمكن حذف مجموعة مرتبطة بأصناف. انقل الأصناف إلى مجموعة أخرى أولاً.');
   if (confirm(`حذف المجموعة «${category}»؟`) && commitDB(draft => { draft.categories.splice(index, 1); })) { renderCategoriesTable(); populateCategoriesSelect(); }
@@ -397,12 +516,17 @@ function openStockFilter(filter) {
 }
 
 function openInvoiceSec(mode) {
+  const permission = mode.startsWith('purchase') ? 'purchase' : mode === 'quote' ? 'quote' : mode === 'sale_return' ? 'sale-return' : 'sale';
+  if (!ensurePermission(permission)) return;
   if (mode !== $('invMode').value && invCart.length && !confirm('تغيير نوع العملية سيفرغ الفاتورة غير المحفوظة. هل تريد المتابعة؟')) return;
   openSec('sec-invoice', '🧾 شاشة الفواتير وعروض الأسعار');
   if (mode !== $('invMode').value) clearInvCart();
   $('invMode').value = mode; updateInvoiceUI();
+  window.setTimeout(() => { if ($('windowLayer').classList.contains('open')) $('invBarcodeInp').focus(); }, 0);
 }
 function changeInvoiceMode(mode) {
+  const permission = mode.startsWith('purchase') ? 'purchase' : mode === 'quote' ? 'quote' : mode === 'sale_return' ? 'sale-return' : 'sale';
+  if (!ensurePermission(permission)) { $('invMode').value = lastInvoiceMode; return; }
   if (mode !== lastInvoiceMode && invCart.length && !confirm('تغيير نوع العملية سيفرغ الفاتورة غير المحفوظة. هل تريد المتابعة؟')) { $('invMode').value = lastInvoiceMode; return; }
   if (mode !== lastInvoiceMode) clearInvCart();
   updateInvoiceUI();
@@ -452,6 +576,8 @@ function loadReturnSource() {
   renderInvCart();
 }
 function addInvItemFromInput() {
+  const modePermission = $('invMode').value.startsWith('purchase') ? 'purchase' : $('invMode').value === 'quote' ? 'quote' : $('invMode').value === 'sale_return' ? 'sale-return' : 'sale';
+  if (!ensurePermission(modePermission)) return;
   const value = $('invBarcodeInp').value.trim(), qty = num('invAddQty'), mode = $('invMode').value;
   if (!value) return alert('اختر الصنف أو اكتب كود الصنف أولاً.');
   if (!Number.isFinite(qty) || qty <= 0) return alert('الكمية يجب أن تكون أكبر من صفر.');
@@ -468,7 +594,7 @@ function addInvItemFromInput() {
     if (existing) existing.qty = roundQuantity(existing.qty + qty);
     else invCart.push({ id: item.id, code: item.code, name: item.name, qty, price, discPct: 0, buyCost: item.buy, minSell: item.minSell });
   }
-  $('invBarcodeInp').value = ''; $('invAddQty').value = 1; renderInvCart();
+  $('invBarcodeInp').value = ''; $('invAddQty').value = 1; renderInvCart(); $('invBarcodeInp').focus();
 }
 function updateCartPricesByTier() {
   if (!['sale', 'quote'].includes($('invMode').value)) return;
@@ -515,12 +641,45 @@ function calcInvoiceRemaining() { $('invRemainAmount').value = money(Number($('i
 function clearInvCart() {
   invCart = []; delete $('invCartTbody').dataset.quoteId; $('invDiscAmount').value = 0; $('invDiscPct').value = 0; $('invReturnSource').value = ''; $('invBarcodeInp').value = ''; $('invAddQty').value = 1; renderInvCart();
 }
+function holdCurrentInvoice() {
+  if (!invCart.length) return alert('لا توجد أصناف لتعليقها.');
+  if ($('invMode').value.endsWith('_return')) return alert('تعليق فواتير المرتجعات غير متاح حالياً.');
+  const held = safeReadArray(HELD_CARTS_KEY);
+  held.unshift({ id: `held-${Date.now()}`, time: new Date().toLocaleString('ar-EG'), user: activeStaff().name, mode: $('invMode').value,
+    items: clone(invCart), partyId: $('invPartySelect').value, priceTier: $('invPriceTier').value, payType: $('invPayType').value,
+    paid: $('invPaidAmount').value, discountAmount: $('invDiscAmount').value, discountPct: $('invDiscPct').value,
+    quoteId: $('invCartTbody').dataset.quoteId || '' });
+  try { localStorage.setItem(HELD_CARTS_KEY, JSON.stringify(held.slice(0, 50))); }
+  catch { return alert('تعذر تعليق الفاتورة في تخزين المتصفح.'); }
+  recordAudit(`تعليق فاتورة مؤقتة (${invCart.length} صنف)`);
+  clearInvCart(); renderHeldCount(); alert('تم تعليق الفاتورة مؤقتاً على هذا الجهاز.');
+}
+function restoreHeldInvoice(index = 0) {
+  const held = safeReadArray(HELD_CARTS_KEY), draft = held[index];
+  if (!draft) return alert('لا توجد فواتير معلقة لاستعادتها.');
+  const permission = String(draft.mode).startsWith('purchase') ? 'purchase' : draft.mode === 'quote' ? 'quote' : 'sale';
+  if (!ensurePermission(permission)) return;
+  if (invCart.length && !confirm('استعادة الفاتورة المعلقة ستستبدل المسودة الحالية. هل تريد المتابعة؟')) return;
+  if (!Array.isArray(draft.items) || !draft.items.every(line => db.items.some(item => item.id === line.id) && Number.isFinite(Number(line.qty)) && line.qty > 0)) return alert('الفاتورة المعلقة غير صالحة أو تحتوي أصنافاً لم تعد موجودة.');
+  openSec('sec-invoice', '🧾 استعادة فاتورة معلقة');
+  $('invMode').value = draft.mode; updateInvoiceUI();
+  invCart = clone(draft.items);
+  if ([...$('invPartySelect').options].some(option => option.value === String(draft.partyId))) $('invPartySelect').value = String(draft.partyId);
+  $('invPriceTier').value = draft.priceTier || 'retail'; $('invPayType').value = draft.payType || 'cash';
+  $('invPaidAmount').value = draft.paid || '0'; $('invDiscAmount').value = draft.discountAmount || '0'; $('invDiscPct').value = draft.discountPct || '0';
+  if (draft.quoteId) $('invCartTbody').dataset.quoteId = String(draft.quoteId);
+  renderInvCart();
+  held.splice(index, 1); localStorage.setItem(HELD_CARTS_KEY, JSON.stringify(held)); renderHeldCount();
+  recordAudit('استعادة فاتورة معلقة'); $('invBarcodeInp').focus();
+}
 function convertQuoteToSale() {
+  if (!ensurePermission('sale')) return;
   if (!invCart.length) return alert('أضف أصناف عرض السعر أولاً.');
   $('invMode').value = 'sale'; $('invPayType').value = 'cash'; updateInvoiceUI();
   alert('تم تجهيز الفاتورة للبيع. لم يتم حفظ البيع أو خصم المخزون بعد؛ راجع البيانات واضغط حفظ.');
 }
 function loadQuoteForSale(id) {
+  if (!ensurePermission('sale')) return;
   const quote = db.invoices.find(inv => inv.id === id && inv.mode === 'quote');
   if (!quote || quote.convertedToId) return alert('عرض السعر غير متاح أو تم تحويله بالفعل.');
   if (invCart.length && !confirm('استبدال الفاتورة غير المحفوظة بعرض السعر؟')) return;
@@ -559,6 +718,9 @@ function validateInvoice(mode, partyId, paidAmount) {
   return { totals, paid: roundMoney(paid), remain, source, party };
 }
 function saveInvoice(doPrint) {
+  const activeMode = $('invMode').value;
+  const permission = activeMode.startsWith('purchase') ? 'purchase' : activeMode === 'quote' ? 'quote' : activeMode === 'sale_return' ? 'sale-return' : 'sale';
+  if (!ensurePermission(permission)) return;
   try {
     const mode = $('invMode').value, partyId = Number($('invPartySelect').value) || 0;
     const { totals, paid, remain, source, party } = validateInvoice(mode, partyId, num('invPaidAmount'));
@@ -588,10 +750,32 @@ function saveInvoice(doPrint) {
     });
     if (!saved) return;
     clearInvCart(); delete $('invCartTbody').dataset.quoteId; updateInvoiceUI(); renderItemsTable();
-    if (doPrint) printInvoiceA5(invoice); else alert('✅ تم حفظ الفاتورة محلياً بنجاح.');
+    if (doPrint === 'thermal') printInvoiceThermal(invoice); else if (doPrint) printInvoiceA5(invoice); else alert('✅ تم حفظ الفاتورة محلياً بنجاح.');
   } catch (error) { alert(error.message); }
 }
-function printInvoiceById(id) { const invoice = db.invoices.find(inv => inv.id === id); if (invoice) printInvoiceA5(invoice); }
+function printInvoiceById(id) {
+  const invoice = db.invoices.find(inv => inv.id === id); if (!invoice) return;
+  const permission = invoice.mode.startsWith('purchase') ? 'purchase-log' : 'sales-log';
+  if (!ensurePermission(permission)) return;
+  printInvoiceA5(invoice);
+}
+function printInvoiceThermalById(id) {
+  const invoice = db.invoices.find(inv => inv.id === id); if (!invoice) return;
+  const permission = invoice.mode.startsWith('purchase') ? 'purchase-log' : 'sales-log';
+  if (!ensurePermission(permission)) return;
+  printInvoiceThermal(invoice);
+}
+function printInvoiceThermal(inv) {
+  const store = inv.store || db.settings, width = getAppearance().receiptWidth === '58' ? 58 : 80;
+  const rows = invoiceLines(inv).map(line => `<tr><td>${esc(line.name)}<br>${esc(line.qty)} × ${money(line.price)}</td><td>${money(line.netTotal)}</td></tr>`).join('');
+  const header = `<div class="receipt-head"><h2>${esc(store.name)}</h2><p>${esc(store.address)}</p><p>${esc(store.phone)}</p><p>${esc(MODE_LABELS[inv.mode])} #${inv.id}</p><p>${esc(inv.date)} — ${esc(inv.time)}</p><p>${esc(inv.partyName)}</p></div>`;
+  const receipt = `<div class="thermal-receipt">${header}<table><thead><tr><th>الصنف</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="receipt-totals"><p><span>الإجمالي</span><strong>${money(inv.subtotal ?? inv.netTotal)} ج.م</strong></p><p><span>الخصم</span><strong>${money(inv.discountTotal ?? 0)} ج.م</strong></p><p><span>الصافي</span><strong>${money(inv.netTotal)} ج.م</strong></p><p><span>المدفوع</span><strong>${money(inv.paidAmount)} ج.م</strong></p><p><span>المتبقي</span><strong>${money(inv.remainAmount)} ج.م</strong></p></div><p class="receipt-thanks">${inv.mode === 'quote' ? 'عرض سعر فقط — ليس إيصال دفع' : 'شكراً لتعاملكم معنا'}</p></div>`;
+  const style = $('thermalPrintStyle');
+  style.textContent = `@media print{@page{size:${width}mm auto;margin:2mm}body.thermal-print #printAreaA5{display:block!important;position:absolute!important;top:0!important;left:0!important;width:${width - 4}mm!important;max-width:${width - 4}mm!important;padding:0!important;margin:0!important;font-size:10px!important;color:#111!important}body.thermal-print #printAreaA5 table{width:100%;border-collapse:collapse}body.thermal-print #printAreaA5 th,body.thermal-print #printAreaA5 td{font-size:10px!important;padding:3px 1px!important;border-bottom:1px dashed #555!important;text-align:right!important}body.thermal-print #printAreaA5 .receipt-totals p{display:flex!important;justify-content:space-between!important;margin:3px 0!important}}`;
+  $('printAreaA5').innerHTML = receipt; document.body.classList.add('thermal-print');
+  const cleanup = () => { document.body.classList.remove('thermal-print'); style.textContent = ''; window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup, { once: true }); window.print(); window.setTimeout(cleanup, 3000);
+}
 function printInvoiceA5(inv) {
   const store = inv.store || db.settings;
   const rows = invoiceLines(inv).map((c, index) => `<tr><td>${index + 1}</td><td>${esc(c.name)}</td><td>${esc(c.qty)}</td><td>${money(c.price)}</td><td>${esc(c.discPct)}%</td><td>${money(c.netTotal)}</td></tr>`).join('');
@@ -605,9 +789,10 @@ function printInvoiceA5(inv) {
 }
 
 function openPartySec(type) {
+  if (!ensurePermission(type === 'supplier' ? 'supplier' : 'customer')) return;
   if ($('partyType').value !== type) resetPartyForm();
-  openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس');
-  $('partyType').value = type; $('partyFormTitle').textContent = type === 'supplier' ? 'بيانات المورد' : 'بيانات العميل'; renderPartiesTable();
+  $('partyType').value = type;
+  openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس'); $('partyFormTitle').textContent = type === 'supplier' ? 'بيانات المورد' : 'بيانات العميل'; renderPartiesTable();
 }
 function openPartyReport(type, report) {
   openPartySec(type); $('partyStatementBox').style.display = report === 'balances' ? 'none' : 'block';
@@ -617,6 +802,7 @@ function resetPartyForm() {
   $('partyEditId').value = ''; $('partyName').value = ''; $('partyPhone').value = ''; $('partyBalance').value = 0; $('partyBalance').disabled = false; $('partyNotes').value = '';
 }
 function saveParty() {
+  if (!ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
   const type = $('partyType').value, name = $('partyName').value.trim(), editId = Number($('partyEditId').value), balance = roundMoney(num('partyBalance'));
   if (!name) return alert('أدخل الاسم.');
   if (!editId && (!Number.isFinite(balance))) return alert('الرصيد الافتتاحي يجب أن يكون رقماً صالحاً.');
@@ -628,7 +814,7 @@ function saveParty() {
   if (saved) { resetPartyForm(); renderPartiesTable(); }
 }
 function editParty(id) {
-  const party = db.parties.find(p => p.id === id); if (!party) return;
+  const party = db.parties.find(p => p.id === id); if (!party || !ensurePermission(party.type === 'supplier' ? 'supplier' : 'customer')) return;
   $('partyEditId').value = id; $('partyType').value = party.type; $('partyName').value = party.name; $('partyPhone').value = party.phone;
   $('partyBalance').value = party.balance; $('partyBalance').disabled = true; $('partyNotes').value = party.notes;
   $('partyFormTitle').textContent = 'تعديل بيانات الحساب — الرصيد يُعدّل بالفواتير والسندات'; window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -646,11 +832,14 @@ function renderPartiesTable() {
   if ($('partyStatementBox').style.display !== 'none') renderPartyStatement();
 }
 function deleteParty(id) {
+  if (!ensurePermission('admin')) return;
   const party = db.parties.find(p => p.id === id); if (!party) return;
   if (db.invoices.some(i => i.partyId === id) || db.treasury.some(t => t.partyId === id) || party.balance !== 0) return alert('لا يمكن حذف حساب له رصيد أو حركات مالية. احتفظ بالحساب للحفاظ على كشوف الحساب.');
   if (confirm('حذف هذا الحساب؟') && commitDB(draft => { draft.parties = draft.parties.filter(p => p.id !== id); })) { resetPartyForm(); renderPartiesTable(); }
 }
 function savePartyVoucher() {
+  const partyType = db.parties.find(p => p.id === Number($('voucherPartyId').value))?.type;
+  if (!ensurePermission(partyType === 'supplier' ? 'purchase' : 'cash')) return;
   const id = Number($('voucherPartyId').value), amount = roundMoney(num('voucherAmount')), note = $('voucherNote').value.trim() || 'دفعة نقدية على الحساب';
   const party = db.parties.find(p => p.id === id);
   if (!party) return alert('اختر الحساب أولاً.');
@@ -690,19 +879,34 @@ function printPartyStatementA5() {
   triggerA5Print(`<div class="p-header"><h2>${esc(db.settings.name)}</h2><h3>${esc($('statementTitle').textContent)}</h3></div>${$('partyStatementBox').querySelector('table').outerHTML}`);
 }
 function openInvLog(type, period = false) {
+  const permission = String(type).startsWith('purchase') ? 'purchase-log' : 'sales-log';
+  if (type === 'all' && !ensurePermission('admin')) return;
+  if (!ensurePermission(permission)) return;
   openSec('sec-invlog', period ? '📑 فواتير الفترة — حدد من وإلى التاريخ' : '📑 سجل الفواتير'); $('logTypeFilter').value = type; renderInvLog();
   if (period) $('logDateFrom').focus();
 }
 function renderInvLog() {
-  const filter = $('logTypeFilter').value, from = $('logDateFrom').value, to = $('logDateTo').value;
+  let filter = $('logTypeFilter').value;
+  if (!isAdmin()) {
+    const allowed = can('sales-log') ? ['sale', 'sale_return', 'quote'] : ['purchase', 'purchase_return'];
+    if (!allowed.includes(filter)) { filter = allowed[0]; $('logTypeFilter').value = filter; }
+    [...$('logTypeFilter').options].forEach(option => { option.disabled = option.value !== 'all' && !allowed.includes(option.value); });
+    const allOption = $('logTypeFilter').querySelector('option[value="all"]'); if (allOption) allOption.disabled = true;
+  }
+  const from = $('logDateFrom').value, to = $('logDateTo').value;
   if (from && to && from > to) { $('invLogTbody').innerHTML = '<tr><td colspan="8">تاريخ البداية بعد تاريخ النهاية. صحّح الفترة.</td></tr>'; return; }
   const list = db.invoices.filter(i => (filter === 'all' || i.mode === filter) && (!from || i.date >= from) && (!to || i.date <= to)).slice().reverse();
-  $('invLogTbody').innerHTML = list.map(i => `<tr><td>#${i.id}</td><td>${esc(i.date)}</td><td>${esc(MODE_LABELS[i.mode])}</td><td>${esc(i.partyName)}</td><td>${money(i.netTotal)}</td><td>${money(i.paidAmount)}</td><td>${money(i.remainAmount)}</td><td class="no-print"><button type="button" class="act-btn bg-teal" onclick="printInvoiceById(${i.id})">طباعة A5</button>${i.mode === 'quote' && !i.convertedToId ? `<button type="button" class="act-btn bg-green" onclick="loadQuoteForSale(${i.id})">تحويل للبيع</button>` : ''}${i.convertedToId ? ` تم التحويل إلى #${i.convertedToId}` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد فواتير في هذه الفترة.</td></tr>';
+  $('invLogTbody').innerHTML = list.map(i => `<tr><td>#${i.id}</td><td>${esc(i.date)}</td><td>${esc(MODE_LABELS[i.mode])}</td><td>${esc(i.partyName)}</td><td>${money(i.netTotal)}</td><td>${money(i.paidAmount)}</td><td>${money(i.remainAmount)}</td><td class="no-print"><button type="button" class="act-btn bg-teal" onclick="printInvoiceById(${i.id})">طباعة A5</button><button type="button" class="act-btn bg-blue" onclick="printInvoiceThermalById(${i.id})">طباعة حرارية</button>${i.mode === 'quote' && !i.convertedToId ? `<button type="button" class="act-btn bg-green" onclick="loadQuoteForSale(${i.id})">تحويل للبيع</button>` : ''}${i.convertedToId ? ` تم التحويل إلى #${i.convertedToId}` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد فواتير في هذه الفترة.</td></tr>';
   document.querySelector('#sec-invlog th:last-child').classList.add('no-print');
 }
-function openTreasury(filter) { openSec('sec-treasury', '💰 إدارة الخزينة'); if (filter !== 'all') $('trType').value = filter; renderTreasury(); }
+function openTreasury(filter) {
+  if (!ensurePermission('cash') || (filter === 'expense' && !ensurePermission('admin'))) return;
+  openSec('sec-treasury', '💰 إدارة الخزينة'); if (filter !== 'all') $('trType').value = filter; renderTreasury();
+}
 function addTreasuryMove() {
-  const type = $('trType').value, amount = roundMoney(num('trAmount')), note = $('trNote').value.trim();
+  const type = $('trType').value;
+  if (type === 'expense' ? !ensurePermission('admin') : !ensurePermission('cash')) return;
+  const amount = roundMoney(num('trAmount')), note = $('trNote').value.trim();
   if (!['in', 'out', 'expense'].includes(type) || !Number.isFinite(amount) || amount <= 0 || !note) return alert('أدخل مبلغاً موجباً وبيان الحركة.');
   if (commitDB(draft => { draft.treasury.push({ id: nextId(draft.treasury), date: localDate(), type, amount: roundMoney(amount), note }); })) { $('trAmount').value = 0; $('trNote').value = ''; renderTreasury(); }
 }
@@ -710,6 +914,7 @@ function renderTreasury() {
   $('treasuryTbody').innerHTML = db.treasury.slice().reverse().map(t => `<tr><td>${esc(t.date)}</td><td>${t.type === 'in' ? 'وارد خزنة' : t.type === 'expense' ? 'مصروفات' : 'منصرف خزنة'}</td><td>${esc(t.note)}</td><td>${t.type === 'in' ? money(t.amount) : '-'}</td><td>${t.type !== 'in' ? money(t.amount) : '-'}</td></tr>`).join('') || '<tr><td colspan="5">لا توجد حركات خزنة.</td></tr>';
 }
 function openProfitSec(mode = 'general') {
+  if (!ensurePermission('admin')) return;
   const selected = $('profItemFilter').value;
   const items = new Map(db.items.map(i => [String(i.id), i.name]));
   db.invoices.filter(i => ['sale', 'sale_return'].includes(i.mode)).flatMap(i => i.items).forEach(i => { if (!items.has(String(i.id))) items.set(String(i.id), `${i.name} (محذوف من المخزن)`); });
@@ -736,9 +941,12 @@ function loadSettingsForm() {
   $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone;
   $('setPinCode').value = ''; $('setSyncKey').value = sessionToken();
   $('rememberSyncKey').checked = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)) || !sessionToken();
-  applyAppearance();
+  $('receiptWidth').value = getAppearance().receiptWidth === '58' ? '58' : '80';
+  $('staffManagerPanel').hidden = !isAdmin();
+  renderStaffTable(); renderAuditTable(); applyAppearance();
 }
 function saveSettings() {
+  if (!ensurePermission('admin')) return;
   const name = $('setStoreName').value.trim(), pin = $('setPinCode').value.trim(), token = $('setSyncKey').value.trim();
   if (!name) return alert('اسم المكتبة مطلوب.');
   if (pin && pin.length < 4) return alert('رقم قفل الشاشة يجب أن يكون أربعة أحرف على الأقل.');
@@ -748,7 +956,7 @@ function saveSettings() {
     if (token && $('rememberSyncKey').checked) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
     else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
   } catch { notify('تعذر حفظ مفتاح المزامنة. اسمح بتخزين بيانات الموقع أو أوقف خيار التذكر.'); return; }
-  $('setSyncKey').value = ''; $('setPinCode').value = ''; applySettingsUI(); applyAppearance(); scheduleAutoSync();
+  $('setSyncKey').value = ''; $('setPinCode').value = ''; applySettingsUI(); applyAppearance(); updateActiveUserBadge(); renderStaffTable(); scheduleAutoSync();
   alert(token && $('rememberSyncKey').checked ? 'تم حفظ الإعدادات، وسيظل مفتاح المزامنة محفوظاً على هذا الجهاز.' : 'تم حفظ الإعدادات. سيبقى مفتاح المزامنة لهذه الجلسة فقط.');
 }
 
@@ -762,6 +970,7 @@ async function apiRequest(method, body, token) {
   } finally { window.clearTimeout(timeout); }
 }
 function syncToCloud(direction) {
+  if (!ensurePermission('admin')) return Promise.resolve(false);
   window.clearTimeout(syncTimer);
   const task = syncQueue.then(() => performSync(direction));
   syncQueue = task.catch(() => false);
@@ -826,9 +1035,10 @@ function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type })), link = document.createElement('a');
   link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportFullBackup() { download(JSON.stringify(db, null, 2), 'application/json', `Bookstore_Backup_${localDate()}.json`); }
+function exportFullBackup() { if (!ensurePermission('admin')) return; download(JSON.stringify(db, null, 2), 'application/json', `Bookstore_Backup_${localDate()}.json`); recordAudit('تصدير نسخة احتياطية'); }
 function exportRecovery() { if (recoveryRaw !== null) download(recoveryRaw, 'application/json', `Bookstore_Recovery_${localDate()}.json`); }
 async function importFullBackup(event) {
+  if (!ensurePermission('admin')) { event.target.value = ''; return; }
   const file = event.target.files[0]; if (!file) return;
   try {
     if (file.size > 4 * 1024 * 1024) throw new Error('الملف أكبر من الحد المسموح (4 ميجابايت).');
@@ -838,7 +1048,7 @@ async function importFullBackup(event) {
     // Restoring an old backup must not make it eligible to overwrite a newer cloud revision.
     writeLocalState(next, { revision: null, dirty: true });
     db = next; syncMeta = { revision: null, dirty: true }; storageBlocked = false; recoveryRaw = null; localVersion += 1;
-    refreshAfterReplace(); setSyncStatus('تمت الاستعادة محلياً — راجع البيانات قبل الرفع'); alert('تمت الاستعادة محلياً. لم تُرفع البيانات إلى السحابة تلقائياً.');
+    refreshAfterReplace(); recordAudit('استعادة نسخة احتياطية'); setSyncStatus('تمت الاستعادة محلياً — راجع البيانات قبل الرفع'); alert('تمت الاستعادة محلياً. لم تُرفع البيانات إلى السحابة تلقائياً.');
   } catch (error) { alert(`لم تُستعد النسخة: ${error.message}`); }
   finally { event.target.value = ''; }
 }
@@ -867,22 +1077,29 @@ function printCurrentScreenA5() {
   triggerA5Print(`<div class="p-header"><h2>${esc(db.settings.name)}</h2><h3>${esc($('winTitle').textContent)}</h3></div>${printableTable(table)}<p>${esc(summary)}</p>`);
 }
 function lockApp() {
-  beforeLockFocus = document.activeElement; $('lockModal').style.display = 'flex'; $('unlockPinInp').value = ''; $('unlockPinInp').focus();
+  closeWorkspace();
+  beforeLockFocus = document.activeElement;
+  $('loginStaffSelect').innerHTML = staffList().map(user => `<option value="${esc(user.id)}">${esc(user.name)} — ${roleLabel(user.role)}</option>`).join('');
+  $('loginStaffSelect').value = activeStaffId; $('lockModal').style.display = 'flex'; $('unlockPinInp').value = ''; $('unlockPinInp').focus();
   document.querySelectorAll('body > :not(#lockModal):not(#printAreaA5):not(script)').forEach(el => { el.inert = true; });
 }
 function unlockApp() {
-  if ($('unlockPinInp').value !== db.settings.pin) return alert('الرقم السري غير صحيح.');
+  const user = staffList().find(entry => entry.id === $('loginStaffSelect').value);
+  if (!user || $('unlockPinInp').value !== user.pin) return alert('الرقم السري غير صحيح.');
+  activeStaffId = user.id; staffSession = true;
+  try { sessionStorage.setItem(ACTIVE_STAFF_KEY, activeStaffId); } catch { notify('تعذر حفظ جلسة المستخدم؛ سيطلب النظام تسجيل الدخول مرة أخرى عند تحديث الصفحة.'); }
   $('lockModal').style.display = 'none'; $('unlockPinInp').value = '';
-  document.querySelectorAll('[inert]').forEach(el => { el.inert = false; }); beforeLockFocus?.focus();
+  document.querySelectorAll('[inert]').forEach(el => { el.inert = false; });
+  updateActiveUserBadge(); recordAudit(`تسجيل دخول (${roleLabel(user.role)})`); beforeLockFocus?.focus();
 }
 
 // Explicit public API for the existing HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
-  openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm,
+  openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, setReceiptWidth, toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice, saveItem, resetItemForm, saveStaff, deleteStaff,
   renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem, showSingleItemProfit, printBarcodeLabel,
   addCategory, deleteCategory, openStockFilter, openInvoiceSec, changeInvoiceMode, updateInvoiceUI, loadReturnSource,
-  addInvItemFromInput, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
-  convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, openPartySec, openPartyReport, resetPartyForm, saveParty,
+  addInvItemFromInput, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart, holdCurrentInvoice, restoreHeldInvoice,
+  convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, printInvoiceThermalById, openPartySec, openPartyReport, resetPartyForm, saveParty,
   editParty, deleteParty, savePartyVoucher, showStatementFor, renderPartyStatement, printPartyStatementA5, openInvLog, renderInvLog,
   openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud, exportFullBackup, importFullBackup,
   exportItemsCSV, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp
