@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"><head></head><body>
-
-
-
+<html lang="ar" dir="rtl">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام إدارة المكتبات والمبيعات الشامل - POS &amp; ERP</title>
+<title>نظام إدارة المكتبات والمبيعات الشامل - POS & ERP</title>
 <style>
   :root {
     --teal-dark: #065a60;
@@ -23,7 +21,6 @@
   * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   body { margin: 0; background: var(--bg-main); color: var(--text-dark); font-size: 14px; }
 
-  /* Top Download & Quick Bar */
   .top-utility-bar {
     background: #0f172a; color: #fff; padding: 6px 14px;
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
@@ -37,7 +34,6 @@
   .btn-lock { background: #ef4444; }
   .btn-view-mode { background: #f59e0b; color: #000 !important; }
 
-  /* Header Banner (Screenshot 1 Style) */
   .main-banner {
     background: var(--teal-dark); color: #fff; margin: 8px;
     border: 3px solid #043d41; border-radius: 6px; padding: 10px 16px;
@@ -60,10 +56,9 @@
     padding: 6px 10px; font-weight: bold; font-size: 16px; border: 2px solid #7f1d1d; border-radius: 4px;
   }
 
-  /* Classic 28-Button Grid (Screenshot 1) */
   .classic-panel {
     margin: 8px; background: #d7f3f5; border: 2px solid var(--teal-dark);
-    padding: 8px; border-radius: 6px;
+    padding: 8px; border-radius: 6px; display: block;
   }
   .classic-top-row {
     display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 6px;
@@ -88,7 +83,6 @@
   .c-btn:hover, .c-btn.active { background: #044347; border-color: #fde047; transform: translateY(-1px); }
   .c-btn.tall { grid-row: span 2; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
-  /* Workspace Window (Screenshot 4 Style) */
   .workspace {
     margin: 8px; background: #fff; border: 3px solid var(--blue-win);
     border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -100,7 +94,6 @@
   .win-header h2 { margin: 0; font-size: 19px; }
   .win-body { padding: 12px; }
 
-  /* Forms & Panels */
   .form-grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
   @media (max-width: 850px) { .form-grid-2 { grid-template-columns: 1fr; } }
   .panel-box {
@@ -119,7 +112,6 @@
   }
   .f-row input:focus, .f-row select:focus { outline: 2px solid var(--blue-win); background: #fefce8; }
 
-  /* Action Bar */
   .action-bar {
     display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0;
     padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;
@@ -135,7 +127,6 @@
   .bg-orange { background: var(--orange-btn); }
   .bg-purple { background: var(--purple-btn); }
 
-  /* Tables */
   .table-wrap { overflow-x: auto; max-height: 400px; border: 1px solid #94a3b8; border-radius: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th {
@@ -155,7 +146,6 @@
   .sec-view.active { display: block; }
   .badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #fff; font-weight: bold; }
 
-  /* A5 Print Area */
   #printAreaA5 { display: none; }
   @media print {
     @page { size: A5 portrait; margin: 6mm; }
@@ -174,31 +164,28 @@
     .p-totals { display: flex; justify-content: space-between; border: 1px solid #000; padding: 6px; font-weight: bold; }
   }
 
-  /* Lock Screen Modal */
   #lockModal {
     display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.92);
     z-index: 9999; align-items: center; justify-content: center;
   }
   .lock-card { background: #fff; padding: 24px; border-radius: 8px; width: 320px; text-align: center; }
 </style>
+</head>
+<body>
 
-
-
-<!-- Top Utility Bar -->
 <div class="top-utility-bar">
-  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل (الإصدار الكامل)</strong> | يحفظ تلقائياً ويعمل أوفلاين وأونلاين</div>
+  <div>📚 <strong>نظام إدارة المكتبة والأدوات المدرسية الشامل</strong> | حالة السيرفر: <span id="syncStatusBadge" style="color:#fde047;">متصل وجاهز</span></div>
   <div class="util-btns">
-    <button class="btn-dl" onclick="downloadSelfFile()">⬇️ تحميل ملف البرنامج على جهازك</button>
-    <button class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء لوحة الأزرار</button>
-    <button class="btn-sync" onclick="openSec('sec-settings')">☁️ المزامنة والنسخ الاحتياطي</button>
-    <button class="btn-lock" onclick="lockApp()">🔒 قفل الشاشة</button>
+    <button type="button" class="btn-sync" onclick="syncToCloud('push')">⬆️ رفع لقاعدة بيانات Neon</button>
+    <button type="button" class="btn-sync" style="background:#0284c7" onclick="syncToCloud('pull')">⬇️ سحب من Neon</button>
+    <button type="button" class="btn-view-mode" onclick="toggleClassicGrid()">🎛️ إظهار/إخفاء لوحة الـ 28 زر</button>
+    <button type="button" class="btn-lock" onclick="lockApp()">🔒 قفل الشاشة</button>
   </div>
 </div>
 
-<!-- Header Banner (Screenshot 1) -->
 <div class="main-banner">
   <div class="banner-kpis">
-    <div class="kpi-box"><small>رصيد الخزنة</small><strong id="kpiCash">5000.00</strong></div>
+    <div class="kpi-box"><small>رصيد الخزنة</small><strong id="kpiCash">0.00</strong></div>
     <div class="kpi-box"><small>مبيعات اليوم</small><strong id="kpiSalesToday">0.00</strong></div>
     <div class="kpi-box"><small>صافي الأرباح</small><strong id="kpiNetProfit">0.00</strong></div>
     <div class="kpi-box"><small>نواقص المكتبة</small><strong id="kpiLowStock">0</strong></div>
@@ -209,71 +196,63 @@
     <p id="lblStorePhone">رقم الهاتف: 01000000000</p>
   </div>
   <div class="clock-boxes">
-    <div class="clock-box" id="liveDate">03/11/2026</div>
-    <div class="clock-box" id="liveTime">05:08:15</div>
+    <div class="clock-box" id="liveDate">2025/01/01</div>
+    <div class="clock-box" id="liveTime">12:00:00</div>
   </div>
 </div>
 
-<!-- Classic 28-Button Control Panel (Exact Screenshot 1 Layout) -->
-<div class="classic-panel" id="classicPanel" style="display: none;">
+<div class="classic-panel" id="classicPanel">
   <div class="classic-top-row">
-    <button class="c-btn tall" onclick="openSec('sec-settings')">🏢 بيانات المنشأة</button>
-    <button class="c-btn" onclick="lockApp()">🔐 شاشة الدخول</button>
-    <button class="c-btn" onclick="openSec('sec-categories')">📁 إضافة مجموعة</button>
-    <button class="c-btn" onclick="openPartySec('supplier')">🚚 الموردين</button>
-    <button class="c-btn" onclick="openInvoiceSec('sale')">🛒 فاتورة مبيعات</button>
-    <button class="c-btn" onclick="openSec('sec-settings')">⚙️ إعدادات البرنامج</button>
-    <button class="c-btn" onclick="openSec('sec-items')">📦 إضافة الأصناف</button>
-    <button class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
-    <button class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
+    <button type="button" class="c-btn tall" onclick="openSec('sec-settings','⚙️ بيانات المنشأة والإعدادات')">🏢 بيانات المنشأة</button>
+    <button type="button" class="c-btn" onclick="lockApp()">🔐 شاشة الدخول</button>
+    <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 مجموعات الأصناف')">📁 إضافة مجموعة</button>
+    <button type="button" class="c-btn" onclick="openPartySec('supplier')">🚚 الموردين</button>
+    <button type="button" class="c-btn" onclick="openInvoiceSec('sale')">🛒 فاتورة مبيعات</button>
+    <button type="button" class="c-btn" onclick="openSec('sec-settings','⚙️ إعدادات البرنامج')">⚙️ إعدادات البرنامج</button>
+    <button type="button" class="c-btn" onclick="openSec('sec-items','📦 شاشة الأصناف والمخازن')">📦 إضافة الأصناف</button>
+    <button type="button" class="c-btn" onclick="openPartySec('customer')">👥 العملاء</button>
+    <button type="button" class="c-btn" onclick="openInvoiceSec('purchase')">📥 فاتورة مشتريات</button>
   </div>
   <div class="classic-grid">
-    <!-- Row 1 -->
-    <button class="c-btn" onclick="openSec('sec-categories')">بيانات المجموعات</button>
-    <button class="c-btn" onclick="openPartyReport('supplier','moves')">حركة حساب مورد</button>
-    <button class="c-btn" onclick="openPartyReport('customer','moves')">حركة حساب عميل</button>
-    <button class="c-btn" onclick="openInvLog('purchase')">عمليات الشراء</button>
-    <button class="c-btn" onclick="openTreasury('all')">الخزنة</button>
-    <button class="c-btn" onclick="openProfitSec('item')">أرباح صنف</button>
-    <!-- Row 2 -->
-    <button class="c-btn" onclick="openSec('sec-items')">بيانات الأصناف</button>
-    <button class="c-btn" onclick="openPartyReport('supplier','balances')">أرصدة الموردين</button>
-    <button class="c-btn" onclick="openPartyReport('customer','balances')">أرصدة العملاء</button>
-    <button class="c-btn" onclick="openInvLog('sale')">عمليات البيع</button>
-    <button class="c-btn" onclick="openTreasury('in')">وارد الخزنة</button>
-    <button class="c-btn" onclick="openProfitSec('general')">الأرباح</button>
-    <!-- Row 3 -->
-    <button class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
-    <button class="c-btn" onclick="openPartyReport('supplier','statement')">كشف ح مورد</button>
-    <button class="c-btn" onclick="openPartyReport('customer','statement')">كشف ح عميل</button>
-    <button class="c-btn" onclick="openInvLog('sale')">مبيعات فترة</button>
-    <button class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
-    <button class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
-    <!-- Row 4 -->
-    <button class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
-    <button class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
-    <button class="c-btn" onclick="openStockFilter('all')">المخزن</button>
-    <button class="c-btn" onclick="openInvLog('purchase')">مشتريات فترة</button>
-    <button class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
-    <button class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
+    <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 بيانات المجموعات')">بيانات المجموعات</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('supplier','moves')">حركة حساب مورد</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('customer','moves')">حركة حساب عميل</button>
+    <button type="button" class="c-btn" onclick="openInvLog('purchase')">عمليات الشراء</button>
+    <button type="button" class="c-btn" onclick="openTreasury('all')">الخزنة</button>
+    <button type="button" class="c-btn" onclick="openProfitSec('item')">أرباح صنف</button>
+    <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف')">بيانات الأصناف</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('supplier','balances')">أرصدة الموردين</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('customer','balances')">أرصدة العملاء</button>
+    <button type="button" class="c-btn" onclick="openInvLog('sale')">عمليات البيع</button>
+    <button type="button" class="c-btn" onclick="openTreasury('in')">وارد الخزنة</button>
+    <button type="button" class="c-btn" onclick="openProfitSec('general')">الأرباح</button>
+    <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('supplier','statement')">كشف ح مورد</button>
+    <button type="button" class="c-btn" onclick="openPartyReport('customer','statement')">كشف ح عميل</button>
+    <button type="button" class="c-btn" onclick="openInvLog('sale')">مبيعات فترة</button>
+    <button type="button" class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
+    <button type="button" class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
+    <button type="button" class="c-btn" onclick="openInvoiceSec('quote')">عرض أسعار</button>
+    <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
+    <button type="button" class="c-btn" onclick="openStockFilter('all')">المخزن</button>
+    <button type="button" class="c-btn" onclick="openInvLog('purchase')">مشتريات فترة</button>
+    <button type="button" class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
+    <button type="button" class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
   </div>
 </div>
 
-<!-- Main Workspace Window -->
 <div class="workspace">
   <div class="win-header">
-    <h2 id="winTitle">🛒 فاتورة مبيعات</h2>
+    <h2 id="winTitle">📦 شاشة الأصناف والمخازن</h2>
     <div>
-      <button class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
+      <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الشاشة (A5)</button>
     </div>
   </div>
 
   <div class="win-body">
-
-    <!-- ==================== 1. ITEMS SCREEN (Screenshot 4) ==================== -->
-    <div id="sec-items" class="sec-view">
+    <!-- 1. ITEMS SCREEN -->
+    <div id="sec-items" class="sec-view active">
       <div class="form-grid-2">
-        <!-- Right Box: Item Data -->
         <div class="panel-box">
           <div class="panel-title">بيانات الصنف (الكتاب / الأداة المدرسية / الهدية)</div>
           <input type="hidden" id="itemEditId">
@@ -282,7 +261,7 @@
             <select id="itemWarehouse"><option value="الرئيسي">الرئيسي</option><option value="مخزن الكتب">مخزن الكتب</option><option value="الفرعي">الفرعي</option></select>
             <label style="min-width:65px">كود الصنف:</label>
             <input type="text" id="itemCode" placeholder="باركود / كود">
-            <button class="act-btn bg-orange" style="padding:5px 10px" onclick="generateNewCode()">كود جديد</button>
+            <button type="button" class="act-btn bg-orange" style="padding:5px 10px" onclick="generateNewCode()">كود جديد</button>
           </div>
           <div class="f-row">
             <label>اسم الصنف:</label>
@@ -290,8 +269,8 @@
           </div>
           <div class="f-row">
             <label>المجموعة:</label>
-            <select id="itemCategory"><option value="كتب خارجية">كتب خارجية</option><option value="كشاكيل وكراسات">كشاكيل وكراسات</option><option value="أقلام وأدوات كتابة">أقلام وأدوات كتابة</option><option value="هدايا وألعاب">هدايا وألعاب</option><option value="أدوات هندسية وفنية">أدوات هندسية وفنية</option></select>
-            <button class="act-btn bg-green" style="padding:4px 9px" onclick="quickAddCategory()">+</button>
+            <select id="itemCategory"></select>
+            <button type="button" class="act-btn bg-green" style="padding:4px 9px" onclick="quickAddCategory()">+</button>
             <label style="min-width:65px">نوع الصنف:</label>
             <select id="itemType">
               <option value="كتاب خارجي">كتاب خارجي</option>
@@ -312,7 +291,6 @@
           </div>
         </div>
 
-        <!-- Left Box: Price Data -->
         <div class="panel-box">
           <div class="panel-title">بيانات السعر والربح</div>
           <div class="f-row">
@@ -338,107 +316,39 @@
         </div>
       </div>
 
-      <!-- Action Buttons (Screenshot 4) -->
       <div class="action-bar">
-        <button class="act-btn bg-green" onclick="saveItem()">💾 إضافة / حفظ الصنف</button>
-        <button class="act-btn bg-red" onclick="resetItemForm()">✖ إلغاء وتفريغ</button>
-        <button class="act-btn bg-blue" onclick="showSingleItemProfit()">📊 ربح صنف</button>
-        <button class="act-btn bg-teal" onclick="printItemsReportA5()">🖨️ طباعة البيانات (A5)</button>
-        <button class="act-btn bg-orange" onclick="toggleQuickEditItems()">✏️ التعديل السريع بالجدول</button>
-        <button class="act-btn bg-purple" onclick="exportItemsCSV()">📤 تصدير إكسيل (CSV)</button>
+        <button type="button" class="act-btn bg-green" onclick="saveItem()">💾 إضافة / حفظ الصنف</button>
+        <button type="button" class="act-btn bg-red" onclick="resetItemForm()">✖ إلغاء وتفريغ</button>
+        <button type="button" class="act-btn bg-blue" onclick="showSingleItemProfit()">📊 ربح صنف</button>
+        <button type="button" class="act-btn bg-teal" onclick="printItemsReportA5()">🖨️ طباعة البيانات (A5)</button>
+        <button type="button" class="act-btn bg-orange" onclick="toggleQuickEditItems()">✏️ التعديل السريع بالجدول</button>
+        <button type="button" class="act-btn bg-purple" onclick="exportItemsCSV()">📤 تصدير إكسيل (CSV)</button>
         <input type="text" id="itemSearchInp" placeholder="🔍 ابحث بالاسم أو الكود أو المجموعة..." oninput="renderItemsTable()" style="flex:1; padding:6px 10px; border:1px solid #94a3b8; border-radius:4px;">
       </div>
 
-      <!-- Items Table -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>كود الصنف</th>
-              <th>اسم الصنف</th>
-              <th>المجموعة</th>
-              <th>الكمية</th>
-              <th>الوحدة</th>
-              <th>سعر الشراء</th>
-              <th>سعر البيع</th>
-              <th>سعر الجملة</th>
-              <th>الحد الأدنى</th>
-              <th>الملاحظات</th>
-              <th>تعديل</th>
-              <th>حذف</th>
-              <th>باركود</th>
+              <th>كود الصنف</th><th>اسم الصنف</th><th>المجموعة</th><th>الكمية</th><th>الوحدة</th>
+              <th>سعر الشراء</th><th>سعر البيع</th><th>سعر الجملة</th><th>الحد الأدنى</th>
+              <th>الملاحظات</th><th>تعديل</th><th>حذف</th><th>باركود</th>
             </tr>
           </thead>
-          <tbody id="itemsTbody"><tr>
-      <td><strong>1001</strong></td>
-      <td style="text-align:right; font-weight:bold;">كتاب المعاصر لغة إنجليزية 3 إعدادي</td>
-      <td>كتب خارجية</td>
-      <td style="font-weight:bold; color:#0f172a">25</td>
-      <td>عدد</td>
-      <td>110.00</td>
-      <td style="font-weight:bold; color:var(--green-btn)">130.00</td>
-      <td>122.00</td>
-      <td>120.00</td>
-      <td>طبعة جديدة</td>
-      <td><button class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(1)">✏️</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(1)">🗑️</button></td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(1)">|||</button></td>
-    </tr><tr>
-      <td><strong>1002</strong></td>
-      <td style="text-align:right; font-weight:bold;">كتاب الأضواء لغة عربية 6 ابتدائي</td>
-      <td>كتب خارجية</td>
-      <td style="font-weight:bold; color:#0f172a">20</td>
-      <td>عدد</td>
-      <td>100.00</td>
-      <td style="font-weight:bold; color:var(--green-btn)">120.00</td>
-      <td>112.00</td>
-      <td>110.00</td>
-      <td>-</td>
-      <td><button class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(2)">✏️</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(2)">🗑️</button></td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(2)">|||</button></td>
-    </tr><tr>
-      <td><strong>1003</strong></td>
-      <td style="text-align:right; font-weight:bold;">كشكول سلك 100 ورقة إكسترا</td>
-      <td>كشاكيل وكراسات</td>
-      <td style="font-weight:bold; color:#0f172a">60</td>
-      <td>عدد</td>
-      <td>25.00</td>
-      <td style="font-weight:bold; color:var(--green-btn)">35.00</td>
-      <td>30.00</td>
-      <td>30.00</td>
-      <td>-</td>
-      <td><button class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(3)">✏️</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(3)">🗑️</button></td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(3)">|||</button></td>
-    </tr><tr>
-      <td><strong>1004</strong></td>
-      <td style="text-align:right; font-weight:bold;">علبة أقلام جاف روتو 12 قلم</td>
-      <td>أقلام وأدوات كتابة</td>
-      <td style="font-weight:bold; color:#0f172a">15</td>
-      <td>علبة</td>
-      <td>45.00</td>
-      <td style="font-weight:bold; color:var(--green-btn)">60.00</td>
-      <td>54.00</td>
-      <td>52.00</td>
-      <td>بدون خصم</td>
-      <td><button class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(4)">✏️</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(4)">🗑️</button></td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(4)">|||</button></td>
-    </tr></tbody>
+          <tbody id="itemsTbody"></tbody>
         </table>
       </div>
       <div class="t-foot-bar">
-        <span>إجمالي عدد الأصناف: <strong id="totItemsCount">4</strong></span>
-        <span>إجمالي قيمة الشراء بالمخزن: <strong id="totItemsBuy">6925.00</strong></span>
-        <span>إجمالي قيمة البيع بالمخزن: <strong id="totItemsSell">8650.00</strong></span>
+        <span>إجمالي عدد الأصناف: <strong id="totItemsCount">0</strong></span>
+        <span>إجمالي قيمة الشراء بالمخزن: <strong id="totItemsBuy">0.00</strong></span>
+        <span>إجمالي قيمة البيع بالمخزن: <strong id="totItemsSell">0.00</strong></span>
       </div>
     </div>
 
-    <!-- ==================== 2. INVOICES (SALE / PURCHASE / QUOTE) ==================== -->
-    <div id="sec-invoice" class="sec-view active">
+    <!-- 2. INVOICES -->
+    <div id="sec-invoice" class="sec-view">
       <div class="panel-box" style="margin-bottom:10px;">
-        <div class="panel-title" id="invPanelTitle">🛒 فاتورة مبيعات</div>
+        <div class="panel-title" id="invPanelTitle">فاتورة مبيعات</div>
         <div class="f-row">
           <label>نوع العملية:</label>
           <select id="invMode" onchange="updateInvoiceUI()">
@@ -449,7 +359,7 @@
             <option value="quote">عرض أسعار</option>
           </select>
           <label id="lblInvParty">العميل:</label>
-          <select id="invPartySelect"><option value="1">عميل نقدي (رصيده: 0.00)</option><option value="2">أستاذ محمود (مدرس أول) (رصيده: 250.00)</option></select>
+          <select id="invPartySelect"></select>
           <label>طريقة الدفع:</label>
           <select id="invPayType" onchange="calcInvoiceTotals()">
             <option value="cash">نقدي (كاش)</option>
@@ -464,27 +374,18 @@
         </div>
         <div class="f-row" style="border-top:1px dashed #94a3b8; padding-top:8px; margin-top:6px;">
           <label>إضافة صنف:</label>
-          <input type="text" id="invBarcodeInp" placeholder="🔫 اقرأ الباركود أو اكتب اسم الكتاب/الصنف واضغط Enter..." list="itemsDatalist" onchange="addInvItemFromInput()">
-          <datalist id="itemsDatalist"><option value="1001">كتاب المعاصر لغة إنجليزية 3 إعدادي - سعر: 130</option><option value="1002">كتاب الأضواء لغة عربية 6 ابتدائي - سعر: 120</option><option value="1003">كشكول سلك 100 ورقة إكسترا - سعر: 35</option><option value="1004">علبة أقلام جاف روتو 12 قلم - سعر: 60</option></datalist>
+          <input type="text" id="invBarcodeInp" placeholder="🔫 اقرأ الباركود أو اختر الصنف ثم اضغط Enter أو (+ أضف للفاتورة)..." list="itemsDatalist" onkeydown="if(event.key==='Enter'){event.preventDefault();addInvItemFromInput();}">
+          <datalist id="itemsDatalist"></datalist>
           <label style="min-width:50px">الكمية:</label>
           <input type="number" id="invAddQty" value="1" style="max-width:70px">
-          <button class="act-btn bg-green" onclick="addInvItemFromInput()">+ أضف للفاتورة</button>
+          <button type="button" class="act-btn bg-green" onclick="addInvItemFromInput()">+ أضف للفاتورة</button>
         </div>
       </div>
 
       <div class="table-wrap" style="max-height:260px;">
         <table>
           <thead>
-            <tr>
-              <th>#</th>
-              <th>الكود</th>
-              <th>اسم الصنف</th>
-              <th>الكمية</th>
-              <th>السعر</th>
-              <th>خصم %</th>
-              <th>الإجمالي</th>
-              <th>حذف</th>
-            </tr>
+            <tr><th>#</th><th>الكود</th><th>اسم الصنف</th><th>الكمية</th><th>السعر</th><th>خصم %</th><th>الإجمالي</th><th>حذف</th></tr>
           </thead>
           <tbody id="invCartTbody"></tbody>
         </table>
@@ -493,7 +394,7 @@
       <div class="panel-box" style="margin-top:10px;">
         <div class="f-row">
           <label>إجمالي الفاتورة:</label>
-          <input type="text" id="invSubTotal" readonly="" value="0.00">
+          <input type="text" id="invSubTotal" readonly value="0.00">
           <label>خصم إضافي (مبلغ):</label>
           <input type="number" id="invDiscAmount" value="0" step="any" oninput="calcInvoiceTotals()">
           <label>خصم (%):</label>
@@ -501,30 +402,30 @@
         </div>
         <div class="f-row">
           <label style="color:var(--red-accent); font-size:15px;">الصافي المطلوب:</label>
-          <input type="text" id="invNetTotal" readonly="" value="0.00" style="font-size:16px; color:var(--red-accent); background:#fef2f2;">
+          <input type="text" id="invNetTotal" readonly value="0.00" style="font-size:16px; color:var(--red-accent); background:#fef2f2;">
           <label>المدفوع حالياً:</label>
           <input type="number" id="invPaidAmount" value="0" step="any" oninput="calcInvoiceRemaining()">
           <label>المتبقي (آجل):</label>
-          <input type="text" id="invRemainAmount" readonly="" value="0.00">
+          <input type="text" id="invRemainAmount" readonly value="0.00">
         </div>
       </div>
 
       <div class="action-bar">
-        <button class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة فاتورة (A5)</button>
-        <button class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط بدون طباعة</button>
-        <button class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تحويل عرض السعر لفاتورة مبيعات</button>
-        <button class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
+        <button type="button" class="act-btn bg-green" onclick="saveInvoice(true)">🖨️ حفظ وطباعة فاتورة (A5)</button>
+        <button type="button" class="act-btn bg-blue" onclick="saveInvoice(false)">💾 حفظ فقط بدون طباعة</button>
+        <button type="button" class="act-btn bg-orange" id="btnConvertQuote" style="display:none;" onclick="convertQuoteToSale()">🔄 تحويل عرض السعر لفاتورة مبيعات</button>
+        <button type="button" class="act-btn bg-red" onclick="clearInvCart()">🗑️ تفريغ الفاتورة</button>
       </div>
     </div>
 
-    <!-- ==================== 3. CATEGORIES SCREEN ==================== -->
+    <!-- 3. CATEGORIES -->
     <div id="sec-categories" class="sec-view">
       <div class="panel-box" style="max-width:550px; margin-bottom:12px;">
         <div class="panel-title">إضافة وتعديل مجموعات الأصناف</div>
         <div class="f-row">
           <label>اسم المجموعة:</label>
           <input type="text" id="catNameInp" placeholder="مثال: كتب خارجية ثانوي / أدوات هندسية / هدايا">
-          <button class="act-btn bg-green" onclick="addCategory()">+ حفظ المجموعة</button>
+          <button type="button" class="act-btn bg-green" onclick="addCategory()">+ حفظ المجموعة</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -535,12 +436,12 @@
       </div>
     </div>
 
-    <!-- ==================== 4. STOCK / SHORTAGES SCREEN ==================== -->
+    <!-- 4. STOCK -->
     <div id="sec-stock" class="sec-view">
       <div class="action-bar">
-        <button class="act-btn bg-blue" onclick="openStockFilter('all')">📦 كل المخزن</button>
-        <button class="act-btn bg-red" onclick="openStockFilter('zero')">🚨 النواقص (رصيد صفر أو أقل)</button>
-        <button class="act-btn bg-orange" onclick="openStockFilter('low')">⚠️ أصناف وصلت لحد الطلب</button>
+        <button type="button" class="act-btn bg-blue" onclick="openStockFilter('all')">📦 كل المخزن</button>
+        <button type="button" class="act-btn bg-red" onclick="openStockFilter('zero')">🚨 النواقص (رصيد صفر أو أقل)</button>
+        <button type="button" class="act-btn bg-orange" onclick="openStockFilter('low')">⚠️ أصناف وصلت لحد الطلب</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -552,41 +453,30 @@
       </div>
     </div>
 
-    <!-- ==================== 5. CUSTOMERS & SUPPLIERS ==================== -->
+    <!-- 5. CUSTOMERS & SUPPLIERS -->
     <div id="sec-parties" class="sec-view">
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title" id="partyFormTitle">بيانات العميل / المورد</div>
           <input type="hidden" id="partyType" value="customer">
+          <div class="f-row"><label>الاسم:</label><input type="text" id="partyName" placeholder="اسم العميل أو دار النشر/المورد"></div>
           <div class="f-row">
-            <label>الاسم:</label>
-            <input type="text" id="partyName" placeholder="اسم العميل أو دار النشر/المورد">
+            <label>رقم الهاتف:</label><input type="text" id="partyPhone" placeholder="01xxxxxxxxx">
+            <label style="min-width:75px">الرصيد الافتتاحي:</label><input type="number" id="partyBalance" value="0" step="any">
           </div>
           <div class="f-row">
-            <label>رقم الهاتف:</label>
-            <input type="text" id="partyPhone" placeholder="01xxxxxxxxx">
-            <label style="min-width:75px">الرصيد الافتتاحي:</label>
-            <input type="number" id="partyBalance" value="0" step="any">
-          </div>
-          <div class="f-row">
-            <label>العنوان / ملاحظات:</label>
-            <input type="text" id="partyNotes">
-            <button class="act-btn bg-green" onclick="saveParty()">💾 حفظ</button>
+            <label>العنوان / ملاحظات:</label><input type="text" id="partyNotes">
+            <button type="button" class="act-btn bg-green" onclick="saveParty()">💾 حفظ</button>
           </div>
         </div>
 
         <div class="panel-box">
           <div class="panel-title">تسجيل دفعة نقدية (سند قبض من عميل / سند صرف لمورد)</div>
+          <div class="f-row"><label>اختر الاسم:</label><select id="voucherPartyId"></select></div>
           <div class="f-row">
-            <label>اختر الاسم:</label>
-            <select id="voucherPartyId"></select>
-          </div>
-          <div class="f-row">
-            <label>المبلغ المسدد:</label>
-            <input type="number" id="voucherAmount" value="0" step="any">
-            <label style="min-width:55px">بيان:</label>
-            <input type="text" id="voucherNote" placeholder="دفعة من الحساب">
-            <button class="act-btn bg-teal" onclick="savePartyVoucher()">💵 تسجيل السند وطباعة A5</button>
+            <label>المبلغ المسدد:</label><input type="number" id="voucherAmount" value="0" step="any">
+            <label style="min-width:55px">بيان:</label><input type="text" id="voucherNote" placeholder="دفعة من الحساب">
+            <button type="button" class="act-btn bg-teal" onclick="savePartyVoucher()">💵 تسجيل السند وطباعة A5</button>
           </div>
         </div>
       </div>
@@ -594,7 +484,7 @@
       <div class="action-bar">
         <label style="font-weight:bold;">كشف حساب تفصيلي لـ:</label>
         <select id="statementPartySelect" onchange="renderPartyStatement()" style="padding:6px; min-width:200px;"></select>
-        <button class="act-btn bg-teal" onclick="printPartyStatementA5()">🖨️ طباعة كشف الحساب (A5)</button>
+        <button type="button" class="act-btn bg-teal" onclick="printPartyStatementA5()">🖨️ طباعة كشف الحساب (A5)</button>
       </div>
 
       <div class="table-wrap">
@@ -614,7 +504,7 @@
       </div>
     </div>
 
-    <!-- ==================== 6. INVOICE LOGS (PERIOD SALES/PURCHASES) ==================== -->
+    <!-- 6. INVOICE LOGS -->
     <div id="sec-invlog" class="sec-view">
       <div class="action-bar">
         <label>النوع:</label>
@@ -626,10 +516,8 @@
           <option value="purchase_return">مرتجع مشتريات</option>
           <option value="quote">عروض الأسعار</option>
         </select>
-        <label>من تاريخ:</label>
-        <input type="date" id="logDateFrom" onchange="renderInvLog()">
-        <label>إلى تاريخ:</label>
-        <input type="date" id="logDateTo" onchange="renderInvLog()">
+        <label>من تاريخ:</label><input type="date" id="logDateFrom" onchange="renderInvLog()">
+        <label>إلى تاريخ:</label><input type="date" id="logDateTo" onchange="renderInvLog()">
       </div>
       <div class="table-wrap">
         <table>
@@ -639,7 +527,7 @@
       </div>
     </div>
 
-    <!-- ==================== 7. TREASURY & EXPENSES ==================== -->
+    <!-- 7. TREASURY -->
     <div id="sec-treasury" class="sec-view">
       <div class="panel-box" style="margin-bottom:10px;">
         <div class="panel-title">تسجيل حركة خزينة (وارد خزنة / منصرف خزنة / مصروفات المكتبة)</div>
@@ -650,11 +538,9 @@
             <option value="out">منصرف الخزنة (سحب)</option>
             <option value="expense">مصروفات عمومية (إيجار / كهرباء / أكياس / مرتبات)</option>
           </select>
-          <label style="min-width:60px">المبلغ:</label>
-          <input type="number" id="trAmount" value="0" step="any">
-          <label style="min-width:60px">البيان:</label>
-          <input type="text" id="trNote" placeholder="تفاصيل العملية...">
-          <button class="act-btn bg-green" onclick="addTreasuryMove()">💾 حفظ الحركة</button>
+          <label style="min-width:60px">المبلغ:</label><input type="number" id="trAmount" value="0" step="any">
+          <label style="min-width:60px">البيان:</label><input type="text" id="trNote" placeholder="تفاصيل العملية...">
+          <button type="button" class="act-btn bg-green" onclick="addTreasuryMove()">💾 حفظ الحركة</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -665,15 +551,12 @@
       </div>
     </div>
 
-    <!-- ==================== 8. PROFITS REPORT ==================== -->
+    <!-- 8. PROFITS -->
     <div id="sec-profits" class="sec-view">
       <div class="action-bar">
-        <label>من تاريخ:</label>
-        <input type="date" id="profDateFrom" onchange="renderProfits()">
-        <label>إلى تاريخ:</label>
-        <input type="date" id="profDateTo" onchange="renderProfits()">
-        <label>تصفية بصنف محدد:</label>
-        <select id="profItemFilter" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
+        <label>من تاريخ:</label><input type="date" id="profDateFrom" onchange="renderProfits()">
+        <label>إلى تاريخ:</label><input type="date" id="profDateTo" onchange="renderProfits()">
+        <label>تصفية بصنف محدد:</label><select id="profItemFilter" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
       </div>
       <div class="t-foot-bar" style="margin-bottom:10px; font-size:15px;">
         <span>صافي المبيعات: <strong id="profTotSales">0.00</strong></span>
@@ -690,7 +573,7 @@
       </div>
     </div>
 
-    <!-- ==================== 9. SETTINGS & CLOUD SYNC ==================== -->
+    <!-- 9. SETTINGS -->
     <div id="sec-settings" class="sec-view">
       <div class="form-grid-2">
         <div class="panel-box">
@@ -699,19 +582,16 @@
           <div class="f-row"><label>العنوان:</label><input type="text" id="setStoreAddress"></div>
           <div class="f-row"><label>رقم الهاتف:</label><input type="text" id="setStorePhone"></div>
           <div class="f-row"><label>الرقم السري للمدير:</label><input type="password" id="setPinCode" placeholder="افتراضي: 1234"></div>
-          <button class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+          <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
 
         <div class="panel-box">
-          <div class="panel-title">☁️ المزامنة السحابية المجانية (إنترنت + موبايل + ويندوز) والنسخ الاحتياطي</div>
-          <div class="f-row">
-            <label>رابط Firebase:</label>
-            <input type="text" id="setFirebaseUrl" placeholder="https://your-project-default-rtdb.firebaseio.com">
-          </div>
+          <div class="panel-title">☁️ المزامنة المباشرة مع قاعدة بيانات Neon والنسخ الاحتياطي</div>
+          <p style="margin:4px 0 10px 0; font-size:13px;">البرنامج مربوط بمسار <code>/api/sync</code> الخاص بقاعدة بيانات <strong>Neon PostgreSQL</strong> على Vercel.</p>
           <div class="action-bar">
-            <button class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات للسيرفر</button>
-            <button class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات من السيرفر</button>
-            <button class="act-btn bg-green" onclick="exportFullBackup()">💾 تحميل نسخة احتياطية</button>
+            <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات إلى Neon الآن</button>
+            <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات من Neon الآن</button>
+            <button type="button" class="act-btn bg-green" onclick="exportFullBackup()">💾 تحميل نسخة احتياطية (JSON)</button>
             <label class="act-btn bg-orange" style="cursor:pointer;">
               📂 استعادة نسخة <input type="file" accept=".json" style="display:none" onchange="importFullBackup(event)">
             </label>
@@ -723,29 +603,25 @@
   </div>
 </div>
 
-<!-- Lock Screen Modal -->
 <div id="lockModal">
   <div class="lock-card">
     <h3>🔒 شاشة دخول المدير</h3>
     <p>أدخل الرقم السري لفتح النظام (الافتراضي: 1234)</p>
     <input type="password" id="unlockPinInp" style="width:100%; padding:8px; font-size:18px; text-align:center; margin-bottom:10px;">
-    <button class="act-btn bg-green" style="width:100%; justify-content:center;" onclick="unlockApp()">دخول</button>
+    <button type="button" class="act-btn bg-green" style="width:100%; justify-content:center;" onclick="unlockApp()">دخول</button>
   </div>
 </div>
 
-<!-- Hidden A5 Print Container -->
 <div id="printAreaA5"></div>
 
 <script>
-/* ==================== DATABASE & DEFAULT DATA ==================== */
 const DB_KEY = 'BOOKSTORE_POS_COMPLETE_DB_V2';
 let db = {
   settings: {
     name: 'مكتبة النور للأدوات المدرسية والكتب الخارجية',
     address: 'العنوان: الشارع الرئيسي - بجوار المدرسة',
     phone: '01000000000',
-    pin: '1234',
-    firebaseUrl: ''
+    pin: '1234'
   },
   categories: ['كتب خارجية', 'كشاكيل وكراسات', 'أقلام وأدوات كتابة', 'هدايا وألعاب', 'أدوات هندسية وفنية'],
   items: [
@@ -779,28 +655,33 @@ function loadDB() {
 function saveDB() {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   updateDashboardKPIs();
+  syncToCloud('auto_push');
 }
 
-/* ==================== CLOCK & INITIALIZATION ==================== */
 function updateClock() {
   const now = new Date();
-  document.getElementById('liveDate').textContent = now.toLocaleDateString('en-GB');
-  document.getElementById('liveTime').textContent = now.toTimeString().slice(0,8);
+  const dEl = document.getElementById('liveDate');
+  const tEl = document.getElementById('liveTime');
+  if (dEl) dEl.textContent = now.toLocaleDateString('en-GB');
+  if (tEl) tEl.textContent = now.toTimeString().slice(0,8);
 }
 setInterval(updateClock, 1000);
 
-window.onload = function() {
+window.addEventListener('DOMContentLoaded', function() {
+  const cp = document.getElementById('classicPanel');
+  if (cp) cp.style.display = 'block';
   loadDB();
   updateClock();
   populateCategoriesSelect();
   renderItemsTable();
   generateNewCode();
-};
+  updateInvoiceUI();
+});
 
-/* ==================== NAVIGATION ==================== */
 function openSec(secId, titleText) {
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
-  document.getElementById(secId).classList.add('active');
+  const target = document.getElementById(secId);
+  if (target) target.classList.add('active');
   if (titleText) document.getElementById('winTitle').textContent = titleText;
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
@@ -811,7 +692,6 @@ function toggleClassicGrid() {
   p.style.display = (p.style.display === 'none') ? 'block' : 'none';
 }
 
-/* ==================== DASHBOARD KPIs ==================== */
 function updateDashboardKPIs() {
   const today = new Date().toISOString().slice(0,10);
   let cash = 0;
@@ -833,9 +713,9 @@ function updateDashboardKPIs() {
   document.getElementById('kpiLowStock').textContent = lowCount;
 }
 
-/* ==================== 1. ITEMS & CATEGORIES ==================== */
 function populateCategoriesSelect() {
   const sel = document.getElementById('itemCategory');
+  if (!sel) return;
   sel.innerHTML = db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 function quickAddCategory() {
@@ -851,7 +731,8 @@ function quickAddCategory() {
 }
 function generateNewCode() {
   const nextCode = db.items.length ? Math.max(...db.items.map(i => Number(i.code) || 1000)) + 1 : 1001;
-  document.getElementById('itemCode').value = nextCode;
+  const el = document.getElementById('itemCode');
+  if (el) el.value = nextCode;
 }
 function calcPriceFromProfit() {
   const buy = parseFloat(document.getElementById('itemBuyPrice').value) || 0;
@@ -914,6 +795,7 @@ function renderItemsTable() {
   const list = db.items.filter(i => i.name.toLowerCase().includes(q) || String(i.code).includes(q) || (i.cat||'').toLowerCase().includes(q));
   let totBuy = 0, totSell = 0;
   const tbody = document.getElementById('itemsTbody');
+  if (!tbody) return;
   tbody.innerHTML = list.map(i => {
     totBuy += (Number(i.buy) * Number(i.qty));
     totSell += (Number(i.sell) * Number(i.qty));
@@ -943,9 +825,9 @@ function renderItemsTable() {
       <td>${Number(i.wholesale).toFixed(2)}</td>
       <td>${Number(i.minSell).toFixed(2)}</td>
       <td>${i.notes || '-'}</td>
-      <td><button class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(${i.id})">✏️</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(${i.id})">🗑️</button></td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(${i.id})">|||</button></td>
+      <td><button type="button" class="act-btn bg-orange" style="padding:3px 8px" onclick="editItem(${i.id})">✏️</button></td>
+      <td><button type="button" class="act-btn bg-red" style="padding:3px 8px" onclick="deleteItem(${i.id})">🗑️</button></td>
+      <td><button type="button" class="act-btn bg-blue" style="padding:3px 8px" onclick="printBarcodeLabel(${i.id})">|||</button></td>
     </tr>`;
   }).join('');
   document.getElementById('totItemsCount').textContent = list.length;
@@ -990,9 +872,7 @@ function deleteItem(id) {
   saveDB();
   renderItemsTable();
 }
-function showSingleItemProfit() {
-  openProfitSec('item');
-}
+function showSingleItemProfit() { openProfitSec('item'); }
 function printBarcodeLabel(id) {
   const it = db.items.find(x => x.id === id);
   if (!it) return;
@@ -1006,14 +886,15 @@ function printBarcodeLabel(id) {
   triggerA5Print(html);
 }
 
-/* ==================== 2. INVOICES (SALES / PURCHASES / QUOTES) ==================== */
 function openInvoiceSec(mode) {
   openSec('sec-invoice', '🧾 شاشة الفواتير وعروض الأسعار');
   document.getElementById('invMode').value = mode;
   updateInvoiceUI();
 }
 function updateInvoiceUI() {
-  const mode = document.getElementById('invMode').value;
+  const modeEl = document.getElementById('invMode');
+  if (!modeEl) return;
+  const mode = modeEl.value;
   const titles = {
     sale: '🛒 فاتورة مبيعات',
     sale_return: '↩️ فاتورة مرتجع مبيعات',
@@ -1022,7 +903,6 @@ function updateInvoiceUI() {
     quote: '📋 عرض أسعار للمدارس والعملاء'
   };
   document.getElementById('invPanelTitle').textContent = titles[mode];
-  document.getElementById('winTitle').textContent = titles[mode];
   document.getElementById('btnConvertQuote').style.display = (mode === 'quote') ? 'inline-flex' : 'none';
 
   const isSupplier = mode.startsWith('purchase');
@@ -1034,11 +914,12 @@ function updateInvoiceUI() {
   renderInvCart();
 }
 function addInvItemFromInput() {
-  const val = document.getElementById('invBarcodeInp').value.trim();
-  if (!val) return;
+  const inp = document.getElementById('invBarcodeInp');
+  const val = inp.value.trim();
+  if (!val) return alert('اختر الصنف أو اكتب كود/اسم الصنف أولاً!');
   const qty = parseFloat(document.getElementById('invAddQty').value) || 1;
   const item = db.items.find(i => String(i.code) === val || i.name === val || i.name.includes(val));
-  if (!item) return alert('لم يتم العثور على الصنف!');
+  if (!item) return alert('لم يتم العثور على الصنف! تأكد من الكود أو الاسم.');
 
   const mode = document.getElementById('invMode').value;
   const tier = document.getElementById('invPriceTier').value;
@@ -1048,7 +929,7 @@ function addInvItemFromInput() {
   if (existing) existing.qty += qty;
   else invCart.push({ id: item.id, code: item.code, name: item.name, qty, price, discPct: 0, buyCost: Number(item.buy), minSell: Number(item.minSell) });
 
-  document.getElementById('invBarcodeInp').value = '';
+  inp.value = '';
   document.getElementById('invAddQty').value = 1;
   renderInvCart();
 }
@@ -1062,17 +943,16 @@ function updateCartPricesByTier() {
 }
 function renderInvCart() {
   const tbody = document.getElementById('invCartTbody');
+  if (!tbody) return;
   tbody.innerHTML = invCart.map((c, idx) => {
     const rowTotal = c.qty * c.price * (1 - (c.discPct || 0)/100);
     return `<tr>
-      <td>${idx + 1}</td>
-      <td>${c.code}</td>
-      <td style="text-align:right; font-weight:bold;">${c.name}</td>
+      <td>${idx + 1}</td><td>${c.code}</td><td style="text-align:right; font-weight:bold;">${c.name}</td>
       <td><input type="number" value="${c.qty}" style="width:60px" onchange="updateCartRow(${idx},'qty',this.value)"></td>
       <td><input type="number" value="${c.price}" style="width:70px" onchange="updateCartRow(${idx},'price',this.value)"></td>
       <td><input type="number" value="${c.discPct}" style="width:55px" onchange="updateCartRow(${idx},'discPct',this.value)"></td>
       <td style="font-weight:bold;">${rowTotal.toFixed(2)}</td>
-      <td><button class="act-btn bg-red" style="padding:2px 8px" onclick="invCart.splice(${idx},1);renderInvCart();">✖</button></td>
+      <td><button type="button" class="act-btn bg-red" style="padding:2px 8px" onclick="invCart.splice(${idx},1);renderInvCart();">✖</button></td>
     </tr>`;
   }).join('');
   calcInvoiceTotals();
@@ -1117,7 +997,7 @@ function convertQuoteToSale() {
   alert('تم تحويل عرض السعر إلى فاتورة مبيعات، اضغط حفظ لإتمام البيع!');
 }
 function saveInvoice(doPrint) {
-  if (!invCart.length) return alert('الفاتورة فارغة! أضف أصنافاً أولاً.');
+  if (!invCart.length) return alert('الفاتورة فارغة! أضف أصنافاً أولاً بالضغط على (+ أضف للفاتورة).');
   const mode = document.getElementById('invMode').value;
   const partyId = Number(document.getElementById('invPartySelect').value);
   const party = db.parties.find(p => p.id === partyId) || { name: 'نقدي', balance: 0 };
@@ -1156,31 +1036,27 @@ function saveInvoice(doPrint) {
     id: db.invoices.length + 1,
     date: new Date().toISOString().slice(0,10),
     time: new Date().toTimeString().slice(0,5),
-    mode,
-    partyId,
-    partyName: party.name,
-    prevBalance,
-    netTotal,
-    paidAmount,
-    remainAmount,
+    mode, partyId, partyName: party.name, prevBalance, netTotal, paidAmount, remainAmount,
     newBalance: party ? Number(party.balance) : 0,
     items: JSON.parse(JSON.stringify(invCart))
   };
   db.invoices.push(invObj);
   saveDB();
   if (doPrint) printInvoiceA5(invObj);
+  else alert('✅ تم حفظ الفاتورة بنجاح!');
   clearInvCart();
   updateInvoiceUI();
+}
+function printInvoiceById(invId) {
+  const inv = db.invoices.find(x => x.id === Number(invId));
+  if (inv) printInvoiceA5(inv);
 }
 function printInvoiceA5(inv) {
   const typeNames = { sale: 'فاتورة مبيعات', sale_return: 'فاتورة مرتجع مبيعات', purchase: 'فاتورة مشتريات', purchase_return: 'مرتجع مشتريات', quote: 'عرض أسعار' };
   const rows = inv.items.map((c, idx) => `
     <tr>
-      <td>${idx+1}</td>
-      <td>${c.name}</td>
-      <td>${c.qty}</td>
-      <td>${Number(c.price).toFixed(2)}</td>
-      <td>${c.discPct || 0}%</td>
+      <td>${idx+1}</td><td>${c.name}</td><td>${c.qty}</td>
+      <td>${Number(c.price).toFixed(2)}</td><td>${c.discPct || 0}%</td>
       <td>${(c.qty * c.price * (1 - (c.discPct||0)/100)).toFixed(2)}</td>
     </tr>`).join('');
   const html = `
@@ -1212,12 +1088,11 @@ function printInvoiceA5(inv) {
   triggerA5Print(html);
 }
 
-/* ==================== 3. CATEGORIES & STOCK ==================== */
 function renderCategoriesTable() {
   document.getElementById('catsTbody').innerHTML = db.categories.map((c, idx) => {
     const count = db.items.filter(i => i.cat === c).length;
     return `<tr><td>${idx+1}</td><td><strong>${c}</strong></td><td>${count}</td>
-      <td><button class="act-btn bg-red" style="padding:2px 8px" onclick="db.categories.splice(${idx},1);saveDB();renderCategoriesTable();">حذف</button></td></tr>`;
+      <td><button type="button" class="act-btn bg-red" style="padding:2px 8px" onclick="db.categories.splice(${idx},1);saveDB();renderCategoriesTable();">حذف</button></td></tr>`;
   }).join('');
 }
 function addCategory() {
@@ -1241,7 +1116,6 @@ function openStockFilter(filter) {
     </tr>`).join('');
 }
 
-/* ==================== 4. CUSTOMERS & SUPPLIERS ==================== */
 function openPartySec(type) {
   openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس');
   document.getElementById('partyType').value = type;
@@ -1260,9 +1134,7 @@ function saveParty() {
   const name = document.getElementById('partyName').value.trim();
   if (!name) return alert('أدخل الاسم!');
   db.parties.push({
-    id: Date.now(),
-    type,
-    name,
+    id: Date.now(), type, name,
     phone: document.getElementById('partyPhone').value.trim(),
     balance: parseFloat(document.getElementById('partyBalance').value) || 0,
     notes: document.getElementById('partyNotes').value.trim()
@@ -1282,8 +1154,8 @@ function renderPartiesTable() {
     <tr>
       <td>${idx+1}</td><td style="font-weight:bold;">${p.name}</td><td>${p.phone || '-'}</td><td>${p.notes || '-'}</td>
       <td style="font-weight:bold; color:${p.balance>0?'var(--red-accent)':'var(--green-btn)'}">${Number(p.balance).toFixed(2)}</td>
-      <td><button class="act-btn bg-blue" style="padding:3px 8px" onclick="showStatementFor(${p.id})">📄 كشف حساب</button></td>
-      <td><button class="act-btn bg-red" style="padding:3px 8px" onclick="deleteParty(${p.id})">🗑️</button></td>
+      <td><button type="button" class="act-btn bg-blue" style="padding:3px 8px" onclick="showStatementFor(${p.id})">📄 كشف حساب</button></td>
+      <td><button type="button" class="act-btn bg-red" style="padding:3px 8px" onclick="deleteParty(${p.id})">🗑️</button></td>
     </tr>`).join('');
 }
 function deleteParty(id) {
@@ -1301,11 +1173,8 @@ function savePartyVoucher() {
   if (!p) return;
   p.balance = Number(p.balance) - amt;
   db.treasury.push({
-    id: Date.now(),
-    date: new Date().toISOString().slice(0,10),
-    type: p.type === 'customer' ? 'in' : 'out',
-    amount: amt,
-    partyId: p.id,
+    id: Date.now(), date: new Date().toISOString().slice(0,10),
+    type: p.type === 'customer' ? 'in' : 'out', amount: amt, partyId: p.id,
     note: `سند ${p.type === 'customer' ? 'قبض من عميل' : 'صرف لمورد'}: ${p.name} - ${note}`
   });
   saveDB();
@@ -1345,7 +1214,6 @@ function printPartyStatementA5() {
   triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>${title}</h3></div>${tableHtml}`);
 }
 
-/* ==================== 5. INVOICE LOGS & TREASURY & PROFITS ==================== */
 function openInvLog(type) {
   openSec('sec-invlog', '📑 سجل الفواتير ومبيعات ومشتريات الفترة');
   document.getElementById('logTypeFilter').value = type;
@@ -1365,7 +1233,7 @@ function renderInvLog() {
     <tr>
       <td>#${i.id}</td><td>${i.date}</td><td>${i.mode}</td><td>${i.partyName}</td>
       <td><strong>${Number(i.netTotal).toFixed(2)}</strong></td><td>${Number(i.paidAmount).toFixed(2)}</td><td>${Number(i.remainAmount).toFixed(2)}</td>
-      <td><button class="act-btn bg-teal" style="padding:3px 8px" onclick='printInvoiceA5(${JSON.stringify(i)})'>🖨️ طباعة A5</button></td>
+      <td><button type="button" class="act-btn bg-teal" style="padding:3px 8px" onclick="printInvoiceById(${i.id})">🖨️ طباعة A5</button></td>
     </tr>`).join('');
 }
 function openTreasury(filter) {
@@ -1407,8 +1275,7 @@ function calculateTotalProfits(dFrom, dTo, itemFilter) {
         if (itemFilter && itemFilter !== 'all' && String(c.id) !== String(itemFilter)) return;
         const rev = c.qty * c.price * (1 - (c.discPct||0)/100) * sign;
         const cst = c.qty * (c.buyCost || 0) * sign;
-        sales += rev;
-        cost += cst;
+        sales += rev; cost += cst;
         if (!itemMap[c.id]) itemMap[c.id] = { code: c.code, name: c.name, qty: 0, rev: 0, cst: 0 };
         itemMap[c.id].qty += (c.qty * sign);
         itemMap[c.id].rev += rev;
@@ -1447,7 +1314,6 @@ function renderProfits() {
     </tr>`).join('');
 }
 
-/* ==================== 6. SETTINGS, CLOUD SYNC, EXPORT & PRINT ==================== */
 function applySettingsUI() {
   document.getElementById('lblStoreName').textContent = db.settings.name;
   document.getElementById('lblStoreAddress').textContent = db.settings.address;
@@ -1458,43 +1324,106 @@ function loadSettingsForm() {
   document.getElementById('setStoreAddress').value = db.settings.address;
   document.getElementById('setStorePhone').value = db.settings.phone;
   document.getElementById('setPinCode').value = db.settings.pin;
-  document.getElementById('setFirebaseUrl').value = db.settings.firebaseUrl || '';
 }
 function saveSettings() {
   db.settings.name = document.getElementById('setStoreName').value.trim();
   db.settings.address = document.getElementById('setStoreAddress').value.trim();
   db.settings.phone = document.getElementById('setStorePhone').value.trim();
   db.settings.pin = document.getElementById('setPinCode').value.trim() || '1234';
-  db.settings.firebaseUrl = document.getElementById('setFirebaseUrl').value.trim();
   saveDB();
   applySettingsUI();
   alert('تم حفظ بيانات المكتبة والإعدادات بنجاح!');
 }
-// دالة المزامنة المباشرة مع قاعدة بيانات Neon على Vercel
+
 async function syncToCloud(dir) {
+  const badge = document.getElementById('syncStatusBadge');
   try {
-    if (dir === 'push') {
+    if (dir === 'push' || dir === 'auto_push') {
+      if (badge) badge.textContent = 'جاري المزامنة...';
       const res = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(db)
       });
+      if (!res.ok) throw new Error('API not ready');
       const data = await res.json();
-      if (data.ok) alert('✅ تم رفع وحفظ كل بيانات المكتبة في قاعدة بيانات Neon بنجاح!');
-      else alert('⚠️ خطأ أثناء الحفظ: ' + (data.error || ''));
-    } else {
+      if (data.ok) {
+        if (badge) badge.textContent = 'متصل بـ Neon ✅';
+        if (dir === 'push') alert('✅ تم رفع وحفظ كل بيانات المكتبة في قاعدة بيانات Neon بنجاح!');
+      }
+    } else if (dir === 'pull') {
+      if (badge) badge.textContent = 'جاري السحب...';
       const res = await fetch('/api/sync');
       const remote = await res.json();
       if (remote && remote.items) {
         db = remote;
         localStorage.setItem(DB_KEY, JSON.stringify(db));
+        if (badge) badge.textContent = 'تم التحديث ✅';
         alert('✅ تم سحب أحدث البيانات من قاعدة بيانات Neon بنجاح!');
         location.reload();
       } else {
-        alert('ℹ️ قاعدة بيانات Neon فارغة حالياً، اضغط "رفع البيانات للسيرفر" أولاً.');
+        alert('ℹ️ قاعدة بيانات Neon فارغة حالياً، اضغط "رفع لقاعدة بيانات Neon" أولاً.');
       }
     }
   } catch (e) {
-    alert('⚠️ تعذر الاتصال بقاعدة بيانات Neon، تأكد من رفع المشروع على Vercel.');
+    if (badge) badge.textContent = 'حفظ محلي (أوفلاين)';
+    if (dir !== 'auto_push') {
+      alert('⚠️ لتفعيل مزامنة Neon، تأكد من إضافة ملف api/sync.js وملف package.json في GitHub.');
+    }
   }
 }
+
+function exportFullBackup() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Bookstore_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importFullBackup(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { db = JSON.parse(e.target.result); saveDB(); location.reload(); } catch(err){ alert('ملف غير صالح'); }
+  };
+  reader.readAsText(file);
+}
+function exportItemsCSV() {
+  let csv = '\uFEFFالكود,اسم الصنف,المجموعة,الكمية,الوحدة,سعر الشراء,سعر البيع,سعر الجملة\n';
+  db.items.forEach(i => { csv += `${i.code},"${i.name}","${i.cat}",${i.qty},${i.unit},${i.buy},${i.sell},${i.wholesale}\n`; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Bookstore_Items.csv';
+  a.click();
+}
+function triggerA5Print(innerHtml) {
+  const area = document.getElementById('printAreaA5');
+  area.innerHTML = innerHtml;
+  window.print();
+}
+function printItemsReportA5() {
+  const rows = db.items.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.buy}</td><td>${i.sell}</td></tr>`).join('');
+  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>تقرير جرد وأسعار الأصناف (A5)</h3></div>
+    <table class="p-table"><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>شراء</th><th>بيع</th></tr></thead><tbody>${rows}</tbody></table>`);
+}
+function printCurrentScreenA5() {
+  const activeSec = document.querySelector('.sec-view.active');
+  const tbl = activeSec ? activeSec.querySelector('table') : null;
+  if (!tbl) return window.print();
+  triggerA5Print(`<div class="p-header"><h2>${db.settings.name}</h2><h3>${document.getElementById('winTitle').textContent}</h3></div><div class="p-table">${tbl.outerHTML}</div>`);
+}
+function lockApp() { document.getElementById('lockModal').style.display = 'flex'; }
+function unlockApp() {
+  if (document.getElementById('unlockPinInp').value === db.settings.pin) {
+    document.getElementById('lockModal').style.display = 'none';
+    document.getElementById('unlockPinInp').value = '';
+  } else alert('الرقم السري غير صحيح!');
+}
+</script>
+</body>
+</html>
+```
+
+جرب استبدال الكود في `index.html` على GitHub الآن وأخبرني بالنتيجة!
