@@ -11,9 +11,9 @@ const STAFF_KEY = `${DB_KEY}_STAFF`;
 const AUDIT_KEY = `${DB_KEY}_AUDIT`;
 const HELD_CARTS_KEY = `${DB_KEY}_HELD_CARTS`;
 const ACTIVE_STAFF_KEY = `${DB_KEY}_ACTIVE_STAFF`;
-const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'night', 'custom'];
-const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', night: '#8fb4ff' };
-const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', night: 'الوضع الليلي', custom: 'تخصيص كامل' };
+const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'ref-light-blue', 'ref-light-purple', 'ref-light-maroon', 'ref-dark-gray', 'ref-dark-purple', 'night', 'custom'];
+const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', 'ref-light-blue': '#1e6fb8', 'ref-light-purple': '#6a5acd', 'ref-light-maroon': '#8b1e1e', 'ref-dark-gray': '#4a9eff', 'ref-dark-purple': '#a855f7', night: '#8fb4ff' };
+const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', 'ref-light-blue': 'مرجعي أزرق فاتح', 'ref-light-purple': 'مرجعي بنفسجي فاتح', 'ref-light-maroon': 'مرجعي عنابي', 'ref-dark-gray': 'مرجعي رمادي داكن', 'ref-dark-purple': 'مرجعي بنفسجي داكن', night: 'الوضع الليلي', custom: 'تخصيص كامل' };
 
 const $ = id => document.getElementById(id);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -353,6 +353,8 @@ function updateClock() {
   const weekday = new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now);
   if ($('liveDate')) { $('liveDate').textContent = date; $('liveDate').title = weekday; }
   if ($('liveTime')) $('liveTime').textContent = time;
+  if ($('statusDate')) $('statusDate').textContent = date;
+  if ($('statusTime')) $('statusTime').textContent = time;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
 /* ------------------------------------------------------------------ */
@@ -601,9 +603,11 @@ function openSec(secId, titleText) {
   if (secId === 'sec-parties' && !ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
   $(secId)?.classList.add('active');
-  $('windowLayer').classList.add('open', 'maximized');
-  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('section-open');
+  document.body.style.overflow = '';
+  $('windowLayer').classList.add('open');
+  $('windowLayer').classList.remove('minimized', 'maximized'); $('windowDock').hidden = true;
+  setActiveNav(({ 'sec-settings': 'settings', 'sec-parties': 'customers', 'sec-invoice': 'sale' })[secId] || '');
   $('winTitle').textContent = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
@@ -614,10 +618,23 @@ function openSec(secId, titleText) {
   if (secId === 'sec-profits') renderProfits();
   if (secId === 'sec-labels') { loadLabelOptions(); renderLabels(); }
   if (secId === 'sec-invoice') renderPosTiles();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function setActiveNav(name) {
+  document.querySelectorAll('#mainNav .main-nav-link').forEach(link => link.classList.toggle('active', link.dataset.nav === name));
+}
+function quickPlaceholder(name) {
+  const title = $('placeholderTitle'), heading = $('placeholderHeading'), text = $('placeholderText');
+  if (title) title.textContent = `🚧 ${name}`;
+  if (heading) heading.textContent = `قسم ${name}`;
+  if (text) text.textContent = `قسم «${name}» من ضمن التخطيط الجديد للبرنامج وسيتم تفعيله في التحديث القادم. باقي الشاشات تعمل بشكل كامل.`;
+  openSec('sec-placeholder', `🚧 ${name}`);
 }
 function closeWorkspace() {
   $('windowLayer').classList.remove('open', 'minimized', 'maximized'); $('windowDock').hidden = true;
+  document.body.classList.remove('section-open');
   document.body.style.overflow = '';
+  setActiveNav('home');
 }
 function minimizeWorkspace() {
   if (!$('windowLayer').classList.contains('open')) return;
@@ -638,7 +655,7 @@ function saveAppearance(settings) {
 }
 function applyAppearance() {
   const appearance = getAppearance();
-  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'vista-classic';
+  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'win11-indigo';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
   if ($('darkModeButton')) {
@@ -707,6 +724,7 @@ function toggleSidebar(force) {
 }
 function showHome() {
   closeWorkspace(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
+  setActiveNav('home');
   document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('selected', link.textContent.includes('الرئيسية')));
   $('homeDashboard').scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
@@ -1535,6 +1553,7 @@ function openInvoiceSec(mode) {
   if (!ensurePermission(invoicePermission(mode))) return;
   if (mode !== $('invMode').value && invCart.length && !confirm('تغيير نوع العملية سيفرغ الفاتورة غير المحفوظة. هل تريد المتابعة؟')) return;
   openSec('sec-invoice', SEC_TITLES['sec-invoice']);
+  setActiveNav(mode.startsWith('purchase') ? 'purchase' : 'sale');
   if (mode !== $('invMode').value) clearInvCart();
   $('invMode').value = mode; updateInvoiceUI();
   // every floating screen opens large: the whole app width is the working area
@@ -3055,6 +3074,7 @@ function openPartySec(type) {
   if ($('partyType').value !== type) resetPartyForm();
   $('partyType').value = type;
   openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس');
+  setActiveNav('customers');
   $('partyFormTitle').textContent = type === 'supplier' ? 'بيانات المورد' : 'بيانات العميل'; renderPartiesTable();
 }
 function openPartyReport(type, report) {
@@ -3336,6 +3356,7 @@ function loadSettingsForm() {
 }
 function openSettingsTab(tab = 'look') {
   openSec('sec-settings', '⚙️ إعدادات النظام');
+  setActiveNav(tab === 'staff' ? 'staff' : 'settings');
   switchSettingsTab(tab);
   if (tab === 'sync') {
     loadSettingsForm();
@@ -3580,7 +3601,7 @@ Object.assign(window, {
   handleScanKey, showSuggestions, hideSuggestions, moveSuggestion, pickSuggestion, suggestionMatches,
   playScanFeedback, setScanFeedback, setScanVibrate, applyScanFeedbackUI,
   openCameraScanner, closeCameraScanner, handleCameraCode, cameraSupported,
-  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
+  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, setActiveNav, quickPlaceholder, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
   setInvoiceTone, resetInvoiceTones, applyInvoiceTones, invoiceTones,
   setDocTemplate, setDocAccent, applyDocSettingsUI, uploadDocSignature, clearDocSignature, docSettings,
   tenderAlertLimit, setTenderAlert, confirmTenderDifference, belowCostLines, confirmBelowCost,
