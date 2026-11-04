@@ -564,3 +564,160 @@ test('app badge counts held invoices plus the auto draft', async t => {
   f.window.clearInvCart(); await f.window.syncAppBadge();
   assert.equal(f.$('draftBadge').textContent, '1');
 });
+
+test('every page has its own close button and the window toolbar is gone', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  assert.equal(f.window.document.querySelector('.win-header').hidden, true);
+  for (const id of ['sec-items', 'sec-categories', 'sec-stock', 'sec-labels', 'sec-parties', 'sec-invlog', 'sec-treasury', 'sec-profits', 'sec-settings']) {
+    const view = f.$(id);
+    assert.equal(view.querySelectorAll('.page-close-btn').length, 1, id);
+  }
+  assert.equal(f.$('sec-invoice').querySelectorAll('.pos-titlebar .page-close-btn').length, 1);
+  f.window.openSec('sec-items', 'الأصناف');
+  const closeButton = f.window.document.querySelector('#sec-items .page-close-btn');
+  assert.match(closeButton.getAttribute('onclick'), /closeWorkspace\(\)/);
+  f.window.closeWorkspace();
+  assert.equal(f.$('windowLayer').classList.contains('open'), false);
+});
+
+test('POS keeps invoice data on the left, money boxes side by side and no quick-pay chips', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale');
+  assert.equal(f.window.document.querySelectorAll('.cash-chip').length, 0);
+  const wrap = f.window.document.querySelector('#sec-invoice .pos-wrap');
+  assert.equal(wrap.dataset.mode, 'sale');
+  const money = f.window.document.querySelector('.pos-sum-major');
+  assert.equal(money.children.length, 3);
+  assert.equal([...money.children].map(cell => cell.querySelector('label').textContent).join('|'), 'الصافي المطلوب|المدفوع|المتبقي (آجل)');
+  // invoice data tabs now live inside the cart card
+  const cartCard = f.window.document.querySelector('.pos-cart-card');
+  assert.equal(cartCard.querySelector('.pos-cart-data #invTabs') !== null, true);
+  f.window.openInvoiceSec('purchase');
+  assert.equal(wrap.dataset.mode, 'purchase');
+  assert.equal(f.$('invPanelTitle') !== null, true);
+});
+
+test('invoice log switches between sales, purchases, quotes with distinct headings', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openSec('sec-invlog');
+  f.window.setLogKind('sale');
+  assert.equal(f.$('sec-invlog').dataset.logKind, 'sale');
+  assert.match(f.$('invLogTitle').textContent, /المبيعات/);
+  assert.equal(f.$('invLogPartyHead').textContent, 'العميل');
+  f.window.setLogKind('purchase');
+  assert.match(f.$('invLogTitle').textContent, /المشتريات/);
+  assert.equal(f.$('invLogPartyHead').textContent, 'المورد');
+  f.window.setLogKind('quote');
+  assert.match(f.$('invLogTitle').textContent, /عروض الأسعار/);
+  assert.deepEqual([...f.window.document.querySelectorAll('#logSwitch .log-switch-btn')].map(b => b.classList.contains('is-active')), [false, false, true, false]);
+});
+
+test('settings page uses real sections instead of a scroll list', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openSec('sec-settings');
+  assert.equal(f.window.document.querySelector('[data-settings-panel="look"]').hidden, false);
+  assert.equal(f.$('staffManagerPanel').closest('[data-settings-panel]').hidden, true);
+  f.window.switchSettingsTab('staff');
+  assert.equal(f.$('staffManagerPanel').closest('[data-settings-panel]').hidden, false);
+  assert.deepEqual([...f.window.document.querySelectorAll('#settingsTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, false, false, true]);
+  f.window.switchSettingsTab('sync');
+  assert.equal(f.$('syncPanel').closest('[data-settings-panel]').hidden, false);
+});
+
+test('every invoice type has its own visual identity in the POS, the preview and the PDF', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const wrap = f.window.document.querySelector('#sec-invoice .pos-wrap');
+  for (const [mode, label] of [['sale', /نقدي/], ['purchase', /تكلفة/], ['sale_return', /مرتجع/], ['purchase_return', /مرتجع مشتريات/], ['quote', /عرض سعر/]]) {
+    f.window.openInvoiceSec(mode);
+    assert.equal(wrap.dataset.mode, mode);
+    assert.match(f.$('posModeBadge').textContent, label);
+    assert.equal(f.$('posModeBadge').dataset.tone, mode);
+  }
+  const themes = ['sale', 'purchase', 'sale_return', 'purchase_return', 'quote'].map(mode => f.window.invoiceDocTheme({ mode }).accent);
+  assert.equal(new Set(themes).size, 5);
+  const html = f.window.invoiceDocHtml({ id: 7, mode: 'sale_return', date: localDate(), time: '10:00', partyName: 'عميل', subtotal: 100, netTotal: 100, paidAmount: 0, remainAmount: 100, prevBalance: 0, newBalance: 100, items: [{ id: 1, code: '1001', name: 'كتاب', qty: 1, price: 100, discPct: 0, netTotal: 100 }], store: { name: 'مكتبة', address: 'عنوان', phone: '0100' } }, 'a5');
+  assert.match(html, /RETURN/); assert.match(html, /#8a1f6d/);
+});
+
+test('invoice tones are configurable per type and reach the POS and the document', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.setInvoiceTone('sale', '#005577');
+  assert.equal(f.window.invoiceTones().sale, '#005577');
+  assert.match(f.$('invoiceToneStyle').textContent, /#005577/);
+  assert.equal(f.$('toneSale').value, '#005577');
+  f.window.setInvoiceTone('quote', 'أحمر');
+  assert.equal(f.window.invoiceTones().quote, '#1d5f8a');
+  assert.equal(f.window.invoiceDocTheme({ mode: 'sale' }).accent, '#005577');
+  f.window.resetInvoiceTones();
+  assert.equal(f.window.invoiceTones().sale, f.window.DOC_THEME.sale.accent);
+});
+
+test('A5 templates and a document signature change the exported invoice', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const invoice = { id: 3, mode: 'sale', date: localDate(), time: '09:00', partyName: 'عميل', subtotal: 50, netTotal: 50, paidAmount: 50, remainAmount: 0, prevBalance: 0, newBalance: 0,
+    items: [{ id: 1, code: '1001', name: 'كتاب', qty: 1, price: 50, discPct: 0, netTotal: 50 }], store: { name: 'مكتبة', address: 'عنوان', phone: '0100' } };
+  for (const template of ['classic', 'modern', 'minimal']) {
+    f.window.setDocTemplate(template);
+    assert.equal(f.window.docSettings().template, template);
+    assert.equal(f.$('docTemplateGrid').querySelector(`[data-doc-template="${template}"]`).getAttribute('aria-pressed'), 'true');
+    assert.match(f.window.invoiceDocHtml(invoice, 'a5'), /<svg/);
+  }
+  f.window.setDocAccent('#123456');
+  assert.match(f.window.invoiceDocHtml(invoice, 'a5'), /#123456/);
+  const signature = f.window.docSettings().signature;
+  assert.match(f.window.invoiceDocBody(invoice, 'a5'), /p-signature/);
+  f.window.clearDocSignature();
+  assert.equal(f.window.docSettings().signature, '');
+  assert.doesNotMatch(f.window.invoiceDocBody(invoice, 'a5'), /p-signature/);
+  f.window.docSettings().signature = signature;
+});
+
+test('a big cash difference raises the tender alert and blocks a silent save', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.setTenderAlert(50);
+  assert.equal(f.window.tenderAlertLimit(), 50);
+  f.window.openInvoiceSec('sale'); addLine(f, '1002', 1);
+  f.fill('invPaidAmount', 500); f.window.calcInvoiceRemaining();
+  assert.equal(f.$('cashChangeBox').dataset.alert, 'yes');
+  f.setConfirm(false); f.window.saveInvoice(false);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.saved().invoices.length, 0);
+  f.fill('invPaidAmount', 10); f.window.calcInvoiceRemaining();
+  f.window.saveInvoice(false);
+  assert.equal(f.saved().invoices.length, 1);
+});
+
+test('selling below cost needs the manager PIN for non-admins', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  // the manager lowers the item cost/minimum first, then a cashier sells below cost
+  f.window.editItem(1);
+  f.fill('itemBuyPrice', 80); f.fill('itemMinSell', 60); f.window.saveItem();
+  f.window.openSec('sec-settings'); f.fill('staffNameInp', 'كاشير'); f.fill('staffPinInp', '7777');
+  f.fill('staffRoleInp', 'cashier'); f.window.saveStaff();
+  const staff = JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_STAFF`));
+  f.window.lockApp(); f.$('loginStaffSelect').value = staff[0].id; f.fill('unlockPinInp', '7777'); f.window.unlockApp();
+  f.window.openInvoiceSec('sale');
+  f.fill('invBarcodeInp', '1001'); f.fill('invAddQty', 1); f.window.addInvItemFromInput();
+  f.window.openInvoiceSec('sale');
+  f.fill('invBarcodeInp', '1001'); f.fill('invAddQty', 1); f.window.addInvItemFromInput();
+  f.window.updateCartRow(0, 'price', 70);
+  assert.equal(f.window.belowCostLines().length, 1);
+  assert.match(f.window.belowCostLines()[0].name, /كتاب/);
+  f.window.prompt = () => '0000';
+  f.setConfirm(true); f.window.saveInvoice(false);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.saved().invoices.length, 0);
+});
+
+test('label sheet supports per-item selection and custom copy counts', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openSec('sec-labels');
+  assert.equal(f.$('labelItemsTbody').querySelectorAll('tr').length, 2);
+  f.window.toggleAllLabelItems(false);
+  f.window.toggleLabelItem(1, true);
+  f.window.setLabelCopies('1001', 6);
+  assert.equal(f.window.labelCopiesMap().get('1001'), 6);
+  const cells = f.$('labelPreview').querySelectorAll('.label-cell').length;
+  assert.equal(cells, 6);
+  assert.match(f.$('labelCount').textContent, /6 ملصق/);
+});
