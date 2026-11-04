@@ -823,3 +823,113 @@ test('the look controls live in the appearance settings panel and the studio is 
   assert.equal(f.window.document.querySelector('[data-settings-panel="look"]').hidden, true);
   assert.equal(f.window.document.querySelector('[data-settings-panel="store"]').hidden, false);
 });
+
+test('saving shows a success flash and a coloured state tag on every invoice row', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale'); addLine(f, '1002', 1);
+  f.$('invPartySelect').value = '2'; f.window.updateInvoiceUI();
+  f.fill('invPaidAmount', 4); f.window.saveInvoice(false);
+  assert.equal(f.window.document.querySelectorAll('.save-flash-check').length, 1);
+  assert.match(f.window.document.querySelector('.save-flash-check').textContent, /تم حفظ/);
+  assert.equal(f.$('syncStatusBadge').dataset.flash, 'ok');
+  const sale = f.saved().invoices.at(-1);
+  assert.ok(sale.remainAmount > 0, f.alerts.join(' | '));
+  assert.match(f.window.invoiceStateTag(sale), /data-tag="due"/);
+  f.window.openInvLog('sale');
+  assert.match(f.$('invLogTbody').innerHTML, /state-tag/);
+  assert.match(f.window.invoiceStateTag({ mode: 'quote' }), /عرض سعر/);
+  assert.match(f.window.invoiceStateTag({ mode: 'sale_return' }), /مرتجع/);
+  assert.match(f.window.invoiceStateTag({ mode: 'sale', remainAmount: 0 }), /data-tag="paid"/);
+  assert.match(f.window.stockStateTag({ qty: 0, minQty: 2 }), /نافد/);
+  assert.match(f.window.stockStateTag({ qty: 2, minQty: 2 }), /حد الطلب/);
+  assert.equal(f.window.stockStateTag({ qty: 9, minQty: 2 }), '');
+});
+
+test('staff avatars use the initials of the signed-in user in the header and the log', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const badge = f.$('activeUserBadge');
+  assert.ok(badge.querySelector('.avatar-circle'));
+  assert.equal(badge.querySelector('.avatar-circle').textContent, f.window.avatarInitials(f.$('statusUser').textContent));
+  assert.equal(f.window.avatarInitials('سارة محمد'), 'سم');
+  assert.equal(f.window.avatarInitials('كريم'), 'كر');
+  f.fill('itemName', 'كراسة'); f.fill('itemQty', 3); f.window.saveItem();
+  f.window.toggleActivityLog(true);
+  assert.ok(f.$('activityLogList').querySelector('.avatar-circle'));
+  f.window.openActivityPage();
+  assert.ok(f.$('auditTbody').querySelector('.avatar-circle'));
+});
+
+test('A5 paper frame and watermark reach the printed document', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const invoice = { id: 5, mode: 'sale', date: localDate(), time: '11:00', partyName: 'عميل', subtotal: 60, netTotal: 60, paidAmount: 60, remainAmount: 0, prevBalance: 0, newBalance: 0,
+    items: [{ id: 1, code: '1001', name: 'كتاب', qty: 1, price: 60, discPct: 0, netTotal: 60 }], store: { name: 'مكتبة', address: 'عنوان', phone: '0100' } };
+  f.window.setDocFrame('ornament');
+  assert.equal(f.window.docPaperOptions().frame, 'ornament');
+  assert.equal(f.$('docFrameSelect').value, 'ornament');
+  assert.match(f.window.invoiceDocHtml(invoice, 'a5'), /border:2px solid/);
+  f.window.setDocWatermark('نسخة أصلية');
+  assert.equal(f.window.docPaperOptions().watermark, 'نسخة أصلية');
+  assert.match(f.window.invoiceDocBody(invoice, 'a5'), /doc-watermark/);
+  f.window.setDocFrame('line');
+  assert.match(f.window.invoiceDocHtml(invoice, 'a5'), /border-inline-start:5px solid/);
+  f.window.setDocFrame('none'); f.window.setDocWatermark('');
+  assert.doesNotMatch(f.window.invoiceDocBody(invoice, 'a5'), /doc-watermark/);
+});
+
+test('label templates and the thermal receipt style are configurable and previewed', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openSec('sec-labels');
+  f.window.setLabelTemplate('price');
+  assert.equal(f.window.lookSettings().labelTemplate, 'price');
+  assert.equal(f.$('labelPreview').dataset.labelTemplate, 'price');
+  assert.match(f.$('labelPreview').innerHTML, /data-template="price"/);
+  f.window.setLabelTemplate('mini');
+  assert.match(f.$('labelPreview').innerHTML, /data-template="mini"/);
+  f.window.setReceiptStyle('detailed');
+  assert.equal(f.window.receiptStyle(), 'detailed');
+  assert.equal(f.$('receiptStyle').value, 'detailed');
+  f.window.previewReceiptStyle();
+  assert.equal(f.$('receiptPreviewBox').hidden, false);
+  assert.match(f.$('receiptPreviewBox').textContent, /كشكول/);
+  f.window.setReceiptStyle('compact');
+  assert.equal(f.window.receiptStyle(), 'compact');
+});
+
+test('app icon is generated from the store branding without external assets', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.setAppIconColor('#1f74a8');
+  assert.equal(f.window.lookSettings().appIcon.color, '#1f74a8');
+  assert.equal(f.$('appIconColor').value, '#1f74a8');
+  assert.match(f.$('appIconPreview').innerHTML, /م/);
+  // browsers without canvas rasterisation simply keep the CSS preview
+  const canvas = f.window.buildAppIconCanvas(64);
+  if (canvas) { assert.equal(canvas.width, 64); }
+});
+
+test('focus mode and the rail sidebar tidy the chrome for a cashier screen', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.enterFocusMode();
+  assert.equal(f.window.document.body.dataset.focus, 'on');
+  assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  f.window.exitFocusMode();
+  assert.equal(f.window.document.body.dataset.focus, undefined);
+  f.window.toggleRailSidebar(true);
+  assert.equal(f.window.document.documentElement.getAttribute('data-rail'), 'on');
+  assert.equal(f.$('railSidebar').checked, true);
+  f.window.toggleRailSidebar(false);
+  assert.equal(f.window.document.documentElement.getAttribute('data-rail'), 'off');
+});
+
+test('button shapes and the colour-blind safe palette switch the whole UI', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const html = f.window.document.documentElement;
+  assert.equal(html.getAttribute('data-buttons'), 'soft');
+  f.window.setLookOption('buttons', 'pill');
+  assert.equal(html.getAttribute('data-buttons'), 'pill');
+  assert.equal(f.$('buttonShapeSeg').querySelector('[data-buttons-opt="pill"]').getAttribute('aria-pressed'), 'true');
+  f.window.setLookOption('buttons', 'classic');
+  assert.equal(html.getAttribute('data-buttons'), 'classic');
+  f.window.setLookOption('cvd', 'on');
+  assert.equal(html.getAttribute('data-cvd'), 'on');
+  assert.equal(JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_LOOK`)).cvd, 'on');
+});
