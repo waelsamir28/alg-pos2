@@ -2592,6 +2592,105 @@
   body[data-theme="ref-dark-purple"] .main-nav-link:hover { background:#2a2140; color:#fff; }
   body[data-theme="ref-dark-gray"] .main-nav-link.active { background:#2a2f38; color:#fff; border-bottom-color:var(--accent); }
   body[data-theme="ref-dark-purple"] .main-nav-link.active { background:#2a2140; color:#fff; border-bottom-color:var(--accent); }
+
+  /* ================= MULTI-WINDOW FLOATING DESKTOP ================= */
+  .window-layer {
+    display:none; position:fixed; inset:0; z-index:5000; padding:0;
+    background:rgba(15,23,42,0.38); backdrop-filter:blur(2px);
+  }
+  .window-layer.open { display:block; }
+  .window-layer .workspace { display:none !important; }
+  .float-windows { position:absolute; inset:0 0 58px 0; overflow:hidden; }
+  .float-taskbar {
+    position:absolute; bottom:0; left:0; right:0; min-height:58px; z-index:6000;
+    display:flex; align-items:center; gap:6px; padding:6px 12px; overflow-x:auto;
+    background:linear-gradient(180deg,#f8fafc,#e2e8f0); border-top:1px solid var(--line-dark);
+    box-shadow:0 -6px 20px #0f172a22;
+  }
+  .float-taskbar[hidden] { display:none !important; }
+  .float-window {
+    position:absolute; display:flex; flex-direction:column; min-width:360px; min-height:240px;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:12px;
+    box-shadow:0 18px 50px #0f172a55; overflow:hidden;
+  }
+  .float-window.active { box-shadow:0 22px 60px #0f172a77, 0 0 0 2px var(--accent); }
+  .float-window.minimized { display:none; }
+  .float-window.maximized { inset:8px 8px 66px 8px !important; width:auto !important; height:auto !important; min-width:0; min-height:0; }
+  .float-titlebar {
+    display:flex; align-items:center; gap:8px; padding:7px 10px; cursor:grab; user-select:none;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+  }
+  .float-titlebar:active { cursor:grabbing; }
+  .float-title { flex:1; font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800; }
+  .float-controls { display:flex; gap:4px; }
+  .float-btn {
+    width:26px; height:24px; display:grid; place-items:center; border:1px solid #ffffff40;
+    border-radius:6px; background:#ffffff1f; color:#fff; font-size:12px; cursor:pointer;
+  }
+  .float-btn:hover { background:#ffffff38; }
+  .float-btn.float-close:hover { background:#c0392b; }
+  .float-body { flex:1; overflow:auto; padding:10px; background:var(--paper); }
+  .taskbar-label {
+    font-family:'Cairo',Tahoma,sans-serif; font-size:11px; font-weight:800; color:var(--muted);
+    white-space:nowrap; margin-inline-end:4px;
+  }
+  .taskbar-btn {
+    display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line-dark);
+    border-radius:8px; background:var(--panel); color:var(--ink); font-family:'Cairo',Tahoma,sans-serif;
+    font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;
+  }
+  .taskbar-btn:hover { background:var(--btn); }
+  .taskbar-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .window-dock { bottom:70px; }
+  @media (max-width:760px) {
+    .float-window { inset:0 !important; width:100% !important; height:100% !important; min-width:0; min-height:0; border-radius:0; border:0; }
+    .float-window.maximized { inset:0 !important; }
+    .float-titlebar { cursor:default; }
+  }
+
+  /* ================= FIRST-RUN WELCOME WIZARD ================= */
+  .wizard-modal {
+    position:fixed; inset:0; z-index:9000; display:flex; align-items:center; justify-content:center;
+    padding:16px; background:rgba(15,23,42,0.55); backdrop-filter:blur(3px);
+  }
+  .wizard-modal[hidden] { display:none !important; }
+  .wizard-card {
+    width:min(720px,100%); max-height:calc(100vh - 32px); overflow:auto;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:16px;
+    box-shadow:0 24px 70px #0f172a66;
+  }
+  .wizard-head {
+    display:flex; align-items:center; gap:12px; padding:16px 18px;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+  }
+  .wizard-mark {
+    width:48px; height:48px; display:grid; place-items:center; border-radius:12px;
+    background:#ffffff26; border:1px solid #ffffff40; font-size:24px; flex:0 0 48px;
+  }
+  .wizard-head h2 { margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:18px; font-weight:800; }
+  .wizard-head p { margin:2px 0 0; font-size:11.5px; color:#dbeafe; }
+  .wizard-body { padding:14px 18px; }
+  .wizard-section {
+    border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    margin-bottom:10px; background:var(--paper);
+  }
+  .wizard-section h3 {
+    margin:0 0 8px; font-family:'Cairo',Tahoma,sans-serif; font-size:13px;
+    font-weight:800; color:var(--accent);
+  }
+  .wizard-themes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .wizard-theme {
+    display:flex; align-items:center; gap:6px; padding:7px 8px; border:1px solid var(--line);
+    border-radius:8px; background:var(--panel); color:var(--ink);
+    font-family:'Cairo',Tahoma,sans-serif; font-size:11px; font-weight:bold; cursor:pointer;
+  }
+  .wizard-theme i { width:16px; height:16px; border-radius:50%; border:1px solid #ffffff80; flex:0 0 16px; }
+  .wizard-theme:hover { border-color:var(--accent); background:var(--btn); }
+  .wizard-actions {
+    display:flex; justify-content:flex-end; gap:8px; padding:12px 18px;
+    border-top:1px solid var(--line); background:var(--paper);
+  }
+  @media (max-width:600px) { .wizard-themes { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
 <style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
@@ -2670,6 +2769,8 @@
       <button type="button" onclick="openInvoiceSec('purchase_return')" title="مرتجع مشتريات"><span aria-hidden="true">↩️</span>مرتجع مشتريات</button>
       <button type="button" onclick="openProfitSec('general')" title="إحصائيات"><span aria-hidden="true">📊</span>إحصائيات</button>
       <button type="button" onclick="openSettingsTab('sync')" title="المزامنة"><span aria-hidden="true">☁️</span>المزامنة</button>
+      <button type="button" onclick="openSec('sec-maintenance','🛠️ الصيانة')" title="الصيانة"><span aria-hidden="true">🛠️</span>الصيانة</button>
+      <button type="button" onclick="openSec('sec-contact','📞 اتصل بنا')" title="اتصل بنا"><span aria-hidden="true">📞</span>اتصل بنا</button>
     </div>
 
     <div class="nav-caption">الرئيسية</div>
@@ -2862,7 +2963,9 @@
     </div>
 
 <div class="window-layer" id="windowLayer" role="region" aria-labelledby="winTitle">
-<div class="workspace">
+  <div class="float-windows" id="floatWindows" aria-live="polite"></div>
+  <div class="float-taskbar" id="floatTaskbar" hidden></div>
+  <div class="workspace" id="sectionPool" hidden>
   <div class="win-header">
     <h2 id="winTitle">📦 بيانات الأصناف والمخزون</h2>
     <div class="win-header-actions">
@@ -3082,7 +3185,7 @@
     </div>
 
     <!-- ==================== 2. ITEMS & STOCK ==================== -->
-    <div id="sec-items" class="sec-view active">
+    <div id="sec-items" class="sec-view">
       <!-- title bar -->
       <div class="page-bar">
         <h2 class="page-bar-title">📦 بيانات الأصناف والمخزون</h2>
@@ -3486,6 +3589,8 @@
         <label for="profDateTo">إلى تاريخ</label><input type="date" id="profDateTo" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
         <label for="profItemFilter">تصفية بصنف</label><select id="profItemFilter" class="plain-input" style="flex:0 0 200px" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
         <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة التقرير</button>
+        <button type="button" class="act-btn bg-green" onclick="exportCurrentReportExcel()">📤 تصدير Excel</button>
+        <button type="button" class="act-btn bg-blue" onclick="exportCurrentReportPDF()">📄 تصدير PDF</button>
       </div>
       <p id="profitScopeNote" class="scope-note">الأرباح محسوبة بعد خصومات الفواتير ومرتجع المبيعات وتكلفة البيع التاريخية، بعد خصم المصروفات العامة.</p>
       <div class="t-foot-bar" style="margin-bottom:8px;font-size:11.5px">
@@ -3928,6 +4033,22 @@
             <label class="act-btn bg-orange" style="cursor:pointer">📂 استعادة نسخة <input type="file" accept=".json" style="display:none" onchange="importFullBackup(event)"></label>
           </div>
         </div>
+        <div class="panel-box" style="margin-top:10px">
+          <div class="panel-title">🗓️ النسخ الاحتياطي المجدول والتذكير</div>
+          <div class="f-row">
+            <label for="backupReminderSelect">تذكير النسخ الاحتياطي</label>
+            <select id="backupReminderSelect">
+              <option value="0">بدون تذكير</option>
+              <option value="1">كل يوم</option>
+              <option value="3">كل 3 أيام</option>
+              <option value="7">كل أسبوع</option>
+              <option value="14">كل أسبوعين</option>
+              <option value="30">كل شهر</option>
+            </select>
+            <button type="button" class="act-btn bg-green" onclick="setBackupReminderFromUI()">💾 حفظ التذكير</button>
+          </div>
+          <p class="scope-note">يظهر تذكير أعلى الشاشة إذا مرّت المدة المحددة بدون نسخة احتياطية. آخر نسخة: <strong id="lastBackupDate">—</strong></p>
+        </div>
       </div>
 
       <div class="settings-panel" data-settings-panel="staff" hidden>
@@ -3970,6 +4091,54 @@
         <div class="action-bar" style="justify-content:center;margin-top:14px">
           <button type="button" class="act-btn bg-blue" onclick="closeWorkspace()">⌂ العودة للرئيسية</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ==================== CONTACT ==================== -->
+    <div id="sec-contact" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">📞 اتصل بنا</h2>
+        <div class="page-bar-meta"><span class="bar-chip">رسائل محفوظة على هذا الجهاز</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="form-grid-2">
+        <div class="panel-box">
+          <div class="panel-title">✉️ إرسال رسالة</div>
+          <div class="f-row"><label for="contactName">الاسم</label><input type="text" id="contactName" autocomplete="off"></div>
+          <div class="f-row"><label for="contactPhone">الهاتف</label><input type="text" id="contactPhone" autocomplete="off"></div>
+          <div class="f-row"><label for="contactEmail">البريد الإلكتروني</label><input type="email" id="contactEmail" autocomplete="off"></div>
+          <div class="f-row"><label for="contactSubject">الموضوع</label><input type="text" id="contactSubject"></div>
+          <div class="f-row"><label for="contactMessage">الرسالة</label><textarea id="contactMessage" rows="4"></textarea></div>
+          <button type="button" class="act-btn bg-green" onclick="saveContactMessage()">📨 إرسال الرسالة</button>
+        </div>
+        <div class="panel-box">
+          <div class="panel-title">📬 الرسائل المحفوظة</div>
+          <div class="table-wrap" style="max-height:360px">
+            <table><thead><tr><th>#</th><th>التاريخ</th><th>الاسم</th><th>الموضوع</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="contactTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MAINTENANCE ==================== -->
+    <div id="sec-maintenance" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">🛠️ الصيانة</h2>
+        <div class="page-bar-meta"><span class="bar-chip">طلبات صيانة الأجهزة</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">🛠️ تسجيل طلب صيانة</div>
+        <div class="f-row">
+          <label for="maintDevice">الجهاز</label><input type="text" id="maintDevice" placeholder="اسم الجهاز / الكاشير / الطابعة">
+          <label for="maintIssue">المشكلة</label><input type="text" id="maintIssue" placeholder="وصف المشكلة">
+          <label for="maintPriority">الأولوية</label>
+          <select id="maintPriority"><option value="low">منخفضة</option><option value="medium">متوسطة</option><option value="high">عالية</option></select>
+          <button type="button" class="act-btn bg-green" onclick="saveMaintenanceRequest()">➕ إضافة الطلب</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>التاريخ</th><th>الجهاز</th><th>المشكلة</th><th>الأولوية</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="maintenanceTbody"></tbody></table>
       </div>
     </div>
 
@@ -4070,6 +4239,48 @@
       <small class="remember-hint" id="rememberDeviceHint">غير موثوق: ستظهر شاشة البداية والدخول في كل تشغيل.</small>
       <button type="button" class="start-btn" onclick="unlockApp()">دخول إلى البرنامج</button>
       <small class="start-foot">البيانات محفوظة على هذا الجهاز — <span id="startFooterUser">مدير</span></small>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FIRST-RUN WELCOME WIZARD ================= -->
+<div id="welcomeWizard" class="wizard-modal" role="dialog" aria-modal="true" aria-labelledby="wizardTitle" hidden>
+  <div class="wizard-card">
+    <div class="wizard-head">
+      <div class="wizard-mark" aria-hidden="true">📚</div>
+      <div>
+        <h2 id="wizardTitle">أهلاً بك في نظام إدارة المكتبة</h2>
+        <p>خطوات سريعة لتخصيص البرنامج على جهازك — بياناتك تُحفظ محلياً.</p>
+      </div>
+    </div>
+    <div class="wizard-body">
+      <div class="wizard-section">
+        <h3>🏢 بيانات المنشأة</h3>
+        <div class="f-row"><label for="wizStoreName">اسم المكتبة</label><input type="text" id="wizStoreName" autocomplete="off"></div>
+        <div class="f-row"><label for="wizStoreAddress">العنوان</label><input type="text" id="wizStoreAddress" autocomplete="off"></div>
+        <div class="f-row"><label for="wizStorePhone">رقم الهاتف</label><input type="text" id="wizStorePhone" autocomplete="off"></div>
+      </div>
+      <div class="wizard-section">
+        <h3>☁️ المزامنة (اختياري)</h3>
+        <div class="f-row"><label for="wizSyncKey">مفتاح المزامنة</label><input type="password" id="wizSyncKey" autocomplete="off" placeholder="اتركه فارغاً إذا لم تُفعّل المزامنة بعد"></div>
+        <label class="remember-row"><input type="checkbox" id="wizRememberKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز</label>
+        <p class="scope-note">يمكنك إدخال المفتاح لاحقاً من الإعدادات ← المزامنة.</p>
+      </div>
+      <div class="wizard-section">
+        <h3>🎨 الثيم الافتراضي</h3>
+        <div class="wizard-themes">
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-blue')"><i style="background:#1e6fb8"></i>أزرق فاتح</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-purple')"><i style="background:#6a5acd"></i>بنفسجي فاتح</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('win11-indigo')"><i style="background:#5b5bd6"></i>Windows 11</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-maroon')"><i style="background:#8b1e1e"></i>عنابي</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-dark-gray')"><i style="background:#1b1d21"></i>رمادي داكن</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-dark-purple')"><i style="background:#0f0a1a"></i>بنفسجي داكن</button>
+        </div>
+      </div>
+    </div>
+    <div class="wizard-actions">
+      <button type="button" class="act-btn bg-orange" onclick="skipWelcomeWizard()">تخطي الآن</button>
+      <button type="button" class="act-btn bg-green" onclick="saveWelcomeWizard()">💾 حفظ ومتابعة</button>
     </div>
   </div>
 </div>

@@ -131,7 +131,7 @@ test('user text is escaped in tables and print, and CSV neutralizes formulas', a
 });
 
 test('screen printing reflects edited input values and omits action buttons', async t => {
-  const f = await ready(t, { db: seedDatabase() }); f.window.toggleQuickEditItems();
+  const f = await ready(t, { db: seedDatabase() }); f.window.openSec('sec-items', 'الأصناف'); f.window.toggleQuickEditItems();
   f.$('itemsTbody').querySelector('input[type="number"]').value = 7;
   f.window.printCurrentScreenA5(); assert.match(f.prints.at(-1), />7</); assert.doesNotMatch(f.prints.at(-1), /<button/); assert.doesNotMatch(f.prints.at(-1), /<input/);
 });

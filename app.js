@@ -535,7 +535,14 @@ function initializeApp() {
     document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('selected', item === link));
     if (window.innerWidth <= 760) toggleSidebar(false);
   });
+  document.querySelectorAll('[data-theme-choice]').forEach(button => {
+    button.addEventListener('mouseenter', () => previewTheme(button.dataset.themeChoice));
+    button.addEventListener('mouseleave', restoreThemePreview);
+    button.addEventListener('focus', () => previewTheme(button.dataset.themeChoice));
+    button.addEventListener('blur', restoreThemePreview);
+  });
   $('windowLayer').addEventListener('click', event => { if (event.target === $('windowLayer')) closeWorkspace(); });
+  $('floatWindows').addEventListener('click', event => { if (event.target === $('floatWindows')) closeWorkspace(); });
   window.addEventListener('keydown', handleGlobalShortcut);
   let rememberedStaff = '';
   try { rememberedStaff = sessionStorage.getItem(ACTIVE_STAFF_KEY) || ''; } catch { /* Session storage may be disabled. */ }
@@ -595,20 +602,23 @@ const SEC_TITLES = {
   'sec-categories': '📁 بيانات المجموعات', 'sec-stock': '🏢 جرد المخزن',
   'sec-labels': '🏷️ طباعة ملصقات الباركود', 'sec-parties': '👥 إدارة العملاء والموردين',
   'sec-invlog': '📑 سجل الفواتير', 'sec-treasury': '💰 الخزنة والحسابات',
-  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام'
+  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام',
+  'sec-contact': '📞 اتصل بنا', 'sec-maintenance': '🛠️ الصيانة'
 };
+const floatWindows = new Map();
+let activeFloatId = null;
+let floatZ = 6000;
 function openSec(secId, titleText) {
   const permission = ({ 'sec-items': 'inventory', 'sec-categories': 'inventory', 'sec-stock': 'stock', 'sec-settings': 'admin', 'sec-profits': 'admin', 'sec-treasury': 'cash', 'sec-labels': 'inventory' })[secId];
   if (permission && !ensurePermission(permission)) return;
   if (secId === 'sec-parties' && !ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
-  document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
+  const title = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
   $(secId)?.classList.add('active');
   document.body.classList.add('section-open');
-  document.body.style.overflow = '';
-  $('windowLayer').classList.add('open');
-  $('windowLayer').classList.remove('minimized', 'maximized'); $('windowDock').hidden = true;
+  document.body.style.overflow = 'hidden';
   setActiveNav(({ 'sec-settings': 'settings', 'sec-parties': 'customers', 'sec-invoice': 'sale' })[secId] || '');
-  $('winTitle').textContent = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
+  $('winTitle').textContent = title;
+  openFloatWindow(secId, title);
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
   if (secId === 'sec-parties') renderPartiesTable();
@@ -618,7 +628,110 @@ function openSec(secId, titleText) {
   if (secId === 'sec-profits') renderProfits();
   if (secId === 'sec-labels') { loadLabelOptions(); renderLabels(); }
   if (secId === 'sec-invoice') renderPosTiles();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (secId === 'sec-contact') renderContactMessages();
+  if (secId === 'sec-maintenance') renderMaintenanceRequests();
+}
+function openFloatWindow(secId, title) {
+  const section = $(secId);
+  if (!section) return;
+  let win = floatWindows.get(secId);
+  if (!win) {
+    const el = document.createElement('div');
+    el.className = 'float-window';
+    el.dataset.section = secId;
+    el.innerHTML = `<div class="float-titlebar"><span class="float-title">${esc(title)}</span><div class="float-controls"><button type="button" class="float-btn" data-float-min title="تصغير" aria-label="تصغير">—</button><button type="button" class="float-btn" data-float-max title="تكبير" aria-label="تكبير">▢</button><button type="button" class="float-btn float-close" data-float-close title="إغلاق" aria-label="إغلاق">✕</button></div></div><div class="float-body"></div>`;
+    const body = el.querySelector('.float-body');
+    body.appendChild(section);
+    el.querySelector('[data-float-min]').addEventListener('click', () => minimizeFloat(secId));
+    el.querySelector('[data-float-max]').addEventListener('click', () => maximizeFloat(secId));
+    el.querySelector('[data-float-close]').addEventListener('click', () => closeFloat(secId));
+    const bar = el.querySelector('.float-titlebar');
+    bar.addEventListener('pointerdown', event => {
+      if (event.target.closest('button') || window.innerWidth <= 760) return;
+      focusFloat(secId);
+      const startX = event.clientX, startY = event.clientY;
+      const rect = el.getBoundingClientRect();
+      const offsetX = startX - rect.left, offsetY = startY - rect.top;
+      const move = ev => {
+        const x = Math.min(Math.max(0, ev.clientX - offsetX), window.innerWidth - 140);
+        const y = Math.min(Math.max(0, ev.clientY - offsetY), window.innerHeight - 140);
+        el.style.left = `${x}px`; el.style.top = `${y}px`;
+      };
+      const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    });
+    $('floatWindows').appendChild(el);
+    win = { el, body, section };
+    floatWindows.set(secId, win);
+  }
+  const count = floatWindows.size;
+  const offset = (count - 1) * 26;
+  win.el.style.left = `${72 + offset}px`;
+  win.el.style.top = `${56 + offset}px`;
+  win.el.style.width = 'min(980px, calc(100vw - 144px))';
+  win.el.style.height = 'min(660px, calc(100vh - 190px))';
+  win.el.classList.remove('minimized', 'maximized');
+  $('windowLayer').classList.add('open');
+  $('windowLayer').classList.remove('minimized', 'maximized');
+  $('windowDock').hidden = true;
+  focusFloat(secId);
+  updateFloatTaskbar();
+}
+function focusFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  activeFloatId = secId;
+  floatWindows.forEach((w, id) => w.el.classList.toggle('active', id === secId));
+  win.el.style.zIndex = String(++floatZ);
+  win.el.classList.remove('minimized');
+  updateFloatTaskbar();
+}
+function closeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  const pool = $('sectionPool')?.querySelector('.win-body');
+  if (pool) pool.appendChild(win.section);
+  win.section.classList.remove('active');
+  win.el.remove();
+  floatWindows.delete(secId);
+  if (activeFloatId === secId) activeFloatId = [...floatWindows.keys()].at(-1) || null;
+  if (!floatWindows.size) {
+    $('windowLayer').classList.remove('open', 'minimized', 'maximized');
+    $('windowDock').hidden = true;
+    document.body.classList.remove('section-open');
+    document.body.style.overflow = '';
+    setActiveNav('home');
+  } else if (activeFloatId) focusFloat(activeFloatId);
+  updateFloatTaskbar();
+}
+function closeAllFloat() {
+  for (const secId of [...floatWindows.keys()]) closeFloat(secId);
+  $('windowLayer').classList.remove('open', 'minimized', 'maximized');
+  $('windowDock').hidden = true;
+  document.body.classList.remove('section-open');
+  document.body.style.overflow = '';
+  setActiveNav('home');
+}
+function minimizeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  win.el.classList.add('minimized');
+  if (activeFloatId === secId) activeFloatId = [...floatWindows.keys()].filter(id => !floatWindows.get(id).el.classList.contains('minimized')).at(-1) || null;
+  if ([...floatWindows.values()].some(w => w.el.classList.contains('minimized'))) $('windowDock').hidden = false;
+  updateFloatTaskbar();
+}
+function maximizeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  win.el.classList.toggle('maximized');
+  $('windowLayer').classList.toggle('maximized', win.el.classList.contains('maximized'));
+}
+function updateFloatTaskbar() {
+  const taskbar = $('floatTaskbar');
+  if (!taskbar) return;
+  const entries = [...floatWindows.entries()];
+  taskbar.hidden = entries.length === 0;
+  taskbar.innerHTML = `<span class="taskbar-label">النوافذ المفتوحة</span>` + entries.map(([id]) => `<button type="button" class="taskbar-btn ${id === activeFloatId ? 'active' : ''}" onclick="focusFloat('${id}')"><span>${esc(SEC_TITLES[id] || 'نافذة')}</span></button>`).join('');
 }
 function setActiveNav(name) {
   document.querySelectorAll('#mainNav .main-nav-link').forEach(link => link.classList.toggle('active', link.dataset.nav === name));
@@ -630,23 +743,89 @@ function quickPlaceholder(name) {
   if (text) text.textContent = `قسم «${name}» من ضمن التخطيط الجديد للبرنامج وسيتم تفعيله في التحديث القادم. باقي الشاشات تعمل بشكل كامل.`;
   openSec('sec-placeholder', `🚧 ${name}`);
 }
+const CONTACT_KEY = `${DB_KEY}_CONTACT_MESSAGES`;
+const MAINTENANCE_KEY = `${DB_KEY}_MAINTENANCE_REQUESTS`;
+function readLocalList(key) {
+  try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
+  catch { return []; }
+}
+function writeLocalList(key, list) {
+  try { localStorage.setItem(key, JSON.stringify(list)); }
+  catch { notify('تعذر حفظ البيانات محلياً. تحقق من مساحة التخزين.'); }
+}
+function saveContactMessage() {
+  const name = $('contactName').value.trim(), phone = $('contactPhone').value.trim(), email = $('contactEmail').value.trim();
+  const subject = $('contactSubject').value.trim(), message = $('contactMessage').value.trim();
+  if (!name || !message) return alert('الاسم والرسالة مطلوبان.');
+  const list = readLocalList(CONTACT_KEY);
+  list.unshift({ id: Date.now(), date: localDate(), time: new Date().toTimeString().slice(0, 5), name, phone, email, subject, message, read: false });
+  writeLocalList(CONTACT_KEY, list);
+  ['contactName', 'contactPhone', 'contactEmail', 'contactSubject', 'contactMessage'].forEach(id => { $(id).value = ''; });
+  renderContactMessages();
+  notify('✅ تم حفظ الرسالة على هذا الجهاز.');
+}
+function renderContactMessages() {
+  const list = readLocalList(CONTACT_KEY);
+  $('contactTbody').innerHTML = list.map((m, index) => `<tr><td>${index + 1}</td><td>${esc(m.date)} ${esc(m.time || '')}</td><td>${esc(m.name)}</td><td>${esc(m.subject || '-')}</td><td>${m.read ? 'مقروءة' : 'جديدة'}</td><td class="no-print"><button type="button" class="act-btn bg-blue" onclick="markContactRead(${m.id})">تعيين كمقروء</button><button type="button" class="act-btn bg-red" onclick="deleteContactMessage(${m.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty-row">لا توجد رسائل بعد.</td></tr>';
+}
+function markContactRead(id) {
+  writeLocalList(CONTACT_KEY, readLocalList(CONTACT_KEY).map(m => m.id === id ? { ...m, read: true } : m));
+  renderContactMessages();
+}
+function deleteContactMessage(id) {
+  writeLocalList(CONTACT_KEY, readLocalList(CONTACT_KEY).filter(m => m.id !== id));
+  renderContactMessages();
+}
+function saveMaintenanceRequest() {
+  const device = $('maintDevice').value.trim(), issue = $('maintIssue').value.trim(), priority = $('maintPriority').value;
+  if (!device || !issue) return alert('اسم الجهاز والمشكلة مطلوبان.');
+  const list = readLocalList(MAINTENANCE_KEY);
+  list.unshift({ id: Date.now(), date: localDate(), device, issue, priority, status: 'new' });
+  writeLocalList(MAINTENANCE_KEY, list);
+  $('maintDevice').value = ''; $('maintIssue').value = ''; $('maintPriority').value = 'medium';
+  renderMaintenanceRequests();
+  notify('✅ تم تسجيل طلب الصيانة.');
+}
+function renderMaintenanceRequests() {
+  const labels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', new: 'جديد', progress: 'قيد التنفيذ', done: 'مكتمل' };
+  const list = readLocalList(MAINTENANCE_KEY);
+  $('maintenanceTbody').innerHTML = list.map((m, index) => `<tr><td>${index + 1}</td><td>${esc(m.date)}</td><td>${esc(m.device)}</td><td>${esc(m.issue)}</td><td>${esc(labels[m.priority] || m.priority)}</td><td>${esc(labels[m.status] || m.status)}</td><td class="no-print"><button type="button" class="act-btn bg-blue" onclick="advanceMaintenanceStatus(${m.id})">تحديث الحالة</button><button type="button" class="act-btn bg-red" onclick="deleteMaintenanceRequest(${m.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="7" class="empty-row">لا توجد طلبات صيانة.</td></tr>';
+}
+function advanceMaintenanceStatus(id) {
+  const order = ['new', 'progress', 'done'];
+  writeLocalList(MAINTENANCE_KEY, readLocalList(MAINTENANCE_KEY).map(m => m.id === id ? { ...m, status: order[(order.indexOf(m.status) + 1) % order.length] } : m));
+  renderMaintenanceRequests();
+}
+function deleteMaintenanceRequest(id) {
+  writeLocalList(MAINTENANCE_KEY, readLocalList(MAINTENANCE_KEY).filter(m => m.id !== id));
+  renderMaintenanceRequests();
+}
 function closeWorkspace() {
-  $('windowLayer').classList.remove('open', 'minimized', 'maximized'); $('windowDock').hidden = true;
-  document.body.classList.remove('section-open');
-  document.body.style.overflow = '';
-  setActiveNav('home');
+  if (activeFloatId) closeFloat(activeFloatId);
+  else closeAllFloat();
 }
 function minimizeWorkspace() {
-  if (!$('windowLayer').classList.contains('open')) return;
-  $('windowLayer').classList.add('minimized'); $('windowDock').hidden = false; document.body.style.overflow = '';
+  if (activeFloatId) { minimizeFloat(activeFloatId); $('windowDock').hidden = false; }
+  else if ($('windowLayer').classList.contains('open')) { $('windowLayer').classList.add('minimized'); $('windowDock').hidden = false; }
 }
 function restoreWorkspace() {
-  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
+  let win = activeFloatId ? floatWindows.get(activeFloatId) : null;
+  if (!win || !win.el.classList.contains('minimized')) {
+    const first = [...floatWindows.entries()].find(([, w]) => w.el.classList.contains('minimized'));
+    if (first) win = first[1];
+  }
+  if (win) {
+    win.el.classList.remove('minimized');
+    focusFloat(win.section.id);
+  }
+  $('windowDock').hidden = true;
   document.body.style.overflow = 'hidden';
 }
 function maximizeWorkspace() {
-  const maximized = $('windowLayer').classList.toggle('maximized');
+  if (activeFloatId) maximizeFloat(activeFloatId);
+  else $('windowLayer').classList.toggle('maximized');
 }
+
 function getAppearance() {
   try { return JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') || {}; } catch { return {}; }
 }
@@ -694,6 +873,22 @@ function selectTheme(theme) {
   const label = THEME_LABELS[theme] || theme;
   notify(`تم تفعيل الثيم: ${label}. يمكنك تغيير اللون الأساسي من الأسفل.`);
 }
+function previewTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  document.body.dataset.theme = theme;
+  const accent = ACCENT_DEFAULTS[theme];
+  if (accent) {
+    const root = document.body.style;
+    root.setProperty('--accent', accent);
+    root.setProperty('--g-bar', accent);
+    root.setProperty('--g-dark', `color-mix(in srgb, ${accent} 82%, #000000)`);
+    root.setProperty('--g-line', `color-mix(in srgb, ${accent} 68%, #000000)`);
+    root.setProperty('--press-glow', `${accent}55`);
+  }
+}
+function restoreThemePreview() {
+  applyAppearance();
+}
 function setCustomAccent(color) {
   if (!/^#[0-9a-f]{6}$/i.test(color)) return;
   const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
@@ -723,7 +918,7 @@ function toggleSidebar(force) {
   const appearance = getAppearance(); appearance.sidebarCollapsed = collapsed; saveAppearance(appearance);
 }
 function showHome() {
-  closeWorkspace(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
+  closeAllFloat(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
   setActiveNav('home');
   document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('selected', link.textContent.includes('الرئيسية')));
   $('homeDashboard').scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -1556,8 +1751,6 @@ function openInvoiceSec(mode) {
   setActiveNav(mode.startsWith('purchase') ? 'purchase' : 'sale');
   if (mode !== $('invMode').value) clearInvCart();
   $('invMode').value = mode; updateInvoiceUI();
-  // every floating screen opens large: the whole app width is the working area
-  if (!$('windowLayer').classList.contains('maximized')) maximizeWorkspace();
   paintDraftHint();
   window.setTimeout(() => { if ($('windowLayer').classList.contains('open')) $('invBarcodeInp').focus(); }, 0);
 }
@@ -3352,6 +3545,8 @@ function loadSettingsForm() {
   applyInvoiceTones(); applyDocSettingsUI();
   if ($('tenderAlertAmount')) $('tenderAlertAmount').value = String(tenderAlertLimit());
   $('staffManagerPanel').hidden = !isAdmin();
+  if ($('backupReminderSelect')) $('backupReminderSelect').value = String(backupReminderDays());
+  if ($('lastBackupDate')) { let last = '—'; try { last = localStorage.getItem(LAST_BACKUP_KEY) || '—'; } catch { /* ignore */ } $('lastBackupDate').textContent = last; }
   renderStaffTable(); renderAuditTable(); applyAppearance(); updateSyncStateBox();
 }
 function openSettingsTab(tab = 'look') {
@@ -3506,7 +3701,43 @@ function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type })), link = document.createElement('a');
   link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportFullBackup() { if (!ensurePermission('admin')) return; download(JSON.stringify(db, null, 2), 'application/json', `POS_Backup_${localDate()}.json`); recordAudit('تصدير نسخة احتياطية'); }
+const BACKUP_REMINDER_KEY = `${DB_KEY}_BACKUP_REMINDER_DAYS`;
+const LAST_BACKUP_KEY = `${DB_KEY}_LAST_BACKUP_DATE`;
+function backupReminderDays() {
+  try {
+    const raw = localStorage.getItem(BACKUP_REMINDER_KEY);
+    if (raw === null) return 7;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 ? value : 7;
+  } catch { return 7; }
+}
+function setBackupReminder(days) {
+  const value = Number(days);
+  if (!Number.isFinite(value) || value < 0) return;
+  try { localStorage.setItem(BACKUP_REMINDER_KEY, String(value)); } catch { /* ignore */ }
+  notify(value ? `✅ سيظهر تذكير النسخ الاحتياطي كل ${value} يوم.` : 'تم إيقاف تذكير النسخ الاحتياطي.');
+}
+function setBackupReminderFromUI() { setBackupReminder(Number($('backupReminderSelect').value) || 0); }
+function checkBackupReminder() {
+  const days = backupReminderDays();
+  if (!days) return;
+  let last = '';
+  try { last = localStorage.getItem(LAST_BACKUP_KEY) || ''; } catch { last = ''; }
+  const lastDate = last ? new Date(`${last}T00:00:00`) : null;
+  const diff = lastDate ? (Date.now() - lastDate.getTime()) / 86400000 : Infinity;
+  if (diff < days) return;
+  const message = lastDate ? `آخر نسخة احتياطية كانت في ${last} (منذ ${Math.floor(diff)} يوم). يُفضّل تنزيل نسخة جديدة الآن.` : 'لم تقم بعمل نسخة احتياطية بعد. يُفضّل تنزيل نسخة الآن لحماية بياناتك.';
+  const box = $('appNotice');
+  if (!box) return;
+  box.innerHTML = `<button type="button" aria-label="إغلاق التنبيه" onclick="this.parentElement.hidden=true">×</button><div>💾 <strong>تذكير النسخ الاحتياطي</strong><br>${esc(message)}</div><div style="margin-top:8px"><button type="button" class="act-btn bg-green" onclick="exportFullBackup(); document.getElementById('appNotice').hidden=true;">⬇️ نسخ احتياطي الآن</button></div>`;
+  box.hidden = false;
+}
+function exportFullBackup() {
+  if (!ensurePermission('admin')) return;
+  download(JSON.stringify(db, null, 2), 'application/json', `POS_Backup_${localDate()}.json`);
+  try { localStorage.setItem(LAST_BACKUP_KEY, localDate()); } catch { /* ignore */ }
+  recordAudit('تصدير نسخة احتياطية');
+}
 function exportRecovery() { if (recoveryRaw !== null) download(recoveryRaw, 'application/json', `POS_Recovery_${localDate()}.json`); }
 async function importFullBackup(event) {
   if (!ensurePermission('admin')) { event.target.value = ''; return; }
@@ -3527,6 +3758,30 @@ function exportItemsCSV() {
   const cell = value => { let string = String(value ?? ''); if (typeof value !== 'number' && /^[\s]*[=+\-@]|[\t\r]/.test(string)) string = `'${string}`; return `"${string.replaceAll('"', '""')}"`; };
   const rows = [['الكود', 'اسم الصنف', 'المجموعة', 'الكمية', 'الوحدة', 'سعر الشراء', 'سعر البيع', 'سعر الجملة'], ...db.items.map(i => [i.code, i.name, i.cat, i.qty, i.unit, i.buy, i.sell, i.wholesale])];
   download('\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8;', 'POS_Items.csv');
+}
+function activeReportTable() {
+  const active = document.querySelector('.float-window.active .sec-view.active') || document.querySelector('.sec-view.active');
+  return { active, table: active?.querySelector('table') };
+}
+function exportCurrentReportExcel() {
+  const { active, table } = activeReportTable();
+  if (!table) return alert('لا يوجد جدول في هذه الشاشة لتصديره.');
+  const cell = value => { let string = String(value ?? '').trim(); if (/^[=\-+@\t\r]/.test(string)) string = `'${string}`; return `"${string.replaceAll('"', '""')}"`; };
+  const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => {
+    const input = td.querySelector('input, select, textarea');
+    if (input) return input.tagName === 'SELECT' ? input.selectedOptions[0]?.textContent || '' : input.value;
+    return td.textContent;
+  }));
+  const csv = '\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n');
+  download(csv, 'text/csv;charset=utf-8;', `POS_Report_${active?.id || 'report'}_${localDate()}.csv`);
+  notify('✅ تم تصدير التقرير بصيغة Excel/CSV.');
+}
+function exportCurrentReportPDF() {
+  const { active, table } = activeReportTable();
+  if (!table) return alert('لا يوجد جدول في هذه الشاشة لتصديره.');
+  const title = active?.querySelector('.page-bar-title, .pos-title')?.textContent || $('winTitle').textContent;
+  triggerA5Print(`<div class="p-header"><h2>${esc(db.settings.name)}</h2><p>${esc(db.settings.address)} | هاتف: ${esc(db.settings.phone)}</p><h3>${esc(title)}</h3></div>${printableTable(table)}<p class="p-foot">تاريخ التصدير: ${esc(localDate())}</p>`);
+  notify('اختر «حفظ كملف PDF» من نافذة الطباعة.');
 }
 
 /* ---------------- printing ---------------- */
@@ -3561,7 +3816,7 @@ function renderStartStats() {
   if ($('startStatToday')) $('startStatToday').textContent = String(invoicesToday);
 }
 function lockApp() {
-  closeWorkspace(); closeKeypad(); closeWelcomePopup();
+  closeAllFloat(); closeKeypad(); closeWelcomePopup();
   window.clearTimeout(autoLockTimer);
   renderStartStats();
   beforeLockFocus = document.activeElement;
@@ -3586,7 +3841,48 @@ function unlockApp() {
   try { localStorage.setItem(LAST_STAFF_KEY, activeStaffId); } catch { /* private mode */ }
   armAutoLock();
   showWelcomePopup(loginName(user));
+  try { if (!localStorage.getItem(WELCOME_KEY)) showWelcomeWizard(); } catch { /* storage disabled */ }
+  window.setTimeout(() => { if ($('welcomeWizard')?.hidden !== false) checkBackupReminder(); }, 1800);
   beforeLockFocus?.focus();
+}
+const WELCOME_KEY = `${DB_KEY}_WELCOME_DONE`;
+function showWelcomeWizard() {
+  if (!$('welcomeWizard')) return;
+  $('wizStoreName').value = db.settings.name || '';
+  $('wizStoreAddress').value = db.settings.address || '';
+  $('wizStorePhone').value = db.settings.phone || '';
+  $('wizSyncKey').value = '';
+  $('wizRememberKey').checked = true;
+  $('welcomeWizard').hidden = false;
+  document.body.style.overflow = 'hidden';
+  window.setTimeout(() => $('wizStoreName')?.focus(), 60);
+}
+function hideWelcomeWizard() {
+  if ($('welcomeWizard')) $('welcomeWizard').hidden = true;
+  document.body.style.overflow = '';
+}
+function skipWelcomeWizard() {
+  try { localStorage.setItem(WELCOME_KEY, '1'); } catch { /* ignore */ }
+  hideWelcomeWizard();
+  notify('يمكنك تخصيص بيانات المنشأة والمظهر في أي وقت من الإعدادات.');
+}
+function saveWelcomeWizard() {
+  const name = $('wizStoreName').value.trim() || db.settings.name;
+  const address = $('wizStoreAddress').value.trim();
+  const phone = $('wizStorePhone').value.trim();
+  const token = $('wizSyncKey').value.trim();
+  const remember = $('wizRememberKey').checked;
+  if (!commitDB(draft => { Object.assign(draft.settings, { name, address, phone }); })) return;
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+      if (remember) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
+      else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    }
+    localStorage.setItem(WELCOME_KEY, '1');
+  } catch { notify('تعذر حفظ مفتاح المزامنة. يمكنك إدخاله لاحقاً من الإعدادات.'); }
+  applySettingsUI(); applyAppearance(); updateActiveUserBadge(); hideWelcomeWizard();
+  notify('✅ تم حفظ بيانات المنشأة. يمكنك تخصيص البرنامج بالكامل من الإعدادات.');
 }
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
@@ -3601,7 +3897,7 @@ Object.assign(window, {
   handleScanKey, showSuggestions, hideSuggestions, moveSuggestion, pickSuggestion, suggestionMatches,
   playScanFeedback, setScanFeedback, setScanVibrate, applyScanFeedbackUI,
   openCameraScanner, closeCameraScanner, handleCameraCode, cameraSupported,
-  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, setActiveNav, quickPlaceholder, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
+  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, setActiveNav, quickPlaceholder, focusFloat, showWelcomeWizard, hideWelcomeWizard, skipWelcomeWizard, saveWelcomeWizard, saveContactMessage, renderContactMessages, markContactRead, deleteContactMessage, saveMaintenanceRequest, renderMaintenanceRequests, advanceMaintenanceStatus, deleteMaintenanceRequest, setBackupReminderFromUI, checkBackupReminder, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
   setInvoiceTone, resetInvoiceTones, applyInvoiceTones, invoiceTones,
   setDocTemplate, setDocAccent, applyDocSettingsUI, uploadDocSignature, clearDocSignature, docSettings,
   tenderAlertLimit, setTenderAlert, confirmTenderDifference, belowCostLines, confirmBelowCost,
@@ -3613,7 +3909,7 @@ Object.assign(window, {
   holdCurrentInvoice, restoreHeldInvoice, convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, printInvoiceThermalById,
   openPartySec, openPartyReport, resetPartyForm, saveParty, editParty, deleteParty, savePartyVoucher, toggleQuickParty, saveQuickParty, showStatementFor, renderPartyStatement,
   printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
-  exportFullBackup, importFullBackup, exportItemsCSV, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
+  exportFullBackup, importFullBackup, exportItemsCSV, exportCurrentReportExcel, exportCurrentReportPDF, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
   switchInvoiceTab, switchItemsTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
   renderPosTiles, renderLabels, printLabels,
   toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,
