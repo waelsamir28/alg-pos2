@@ -200,10 +200,10 @@ test('dashboard, responsive navigation, window controls and themes work', async 
   f.window.openSec('sec-items', 'الأصناف');
   assert.equal(f.$('windowLayer').classList.contains('open'), true);
   assert.equal(f.$('sec-items').classList.contains('active'), true);
-  // screens now open large by default: the maximize button toggles back to normal
-  assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
-  f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
+  // the reference layout opens the section as an inline content card, not a maximized modal
+  assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
   f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
+  f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
   f.window.minimizeWorkspace(); assert.equal(f.$('windowDock').hidden, false);
   f.window.restoreWorkspace(); assert.equal(f.$('windowDock').hidden, true);
   f.window.selectTheme('vista-emerald');
@@ -565,9 +565,9 @@ test('app badge counts held invoices plus the auto draft', async t => {
   assert.equal(f.$('draftBadge').textContent, '1');
 });
 
-test('every page has its own close button and the window toolbar is gone', async t => {
+test('every page has its own close button and the inline content header is visible', async t => {
   const f = await ready(t, { db: seedDatabase() });
-  assert.equal(f.window.document.querySelector('.win-header').hidden, true);
+  assert.equal(f.window.document.querySelector('.win-header').hidden, false);
   for (const id of ['sec-items', 'sec-categories', 'sec-stock', 'sec-labels', 'sec-parties', 'sec-invlog', 'sec-treasury', 'sec-profits', 'sec-settings']) {
     const view = f.$(id);
     assert.equal(view.querySelectorAll('.page-close-btn').length, 1, id);

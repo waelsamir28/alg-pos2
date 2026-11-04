@@ -2418,11 +2418,185 @@
   .appicon-preview { width:64px; height:64px; border-radius:14px; display:grid; place-items:center; color:#fff;
     font-weight:900; font-size:22px; box-shadow:0 6px 16px #0b1b3024; overflow:hidden; }
   .appicon-preview img { width:100%; height:100%; object-fit:cover; }
+
+  /* ================= REFERENCE LAYOUT (POS / ERP) ================= */
+  :root {
+    --ref-nav-bg: #ffffff;
+    --ref-nav-border: #d8dee9;
+    --ref-nav-active: #eef4ff;
+    --ref-sidebar-w: 228px;
+    --ref-status-bg: #f8fafc;
+  }
+  .main-nav {
+    display:flex; align-items:center; gap:2px; flex-wrap:wrap;
+    padding:0 18px; background:linear-gradient(180deg,#ffffff,#f4f7fb);
+    border-bottom:1px solid var(--line); box-shadow:0 2px 6px #0f172a0a;
+    position:sticky; top:0; z-index:40;
+  }
+  .main-nav-link {
+    display:inline-flex; align-items:center; gap:7px; padding:10px 16px;
+    border:0; border-bottom:3px solid transparent; background:transparent;
+    color:var(--ink); font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800;
+    cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+  }
+  .main-nav-link span { font-size:15px; }
+  .main-nav-link:hover { background:#eef4ff; color:var(--accent); }
+  .main-nav-link.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--ref-nav-active); }
+  /* the section window is the main content card, not a modal */
+  body.section-open .home-dashboard,
+  body.section-open .alerts-panel,
+  body.section-open .classic-panel { display:none !important; }
+  .window-layer {
+    display:none; position:static; inset:auto; z-index:auto; padding:0;
+    background:transparent; align-items:stretch; justify-content:stretch;
+  }
+  .window-layer.open { display:block; }
+  .window-layer .workspace {
+    width:100%; max-width:none; height:auto; max-height:none;
+    border:1px solid var(--line-dark); border-radius:14px;
+    box-shadow:0 10px 28px #0f172a1f; overflow:visible;
+    background:var(--panel);
+  }
+  .window-layer.maximized { padding:0; }
+  .window-layer.maximized .workspace { height:auto; width:100%; }
+  .window-layer .win-header {
+    display:flex !important; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-radius:14px 14px 0 0;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3));
+    color:#fff; border-bottom:1px solid var(--line-dark);
+  }
+  .window-layer .win-header h2 { color:#fff; font-size:15px; font-weight:800; }
+  .window-layer .win-header h2::before { color:var(--head-gold); }
+  .window-layer .win-header .win-close[onclick="minimizeWorkspace()"],
+  .window-layer .win-header .win-close[onclick="maximizeWorkspace()"] { display:none; }
+  .window-layer .win-body { padding:12px; overflow:visible; background:var(--paper); border-radius:0 0 14px 14px; }
+  .window-layer .sec-view { padding-bottom:4px; }
+  /* side quick icon toolbar */
+  .side-quick { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; padding:6px 4px 8px; }
+  .side-quick button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:6px 2px; border:1px solid #ffffff2b; border-radius:8px;
+    background:#ffffff14; color:#eaf4ff; font-family:'Cairo',Tahoma,sans-serif;
+    font-size:9px; font-weight:bold; cursor:pointer; transition:background .15s,transform .1s;
+  }
+  .side-quick button span { font-size:15px; line-height:1; }
+  .side-quick button:hover { background:#ffffff2e; transform:translateY(-1px); }
+  /* bottom status bar */
+  .status-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:7px 18px; background:linear-gradient(180deg,#f8fafc,#eef2f7);
+    border-top:1px solid var(--line-dark); color:var(--muted);
+    font-family:'Cairo',Tahoma,sans-serif; font-size:10.5px; font-weight:bold;
+  }
+  .status-bar strong { color:var(--ink); }
+  .status-bar .status-item { display:inline-flex; align-items:center; gap:6px; }
+  .status-bar .status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 2px #22c55e33; }
+  .status-bar .status-license { color:var(--accent); }
+  .status-bar { position:sticky; bottom:0; z-index:30; }
+  .app-shell { grid-template-columns:var(--ref-sidebar-w) minmax(0,1fr); }
+  .side-nav { top:64px; max-height:calc(100vh - 84px); }
+  /* reference light themes */
+  body[data-theme="ref-light-blue"] {
+    --accent:#1e6fb8; --g-bar:#2b82c9; --g-dark:#1a5a94; --g-line:#144a7a; --g-soft:#e3f1fb;
+    --paper:#f2f7fc; --paper-2:#e8f1f9; --panel:#ffffff; --panel-2:#eef5fb;
+    --ink:#152a3a; --muted:#5b7080;
+    --line:#c3d6e6; --line-dark:#93b0c6; --line-soft:#dce9f3;
+    --thead:#e3eff9; --row-alt:#f7fbfe; --row-sel:#d9ecfb; --row-hover:#eaf5fd;
+    --btn:#eef5fb; --btn-2:#e0edf7; --btn-hover:#ffffff;
+    --ok:#2f8f6b; --ok-dark:#1e6a4d; --danger:#c0392b; --info:#1e6fb8; --warn:#c47a12; --purple:#6a52a8;
+    --shell-bg:#e8f0f7; --press-glow:#1e6fb855;
+    --head-1:#071a2e; --head-2:#0d3355; --head-3:#155a8a; --head-gold:#8fd3ff;
+  }
+  body[data-theme="ref-light-purple"] {
+    --accent:#6a5acd; --g-bar:#7b6bdd; --g-dark:#5847b0; --g-line:#463a91; --g-soft:#eeecfb;
+    --paper:#f5f4fc; --paper-2:#eceaf8; --panel:#ffffff; --panel-2:#f1effb;
+    --ink:#211d38; --muted:#6b6685;
+    --line:#d0cce8; --line-dark:#a9a3cc; --line-soft:#e2dff2;
+    --thead:#eae7f9; --row-alt:#f8f7fe; --row-sel:#e4e0fb; --row-hover:#f0edfd;
+    --btn:#f1effb; --btn-2:#e6e2f7; --btn-hover:#ffffff;
+    --ok:#219a6f; --ok-dark:#157251; --danger:#c8392f; --info:#2f74c0; --warn:#c47a1c; --purple:#7a4fd0;
+    --shell-bg:#e9e6f5; --press-glow:#6a5acd55;
+    --head-1:#120a24; --head-2:#241344; --head-3:#3b2470; --head-gold:#c4b5fd;
+  }
+  body[data-theme="ref-light-maroon"] {
+    --accent:#8b1e1e; --g-bar:#a32a2a; --g-dark:#741717; --g-line:#5c1010; --g-soft:#f8e7e7;
+    --paper:#fbf5f4; --paper-2:#f4eae8; --panel:#ffffff; --panel-2:#f9efee;
+    --ink:#331b1b; --muted:#7d5f5f;
+    --line:#e3c9c9; --line-dark:#c9a3a3; --line-soft:#f0dede;
+    --thead:#f6e6e6; --row-alt:#fdf8f8; --row-sel:#f7dede; --row-hover:#fcf0f0;
+    --btn:#f9eeee; --btn-2:#f1dede; --btn-hover:#ffffff;
+    --ok:#2f8f6b; --ok-dark:#1e6a4d; --danger:#8b1e1e; --info:#7a5bb5; --warn:#c07a25; --purple:#8a4f9e;
+    --shell-bg:#f0e4e3; --press-glow:#8b1e1e55;
+    --head-1:#1c0707; --head-2:#380d0d; --head-3:#5c1717; --head-gold:#ffb3b3;
+  }
+  /* reference dark themes: reuse the night rules via duplicated selectors */
+  body[data-theme="ref-dark-gray"] {
+    --paper:#1b1d21; --paper-2:#16181c; --panel:#25282e; --panel-2:#1f2227;
+    --ink:#e5e7eb; --muted:#a1a8b3; --line:#3a3f47; --line-dark:#4b515b; --line-soft:#30343b;
+    --thead:#333842; --row-alt:#2a2e35; --row-sel:#2f3a4a; --row-hover:#313640;
+    --btn:#333842; --btn-2:#2a2e35; --btn-hover:#3b414b; --g-soft:#2b3340;
+    --accent:#4a9eff; --g-bar:#3b82c4; --g-dark:#255a8a; --g-line:#1d4a70;
+    --shell-bg:#111317; --press-glow:#4a9eff44;
+    --head-1:#0b0d10; --head-2:#161b22; --head-3:#1f2937; --head-gold:#93c5fd;
+  }
+  body[data-theme="ref-dark-purple"] {
+    --paper:#0f0a1a; --paper-2:#0b0714; --panel:#171126; --panel-2:#130d20;
+    --ink:#ede9fe; --muted:#a79fc4; --line:#332a4a; --line-dark:#453a63; --line-soft:#2a223d;
+    --thead:#2a2140; --row-alt:#1c1530; --row-sel:#3b2a5e; --row-hover:#241a3a;
+    --btn:#2a2140; --btn-2:#211934; --btn-hover:#332a4a; --g-soft:#2e2447;
+    --accent:#a855f7; --g-bar:#7c3aed; --g-dark:#5b21b6; --g-line:#4c1d95;
+    --shell-bg:#08050f; --press-glow:#a855f744;
+    --head-1:#0d0618; --head-2:#1e0b33; --head-3:#3b1d6e; --head-gold:#d8b4fe;
+  }
+  body[data-theme="ref-dark-gray"] .sec-view > .action-bar { background:linear-gradient(#2e333b,#262b32); border-color:#4b515b; }
+  body[data-theme="ref-dark-purple"] .sec-view > .action-bar { background:linear-gradient(#2a2140,#211934); border-color:#453a63; }
+  body[data-theme="ref-dark-gray"] .win-header,
+  body[data-theme="ref-dark-purple"] .win-header { border-bottom-color:#00000055; }
+  body[data-theme="ref-dark-gray"] .panel-title,
+  body[data-theme="ref-dark-purple"] .panel-title { text-shadow:0 1px 5px #00000066; }
+  body[data-theme="ref-dark-gray"] .kpi-box, body[data-theme="ref-dark-gray"] .c-btn, body[data-theme="ref-dark-gray"] .act-btn,
+  body[data-theme="ref-dark-gray"] .pos-field select, body[data-theme="ref-dark-gray"] .pos-field input,
+  body[data-theme="ref-dark-gray"] .f-row input, body[data-theme="ref-dark-gray"] .f-row select { background:#2c3138; color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .kpi-box, body[data-theme="ref-dark-purple"] .c-btn, body[data-theme="ref-dark-purple"] .act-btn,
+  body[data-theme="ref-dark-purple"] .pos-field select, body[data-theme="ref-dark-purple"] .pos-field input,
+  body[data-theme="ref-dark-purple"] .f-row input, body[data-theme="ref-dark-purple"] .f-row select { background:#2a2140; color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] .table-wrap, body[data-theme="ref-dark-gray"] td input,
+  body[data-theme="ref-dark-gray"] .sum-cell input, body[data-theme="ref-dark-gray"] .item-tile { background:#22262c; color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .table-wrap, body[data-theme="ref-dark-purple"] td input,
+  body[data-theme="ref-dark-purple"] .sum-cell input, body[data-theme="ref-dark-purple"] .item-tile { background:#1c1530; color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] thead th { background:#333842; color:#eef3f8; }
+  body[data-theme="ref-dark-purple"] thead th { background:#2a2140; color:#f3e8ff; }
+  body[data-theme="ref-dark-gray"] .nav-link { color:#e6eef8; border-color:#ffffff1f; background:linear-gradient(#3a4560,#2b3450); }
+  body[data-theme="ref-dark-gray"] .nav-link:hover { background:linear-gradient(#4a5679,#39456b); color:#fff; }
+  body[data-theme="ref-dark-purple"] .nav-link { color:#ede9fe; border-color:#ffffff1f; background:linear-gradient(#3b2a5e,#2a2140); }
+  body[data-theme="ref-dark-purple"] .nav-link:hover { background:linear-gradient(#4c3a75,#3b2a5e); color:#fff; }
+  body[data-theme="ref-dark-gray"] .side-nav { background:linear-gradient(180deg,#0b0d10,#161b22 60%,#1f2937); }
+  body[data-theme="ref-dark-purple"] .side-nav { background:linear-gradient(180deg,#0d0618,#1e0b33 60%,#3b1d6e); }
+  body[data-theme="ref-dark-gray"] .board-toggle, body[data-theme="ref-dark-gray"] .section-bar { background:linear-gradient(105deg,#0b0d10,#1f2937 55%,#2e3b4e); }
+  body[data-theme="ref-dark-purple"] .board-toggle, body[data-theme="ref-dark-purple"] .section-bar { background:linear-gradient(105deg,#0d0618,#2a1245 55%,#4c1d95); }
+  body[data-theme="ref-dark-gray"] .win-body { background:#1b1d21; }
+  body[data-theme="ref-dark-purple"] .win-body { background:#171126; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-green, body[data-theme="ref-dark-purple"] .act-btn.bg-green { background:linear-gradient(#4f9c36,var(--ok) 55%,var(--ok-dark)); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-red, body[data-theme="ref-dark-purple"] .act-btn.bg-red { background:linear-gradient(#d05046,var(--danger) 60%,#8c1a14); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-blue, body[data-theme="ref-dark-purple"] .act-btn.bg-blue { background:linear-gradient(#4b82b5,var(--info) 60%,#1f4a72); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-teal, body[data-theme="ref-dark-purple"] .act-btn.bg-teal { background:linear-gradient(#4aa79b,#237a70 60%,#17594f); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-orange, body[data-theme="ref-dark-purple"] .act-btn.bg-orange { background:linear-gradient(#e2a258,var(--warn) 60%,#83500f); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-purple, body[data-theme="ref-dark-purple"] .act-btn.bg-purple { background:linear-gradient(#a084d3,var(--purple) 60%,#503778); color:#fff; }
+  body[data-theme="ref-dark-gray"] .status-bar { background:linear-gradient(180deg,#1b1f26,#12151a); border-top-color:#3a3f47; color:#a1a8b3; }
+  body[data-theme="ref-dark-purple"] .status-bar { background:linear-gradient(180deg,#1c1530,#0f0a1a); border-top-color:#453a63; color:#a79fc4; }
+  body[data-theme="ref-dark-gray"] .main-nav { background:linear-gradient(180deg,#1b1f26,#12151a); border-bottom-color:#3a3f47; }
+  body[data-theme="ref-dark-purple"] .main-nav { background:linear-gradient(180deg,#1c1530,#0f0a1a); border-bottom-color:#453a63; }
+  body[data-theme="ref-dark-gray"] .main-nav-link { color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .main-nav-link { color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] .main-nav-link:hover { background:#2a2f38; color:#fff; }
+  body[data-theme="ref-dark-purple"] .main-nav-link:hover { background:#2a2140; color:#fff; }
+  body[data-theme="ref-dark-gray"] .main-nav-link.active { background:#2a2f38; color:#fff; border-bottom-color:var(--accent); }
+  body[data-theme="ref-dark-purple"] .main-nav-link.active { background:#2a2140; color:#fff; border-bottom-color:var(--accent); }
 </style>
 <style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
 </head>
-<body data-theme="vista-classic">
+<body data-theme="win11-indigo">
 
 <!-- ================= APP HEADER ================= -->
 <header class="top-bar" id="appHeader" data-header="name" data-align="start">
@@ -2451,6 +2625,16 @@
   </div>
 </header>
 
+<!-- ================= MAIN NAVIGATION TABS ================= -->
+<nav class="main-nav" id="mainNav" aria-label="التنقل الرئيسي">
+  <button type="button" class="main-nav-link active" data-nav="home" onclick="showHome()"><span aria-hidden="true">⌂</span> الرئيسية</button>
+  <button type="button" class="main-nav-link" data-nav="sale" onclick="openInvoiceSec('sale')"><span aria-hidden="true">🛒</span> فاتورة مبيعات</button>
+  <button type="button" class="main-nav-link" data-nav="purchase" onclick="openInvoiceSec('purchase')"><span aria-hidden="true">📥</span> فاتورة مشتريات</button>
+  <button type="button" class="main-nav-link" data-nav="customers" onclick="openPartySec('customer')"><span aria-hidden="true">👥</span> العملاء</button>
+  <button type="button" class="main-nav-link" data-nav="settings" onclick="openSettingsTab('look')"><span aria-hidden="true">⚙️</span> الإعدادات</button>
+  <button type="button" class="main-nav-link" data-nav="staff" onclick="openSettingsTab('staff')"><span aria-hidden="true">👤</span> إدارة الموظفين</button>
+</nav>
+
 <!-- ================= MAIN ACTION BAR ================= -->
 <div class="tool-strip">
   <button type="button" class="y-btn big-action-btn btn-menu" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">
@@ -2472,6 +2656,21 @@
 
   <aside class="side-nav" id="sideNav" aria-label="القائمة الرئيسية">
     <div class="side-brand"><span class="brand-mark" aria-hidden="true">📚</span><div><strong>نظام نقاط البيع</strong><small>إدارة المكتبات</small></div></div>
+
+    <div class="side-quick" aria-label="أدوات سريعة">
+      <button type="button" onclick="openPartySec('supplier')" title="الموردون"><span aria-hidden="true">🚚</span>الموردون</button>
+      <button type="button" onclick="openSettingsTab('staff')" title="الموظفون"><span aria-hidden="true">👤</span>الموظفون</button>
+      <button type="button" onclick="openInvoiceSec('purchase')" title="فاتورة مشتريات"><span aria-hidden="true">📥</span>مشتريات</button>
+      <button type="button" onclick="openInvoiceSec('sale_return')" title="مرتجع مبيعات"><span aria-hidden="true">↩️</span>مرتجع مبيعات</button>
+      <button type="button" onclick="quickPlaceholder('التحويلات')" title="تحويلات"><span aria-hidden="true">🔄</span>تحويلات</button>
+      <button type="button" onclick="openStockFilter('all')" title="المخازن"><span aria-hidden="true">📦</span>المخازن</button>
+      <button type="button" onclick="quickPlaceholder('الحضور والانصراف')" title="حضور وانصراف"><span aria-hidden="true">🕒</span>حضور</button>
+      <button type="button" onclick="openTreasury('all')" title="الخزينة"><span aria-hidden="true">💰</span>الخزينة</button>
+      <button type="button" onclick="openTreasury('expense')" title="المصروفات"><span aria-hidden="true">💸</span>المصروفات</button>
+      <button type="button" onclick="openInvoiceSec('purchase_return')" title="مرتجع مشتريات"><span aria-hidden="true">↩️</span>مرتجع مشتريات</button>
+      <button type="button" onclick="openProfitSec('general')" title="إحصائيات"><span aria-hidden="true">📊</span>إحصائيات</button>
+      <button type="button" onclick="openSettingsTab('sync')" title="المزامنة"><span aria-hidden="true">☁️</span>المزامنة</button>
+    </div>
 
     <div class="nav-caption">الرئيسية</div>
     <div class="nav-group">
@@ -2662,15 +2861,9 @@
       </div>
     </div>
 
-  </main>
-</div>
-<div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
-<button type="button" class="focus-exit" id="focusExitBtn" onclick="exitFocusMode()">✕ إنهاء التركيز</button>
-
-<!-- ================= FLOATING WINDOW ================= -->
-<div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+<div class="window-layer" id="windowLayer" role="region" aria-labelledby="winTitle">
 <div class="workspace">
-  <div class="win-header" hidden aria-hidden="true">
+  <div class="win-header">
     <h2 id="winTitle">📦 بيانات الأصناف والمخزون</h2>
     <div class="win-header-actions">
       <button type="button" class="win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة" title="تصغير">－</button>
@@ -3337,13 +3530,18 @@
         <div class="panel-box">
           <div class="panel-title">🎨 مظهر البرنامج — اختر الثيم ثم اضغط عليه ليُفعّل فوراً</div>
           <div class="appearance-grid" id="themeChoices">
-            <button type="button" class="theme-choice" data-theme-choice="vista-classic" onclick="selectTheme('vista-classic')" aria-pressed="true">كلاسيكي أخضر <span class="theme-swatches"><i style="background:#3b7323"></i><i style="background:#f4f2e4"></i><i style="background:#b1251d"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="vista-classic" onclick="selectTheme('vista-classic')" aria-pressed="false">كلاسيكي أخضر <span class="theme-swatches"><i style="background:#3b7323"></i><i style="background:#f4f2e4"></i><i style="background:#b1251d"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-blue" onclick="selectTheme('vista-blue')" aria-pressed="false">Vista — أزرق زجاجي <span class="theme-swatches"><i style="background:#1f74a8"></i><i style="background:#eef5fa"></i><i style="background:#2f8f6b"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-emerald" onclick="selectTheme('vista-emerald')" aria-pressed="false">Vista — أخضر طبيعي <span class="theme-swatches"><i style="background:#1f8a5c"></i><i style="background:#eef7f2"></i><i style="background:#c47a12"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-rose" onclick="selectTheme('vista-rose')" aria-pressed="false">Vista — وردي أنيق <span class="theme-swatches"><i style="background:#b04a76"></i><i style="background:#faf1f5"></i><i style="background:#8a4f9e"></i></span></button>
-            <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')" aria-pressed="false">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f1f2fa"></i><i style="background:#7a4fd0"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')" aria-pressed="true">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f1f2fa"></i><i style="background:#7a4fd0"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-mint" onclick="selectTheme('win11-mint')" aria-pressed="false">Windows 11 — نعناعي <span class="theme-swatches"><i style="background:#12857a"></i><i style="background:#eef7f6"></i><i style="background:#2f74c0"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-sunset" onclick="selectTheme('win11-sunset')" aria-pressed="false">Windows 11 — غروب دافئ <span class="theme-swatches"><i style="background:#c8603f"></i><i style="background:#faf2ee"></i><i style="background:#b5761b"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-blue" onclick="selectTheme('ref-light-blue')" aria-pressed="false">مرجعي — أزرق فاتح <span class="theme-swatches"><i style="background:#1e6fb8"></i><i style="background:#f2f7fc"></i><i style="background:#2f8f6b"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-purple" onclick="selectTheme('ref-light-purple')" aria-pressed="false">مرجعي — بنفسجي فاتح <span class="theme-swatches"><i style="background:#6a5acd"></i><i style="background:#f5f4fc"></i><i style="background:#7a4fd0"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-maroon" onclick="selectTheme('ref-light-maroon')" aria-pressed="false">مرجعي — عنابي <span class="theme-swatches"><i style="background:#8b1e1e"></i><i style="background:#fbf5f4"></i><i style="background:#c07a25"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-dark-gray" onclick="selectTheme('ref-dark-gray')" aria-pressed="false">مرجعي — رمادي داكن <span class="theme-swatches"><i style="background:#1b1d21"></i><i style="background:#333842"></i><i style="background:#4a9eff"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-dark-purple" onclick="selectTheme('ref-dark-purple')" aria-pressed="false">مرجعي — بنفسجي داكن <span class="theme-swatches"><i style="background:#0f0a1a"></i><i style="background:#2a2140"></i><i style="background:#a855f7"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="night" onclick="selectTheme('night')" aria-pressed="false">الوضع الليلي <span class="theme-swatches"><i style="background:#111827"></i><i style="background:#263349"></i><i style="background:#8fb4ff"></i></span></button>
           </div>
           <div class="f-row">
@@ -3758,9 +3956,40 @@
       </div><!-- /settings panels -->
     </div>
 
+    <!-- ==================== REFERENCE PLACEHOLDER ==================== -->
+    <div id="sec-placeholder" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title" id="placeholderTitle">🚧 قسم قيد التطوير</h2>
+        <div class="page-bar-meta"><span class="bar-chip">قسم جديد</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="panel-box" style="text-align:center;padding:42px 20px;">
+        <div style="font-size:46px;line-height:1.2" aria-hidden="true">🚧</div>
+        <h3 id="placeholderHeading" style="margin:8px 0 4px;font-size:18px;font-weight:800">قسم قيد التطوير</h3>
+        <p id="placeholderText" style="margin:0 auto;max-width:520px;color:var(--muted);line-height:1.9">هذا القسم من ضمن التخطيط الجديد للبرنامج وسيتم تفعيله في التحديث القادم. باقي الشاشات تعمل بشكل كامل.</p>
+        <div class="action-bar" style="justify-content:center;margin-top:14px">
+          <button type="button" class="act-btn bg-blue" onclick="closeWorkspace()">⌂ العودة للرئيسية</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
+
+  </main>
 </div>
+
+<footer class="status-bar" aria-label="شريط حالة النظام">
+  <div class="status-item"><span class="status-dot" aria-hidden="true"></span> المستخدم: <strong id="statusUser">المدير</strong></div>
+  <div class="status-item">التاريخ: <strong id="statusDate">2025/01/01</strong></div>
+  <div class="status-item">الوقت: <strong id="statusTime">12:00:00</strong></div>
+  <div class="status-item status-license">ترخيص البرنامج: نسخة تجريبية — 2026</div>
+</footer>
+
+<div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
+<button type="button" class="focus-exit" id="focusExitBtn" onclick="exitFocusMode()">✕ إنهاء التركيز</button>
+
+<!-- ================= FLOATING WINDOW ================= -->
 
 <div class="window-dock" id="windowDock" hidden><span>نافذة مفتوحة في الخلفية</span><button type="button" class="act-btn bg-blue" onclick="restoreWorkspace()">↗ استعادة النافذة</button></div>
 
