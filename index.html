@@ -137,6 +137,14 @@
   .sync-chip[data-state="synced"] .status-dot { background:#2ee08a; box-shadow:0 0 0 3px #2ee08a3d; animation:none; }
   .sync-chip[data-state="error"] { border-color:#f8717166; background:#7f1d1d33; color:#ffdad6; }
   .sync-chip[data-state="error"] .status-dot { background:#ff5a4d; box-shadow:0 0 0 3px #ff5a4d3d; animation:none; }
+  .sync-state-box {
+    display:grid; gap:4px; margin:8px 0; padding:9px 11px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:color-mix(in srgb,var(--accent) 7%,#fff);
+  }
+  .sync-state-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11.5px; }
+  .sync-state-label { color:var(--muted); font-weight:bold; }
+  .sync-state-row strong { color:var(--accent); font-weight:800; }
   @keyframes dotPulse { 0%,100% { opacity:.35; box-shadow:0 0 0 3px #f2c14e22; } 50% { opacity:1; box-shadow:0 0 0 6px #f2c14e33; } }
   .clock-pill {
     display:grid; place-items:center; gap:1px; min-width:104px; height:44px;
@@ -2428,6 +2436,8 @@
   </div>
   <div class="head-side">
     <div class="head-icons">
+      <button type="button" class="head-icon-btn" onclick="openSettingsTab('sync')" title="مركز المزامنة والنسخ الاحتياطي" aria-label="مركز المزامنة">☁️</button>
+      <button type="button" class="head-icon-btn" onclick="openSettingsTab('look')" title="الإعدادات وتخصيص المظهر" aria-label="الإعدادات">⚙️</button>
       <button type="button" class="head-icon-btn" id="darkModeButton" onclick="toggleDarkMode()" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
       <button type="button" class="head-icon-btn" onclick="installApp()" title="تثبيت البرنامج على الجهاز" aria-label="تثبيت البرنامج">⬇️</button>
       <button type="button" class="head-icon-btn" onclick="lockApp()" title="دخول / تبديل المستخدم" aria-label="تبديل المستخدم">👤</button>
@@ -2436,7 +2446,7 @@
     <div class="head-meta">
       <div class="clock-pill"><small>التاريخ</small><span id="liveDate">2025/01/01</span></div>
       <div class="clock-pill is-time"><small>الوقت</small><span id="liveTime">12:00:00</span></div>
-      <span id="syncStatusBadge" class="sync-chip" role="status" data-state="local" title="حالة حفظ البيانات"><i class="status-dot"></i><span class="sync-text">محفوظ محلياً</span></span>
+      <span id="syncStatusBadge" class="sync-chip" role="button" tabindex="0" data-state="local" title="فتح مركز المزامنة" onclick="openSettingsTab('sync')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSettingsTab('sync');}" style="cursor:pointer"><i class="status-dot"></i><span class="sync-text">محفوظ محلياً</span></span>
     </div>
   </div>
 </header>
@@ -3699,11 +3709,20 @@
 
       <div class="settings-panel" data-settings-panel="sync" hidden>
         <div class="panel-box" id="syncPanel">
-          <div class="panel-title">☁️ المزامنة مع Neon والنسخ الاحتياطي</div>
-          <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية.</p>
+          <div class="panel-title">☁️ مركز المزامنة مع Neon والنسخ الاحتياطي</div>
+          <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية. اكتب المفتاح مرة واحدة وفعّل «تذكّره» ليُحفظ على هذا الجهاز.</p>
           <div class="f-row"><label for="setSyncKey">مفتاح المزامنة</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
-          <label style="display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:bold"><input type="checkbox" id="rememberSyncKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز</label>
+          <label style="display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:bold"><input type="checkbox" id="rememberSyncKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز (اكتبه مرة واحدة)</label>
           <p class="scope-note">عند التفعيل يُحفظ المفتاح في تخزين المتصفح؛ لا تفعّله على جهاز مشترك. لا يدخل المفتاح في النسخ الاحتياطية.</p>
+          <div class="sync-state-box" id="syncStateBox" aria-live="polite">
+            <div class="sync-state-row"><span class="sync-state-label">حالة المزامنة</span><strong id="syncStateText">محفوظ محلياً</strong></div>
+            <div class="sync-state-row"><span class="sync-state-label">إصدار السحابة</span><strong id="syncRevisionText">غير مرتبط</strong></div>
+            <div class="sync-state-row"><span class="sync-state-label">المفتاح المحفوظ</span><strong id="syncKeyStateText">غير محفوظ</strong></div>
+          </div>
+          <div class="action-bar" style="margin-bottom:6px">
+            <button type="button" class="act-btn bg-green" onclick="saveSyncKey()">🔑 حفظ مفتاح المزامنة</button>
+            <button type="button" class="act-btn bg-orange" onclick="clearRememberedSyncKey()">🧹 مسح المفتاح المحفوظ</button>
+          </div>
           <div class="action-bar" style="margin-bottom:0">
             <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات</button>
             <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات</button>

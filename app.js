@@ -266,6 +266,7 @@ function setSyncStatus(message) {
   }
   const navStatus = document.querySelector('.side-nav-foot .nav-label');
   if (navStatus) navStatus.textContent = badge?.dataset.state === 'synced' ? 'متصل ومتزامن مع Neon' : badge?.dataset.state === 'error' ? 'يحتاج مراجعة' : 'محفوظ على هذا الجهاز';
+  updateSyncStateBox();
   renderSystemAlerts();
 }
 function readMeta() {
@@ -3331,7 +3332,56 @@ function loadSettingsForm() {
   applyInvoiceTones(); applyDocSettingsUI();
   if ($('tenderAlertAmount')) $('tenderAlertAmount').value = String(tenderAlertLimit());
   $('staffManagerPanel').hidden = !isAdmin();
-  renderStaffTable(); renderAuditTable(); applyAppearance();
+  renderStaffTable(); renderAuditTable(); applyAppearance(); updateSyncStateBox();
+}
+function openSettingsTab(tab = 'look') {
+  openSec('sec-settings', '⚙️ إعدادات النظام');
+  switchSettingsTab(tab);
+  if (tab === 'sync') {
+    loadSettingsForm();
+    updateSyncStateBox();
+    window.setTimeout(() => $('setSyncKey')?.focus(), 60);
+  }
+}
+function updateSyncStateBox() {
+  if (!$('syncStateText')) return;
+  const state = $('syncStatusBadge')?.dataset.state || 'local';
+  const labels = { local: 'محفوظ محلياً — غير متزامن', synced: 'متزامن مع Neon ✅', error: 'يحتاج مراجعة المزامنة' };
+  $('syncStateText').textContent = labels[state] || labels.local;
+  $('syncRevisionText').textContent = syncMeta.revision === null || syncMeta.revision === undefined ? 'غير مرتبط' : String(syncMeta.revision);
+  let saved = false;
+  try { saved = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)); } catch { saved = false; }
+  $('syncKeyStateText').textContent = saved ? 'محفوظ على هذا الجهاز 🔒' : 'غير محفوظ';
+}
+function saveSyncKey() {
+  if (!ensurePermission('admin')) return;
+  const token = $('setSyncKey').value.trim(), remember = $('rememberSyncKey').checked;
+  try {
+    if (token) {
+      if (token.length < 32) { notify('مفتاح المزامنة يجب أن يكون 32 حرفاً على الأقل.'); return; }
+      sessionStorage.setItem(TOKEN_KEY, token);
+      if (remember) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
+      else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    }
+  } catch {
+    notify('تعذر حفظ مفتاح المزامنة. اسمح بتخزين بيانات الموقع أو أوقف خيار التذكر.');
+    return;
+  }
+  $('setSyncKey').value = '';
+  setSyncStatus(token ? (remember ? 'تم حفظ مفتاح المزامنة على هذا الجهاز' : 'المفتاح محفوظ لهذه الجلسة فقط') : 'محفوظ محلياً — المزامنة غير مفعلة');
+  updateSyncStateBox();
+  notify(token ? (remember ? '✅ تم حفظ مفتاح المزامنة على هذا الجهاز. لن تكتبه مرة أخرى.' : '✅ تم حفظ المفتاح لهذه الجلسة فقط.') : 'تم مسح مفتاح المزامنة.');
+}
+function clearRememberedSyncKey() {
+  try { localStorage.removeItem(REMEMBERED_TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+  if ($('setSyncKey')) $('setSyncKey').value = '';
+  if ($('rememberSyncKey')) $('rememberSyncKey').checked = false;
+  setSyncStatus('محفوظ محلياً — المزامنة غير مفعلة');
+  updateSyncStateBox();
+  notify('🧹 تم مسح مفتاح المزامنة المحفوظ من هذا الجهاز.');
 }
 function saveSettings() {
   if (!ensurePermission('admin')) return;
@@ -3530,7 +3580,7 @@ Object.assign(window, {
   handleScanKey, showSuggestions, hideSuggestions, moveSuggestion, pickSuggestion, suggestionMatches,
   playScanFeedback, setScanFeedback, setScanVibrate, applyScanFeedbackUI,
   openCameraScanner, closeCameraScanner, handleCameraCode, cameraSupported,
-  switchSettingsTab, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
+  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
   setInvoiceTone, resetInvoiceTones, applyInvoiceTones, invoiceTones,
   setDocTemplate, setDocAccent, applyDocSettingsUI, uploadDocSignature, clearDocSignature, docSettings,
   tenderAlertLimit, setTenderAlert, confirmTenderDifference, belowCostLines, confirmBelowCost,
