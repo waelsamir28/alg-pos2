@@ -546,7 +546,10 @@
   }
   .win-close:hover { background:#ffffff38; border-color:var(--head-gold); transform:translateY(-1px); }
   .win-close:active { background:var(--head-gold); color:#062033; transform:translateY(1px); }
-  .win-body { padding:9px; overflow:auto; background:#e9e7d8; }
+  .win-body { padding:10px; overflow:auto; background:#e9e7d8; }
+  .win-header[hidden] { display:none !important; }
+  .window-layer.open .workspace { border-radius:16px; }
+  .sec-view { padding-bottom:4px; }
   .window-layer.minimized { pointer-events:none; background:transparent; }
   .window-layer.minimized .workspace { display:none; }
   .window-dock {
@@ -575,7 +578,7 @@
   .f-row > label[for="staffDiscountLimit"] { min-width:auto; }
   .f-row > #staffDiscountLimit { max-width:88px; text-align:center; }
   .f-row input, .f-row select, .f-row textarea, .plain-input {
-    flex:1 1 90px; min-width:70px; padding:3px 6px; height:26px;
+    flex:1 1 90px; min-width:70px; padding:4px 8px; height:32px; font-size:12px; line-height:1.55;
     border:1px solid #a9a48a; border-radius:var(--radius-btn); background:#fffef8; font-weight:bold;
     box-shadow:inset 1px 1px 2px #0000000f; text-align:center;
     transition:border-color .14s, box-shadow .14s, background .14s;
@@ -591,6 +594,19 @@
     box-shadow:0 0 0 2px var(--press-glow);
   }
   .plain-input::placeholder, .pos-field input::placeholder, #invBarcodeInp::placeholder { color:#8b8f7a; font-weight:normal; }
+
+  /* ============ FIELD SIZING: text always fits the box ============ */
+  input[type="text"], input[type="number"], input[type="date"], input[type="tel"], input[type="search"],
+  input[type="password"], select, .plain-input, .f-row input, .f-row select {
+    min-height:32px; line-height:1.5; font-size:12px; box-sizing:border-box;
+    text-overflow:ellipsis; padding-inline:8px;
+  }
+  select { padding-block:4px; }
+  input[type="number"] { text-align:center; }
+  input[type="date"] { text-align:center; min-width:132px; }
+  .f-row { row-gap:7px; margin-bottom:8px; }
+  .f-row > label { min-width:96px; }
+  td input, td select { min-height:28px; font-size:11.5px; }
   /* Grouped rows: mix centred controls with readable alignment */
   .f-row { justify-content:center; }
   .f-row > label:first-child { min-width:78px; }
@@ -669,7 +685,7 @@
     background:color-mix(in srgb,var(--accent) 5%,#ffffff); border:1px solid var(--line-soft);
     border-radius:10px; padding:6px 10px; font-size:11px; font-weight:700; color:#31465c;
   }
-  .design-grid input[type="color"] { width:44px; height:26px; padding:0; border:1px solid var(--line-dark); border-radius:6px; background:none; cursor:pointer; }
+  .design-grid input[type="color"] { width:46px; height:30px; padding:0; border:1px solid var(--line-dark); border-radius:8px; background:none; cursor:pointer; }
   .design-grid input[type="range"] { flex:1 1 70px; accent-color:var(--accent); }
   .design-grid select { flex:0 1 130px; }
   .file-field { flex-wrap:wrap; justify-content:center; gap:6px; }
@@ -686,11 +702,14 @@
 
   /* ============ ACTION BAR / BUTTONS ============ */
   .action-bar {
-    display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:8px 0;
-    padding:6px; background:linear-gradient(#f7f5e6,#eae7d2); border:1px solid var(--line); border-radius:var(--radius);
+    display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin:8px 0;
+    padding:7px 9px; background:linear-gradient(#fbfcf5,#eef0e2); border:1px solid var(--line);
+    border-radius:var(--radius-card); box-shadow:inset 0 1px 0 #ffffffcc;
   }
+  .action-bar > label { font-size:11px; font-weight:800; color:#3b442b; white-space:nowrap; }
+  .action-bar .plain-input { height:32px; }
   .act-btn {
-    display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:5px 11px; min-height:26px;
+    display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:5px 12px; min-height:30px;
     border:var(--line-w,1px) solid #7d7960; border-radius:var(--radius-btn); font-size:11px; font-weight:bold; color:var(--btn-ink,#1f2714);
     background:linear-gradient(#fefdf4,var(--btn) 60%,var(--btn-2)); text-align:center;
     box-shadow:inset 0 1px 0 #fff, 0 1px 1px #00000018;
@@ -752,20 +771,94 @@
 
   /* ---- title bar: gradient, full width, title right / mode left ---- */
   .pos-titlebar {
-    display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px;
-    min-height:74px; padding:8px 22px; color:#fff; direction:rtl;
+    display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+    min-height:58px; padding:7px 14px; color:#fff; direction:rtl;
     background:linear-gradient(105deg,var(--sec-1,var(--head-1)),var(--sec-mid,var(--head-2)) 55%,var(--sec-2,var(--head-3)));
     border-radius:var(--radius-card); box-shadow:inset 0 1px 0 #ffffff2e, 0 8px 20px #0b1b3026;
   }
   .pos-title {
-    grid-column:1; justify-self:end; margin:0; font-family:'Cairo',Tahoma,sans-serif;
-    font-size:clamp(22px,2.6vw,34px); font-weight:800; letter-spacing:.4px; color:#fff;
+    grid-column:2; justify-self:center; margin:0; font-family:'Cairo',Tahoma,sans-serif;
+    font-size:clamp(18px,2.1vw,26px); font-weight:800; letter-spacing:.3px; color:#fff;
     text-shadow:0 2px 10px #00000055; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
   }
   .pos-mode-wrap {
-    grid-column:3; justify-self:start; display:flex; align-items:center; gap:8px;
+    grid-column:2; justify-self:center; display:flex; align-items:center; gap:8px;
     background:#ffffff1f; border:1px solid var(--head-line); border-radius:999px; padding:5px 12px;
   }
+  .pos-close { grid-column:1; justify-self:start; }
+  .pos-title-wrap { grid-column:2; justify-self:center; display:flex; align-items:center; gap:9px; min-width:0; }
+  .pos-title-wrap .pos-title { grid-column:auto; justify-self:auto; }
+
+  /* ===== per-invoice-type identity: colour + ring + badge ===== */
+  .pos-mode-badge {
+    display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:999px;
+    font-size:10.5px; font-weight:800; letter-spacing:.2px; white-space:nowrap;
+    color:#123024; background:#ffffffd9; border:1px solid #ffffff66;
+    box-shadow:0 2px 8px #00000026;
+  }
+  .pos-wrap[data-mode="purchase"] .pos-mode-badge { color:#5a2f05; }
+  .pos-wrap[data-mode="sale_return"] .pos-mode-badge { color:#5c0f45; }
+  .pos-wrap[data-mode="purchase_return"] .pos-mode-badge { color:#3f1a5c; }
+  .pos-wrap[data-mode="quote"] .pos-mode-badge { color:#0d3f5c; }
+
+  /* the invoice-type ribbon sits on top of the cart card */
+  .pos-wrap[data-mode] .pos-cart-card { position:relative; overflow:visible; }
+  .pos-wrap[data-mode] .pos-cart-card::before {
+    content:''; position:absolute; inset-inline:0; top:0; height:3px; border-radius:var(--radius-card) var(--radius-card) 0 0;
+    background:var(--pos-ribbon, none);
+  }
+  .pos-wrap[data-mode] .pos-cart-card .section-bar.pos-bar h3 { color:#233; }
+  .pos-wrap[data-mode="sale"] {
+    --pos-ribbon:linear-gradient(90deg,#2f7d32,#7ac043,#2f7d32);
+    --pos-shadow:0 10px 26px #2f7d321f;
+  }
+  .pos-wrap[data-mode="purchase"] {
+    --pos-ribbon:repeating-linear-gradient(135deg,#9a5a16 0 12px,#d99a4e 12px 24px);
+    --pos-shadow:0 10px 26px #9a5a161f;
+  }
+  .pos-wrap[data-mode="sale_return"] {
+    --pos-ribbon:linear-gradient(90deg,#8a1f6d,#c95aa8,#8a1f6d);
+    --pos-shadow:0 10px 26px #8a1f6d1f;
+  }
+  .pos-wrap[data-mode="purchase_return"] {
+    --pos-ribbon:repeating-linear-gradient(135deg,#5c2b7d 0 12px,#a37bd0 12px 24px);
+    --pos-shadow:0 10px 26px #5c2b7d1f;
+  }
+  .pos-wrap[data-mode="quote"] {
+    --pos-ribbon:linear-gradient(90deg,#1d5f8a,#8fd0ea,#1d5f8a);
+    --pos-shadow:0 10px 26px #1d5f8a1f;
+  }
+  .pos-wrap[data-mode] .entry-card { box-shadow:var(--pos-shadow,0 4px 14px #0f172a12); }
+
+  /* each type gets its own layout accents */
+  /* مبيعات: النقدية هي الأساس — بطاقة المدفوع مميزة */
+  .pos-wrap[data-mode="sale"] .sum-cell.paid input { box-shadow:0 0 0 3px #4f83c02e; }
+  /* مشتريات: تمييز المورد والتكلفة */
+  .pos-wrap[data-mode="purchase"] .pos-cart-data { background:linear-gradient(#fdf6ec,#f8e9d5); border-color:#e0c091; }
+  .pos-wrap[data-mode="purchase"] .sum-cell.net input { background:linear-gradient(#fff4e2,#ffe6c2); border-color:#c98a3a; color:#6b3d05; }
+  .pos-wrap[data-mode="purchase"] .pos-action.save { background:linear-gradient(150deg,#d99a4e,#8a4b12); border-color:#6f3a0c; }
+  /* مرتجع مبيعات: شارة الإرجاع + لون المتبقي */
+  .pos-wrap[data-mode="sale_return"] .pos-cart-data { background:linear-gradient(#fdf3fa,#f8e3f1); border-color:#e3b2d4; }
+  .pos-wrap[data-mode="sale_return"] .sum-cell.remain input { background:linear-gradient(#fff0f8,#ffd9ee); border-color:#c95aa8; color:#5c0f45; }
+  .pos-wrap[data-mode="sale_return"] .pos-action.save { background:linear-gradient(150deg,#c95aa8,#8a1f6d); border-color:#6e1557; }
+  /* مرتجع مشتريات: بنفسجي مع نمط مخطط */
+  .pos-wrap[data-mode="purchase_return"] .pos-cart-data { background:linear-gradient(#f8f2fd,#efe4f9); border-color:#c4aae0; }
+  .pos-wrap[data-mode="purchase_return"] .pos-action.save { background:linear-gradient(150deg,#a37bd0,#5c2b7d); border-color:#47215f; }
+  /* عرض سعر: هادئ ورسمي بلا دفع */
+  .pos-wrap[data-mode="quote"] .pos-cart-data { background:linear-gradient(#f1f9fd,#e2f2fb); border-color:#a8d3e8; }
+  .pos-wrap[data-mode="quote"] .sum-cell.paid,
+  .pos-wrap[data-mode="quote"] .sum-cell.remain { opacity:.55; }
+  .pos-wrap[data-mode="quote"] .pos-titlebar { box-shadow:inset 0 1px 0 #ffffff2e, 0 8px 20px #1d5f8a33; }
+  .pos-wrap[data-mode="quote"] .pos-title { letter-spacing:.8px; }
+  /* shape language per type, so the screens differ at a glance */
+  .pos-wrap[data-mode="sale"] .pos-titlebar { border-radius:14px 14px 14px 4px; }
+  .pos-wrap[data-mode="purchase"] .pos-titlebar { border-radius:4px 14px 14px 14px; }
+  .pos-wrap[data-mode="sale_return"] .pos-titlebar { border-radius:14px 4px 14px 14px; }
+  .pos-wrap[data-mode="purchase_return"] .pos-titlebar { border-radius:14px 14px 4px 14px; }
+  .pos-wrap[data-mode="quote"] .pos-titlebar { border-radius:8px; }
+  .pos-wrap[data-mode="sale_return"] .pos-title::before,
+  .pos-wrap[data-mode="purchase_return"] .pos-title::before { content:'↩ '; opacity:.9; }
+  .pos-wrap[data-mode="quote"] .pos-title::before { content:'📄 '; }
   .pos-mode-wrap label { font-size:11px; font-weight:700; color:#d9ecff; white-space:nowrap; }
   .pos-mode-wrap select {
     height:32px; min-width:170px; padding:2px 12px; font-weight:800; font-size:12.5px; text-align:center;
@@ -777,6 +870,37 @@
   .pos-mode-wrap select option { background:#0d2b46; color:#fff; }
 
   /* ---- tool strip: tabs (left) + contextual fields (right) ---- */
+  /* invoice data strip lives inside the cart card */
+  .pos-cart-data {
+    display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; direction:rtl;
+    margin:6px 0 7px; padding:7px 8px; border-radius:11px;
+    background:linear-gradient(#fbfdff,#eef4fb); border:1px solid #cfdded;
+  }
+  .pos-cart-data .pos-tabs { flex:1 1 100%; min-width:0; grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .pos-cart-data .pos-tab { min-height:32px; font-size:11px; border-radius:9px; }
+  .pos-cart-data .pos-panel-title { display:none; }
+  .pos-cart-data .pos-inline-fields { flex:1 1 auto; margin:0; padding:0; border:0; background:transparent; gap:7px; flex-wrap:wrap; }
+  .pos-cart-data .pos-field { flex:0 1 168px; min-width:126px; }
+  .pos-cart-data .pos-field label { font-size:10px; }
+  /* per-operation look: sale / purchase / quote / returns are visually distinct */
+  .pos-wrap[data-mode="sale"] { --pos-accent:#2f7d32; --pos-accent-2:#7ac043; --pos-surface:#f5fbf1; --pos-tag:'🧾 فاتورة مبيعات'; }
+  .pos-wrap[data-mode="purchase"] { --pos-accent:#8a4b12; --pos-accent-2:#d38b3a; --pos-surface:#fdf6ec; }
+  .pos-wrap[data-mode="sale_return"] { --pos-accent:#8a1f6d; --pos-accent-2:#c95aa8; --pos-surface:#fdf2f9; }
+  .pos-wrap[data-mode="purchase_return"] { --pos-accent:#6a3a8a; --pos-accent-2:#a37bd0; --pos-surface:#f8f2fd; }
+  .pos-wrap[data-mode="quote"] { --pos-accent:#1d5f8a; --pos-accent-2:#4aa6d8; --pos-surface:#f1f9fd; }
+  .pos-wrap[data-mode] .pos-titlebar {
+    background:linear-gradient(105deg,var(--pos-accent,var(--head-1)),color-mix(in srgb,var(--pos-accent) 66%,#ffffff) 62%,var(--pos-accent-2,var(--head-3)));
+  }
+  .pos-wrap[data-mode] .pos-cart-card { background:var(--pos-surface,#fff); }
+  .pos-wrap[data-mode] .pos-cart-card .section-bar.pos-bar,
+  .pos-wrap[data-mode] .pos-col-main .section-bar.pos-bar {
+    background:linear-gradient(180deg,color-mix(in srgb,var(--pos-accent) 22%,#ffffff),color-mix(in srgb,var(--pos-accent) 34%,#ffffff));
+  }
+  .pos-wrap[data-mode] .pos-cart-card { border-top:3px solid var(--pos-accent); }
+  .pos-wrap[data-mode="quote"] .pos-actions-strip .pos-action.save { background:linear-gradient(#2f8fc4,#1d5f8a); }
+  .pos-wrap[data-mode="purchase"] .pos-cart-card .section-bar h3::before,
+  .pos-wrap[data-mode="sale"] .pos-cart-card .section-bar h3::before { content:''; }
+
   .pos-toolbar {
     display:flex; align-items:center; gap:10px; flex-wrap:wrap; direction:ltr;
     background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius-card);
@@ -812,8 +936,9 @@
   .pos-field-wide { flex:2 1 260px; }
   .pos-field label { font-size:10.5px; font-weight:800; color:var(--muted); text-align:center; }
   .pos-field select, .pos-field input {
-    height:34px; padding:2px 8px; border:1px solid #a9a48a; background:#fffef8; font-weight:700;
+    height:34px; padding:2px 9px; border:1px solid #a9a48a; background:#fffef8; font-weight:700;
     border-radius:var(--radius-btn); box-shadow:inset 1px 1px 2px #0000000f; text-align:center;
+    font-size:12px; line-height:1.5; box-sizing:border-box; text-overflow:ellipsis;
     transition:border-color .16s, box-shadow .16s, background .16s, transform .12s;
   }
   .pos-field select:hover, .pos-field input:hover {
@@ -940,9 +1065,12 @@
   .pos-table tbody tr:hover td { background:var(--row-hover); }
 
   /* ---- summary ---- */
-  .pos-sum { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; background:transparent; border:0; padding:0; }
-  .pos-sum-major { margin-top:9px; }
-  .pos-sum-major .sum-cell.big input { height:74px; font-size:28px; }
+  .pos-sum { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; background:transparent; border:0; padding:0; direction:rtl; }
+  .pos-sum-major { margin-top:7px; }
+  .pos-sum-major .sum-cell.big input { height:52px; font-size:20px; }
+  /* the money boxes stay side by side and never stack */
+  .pos-sum-minor .sum-cell input { height:30px; font-size:12.5px; }
+  .pos-sum .sum-cell input { text-align:center; }
   .sum-cell { display:flex; flex-direction:column; gap:4px; }
   .sum-cell label { font-size:10.5px; font-weight:800; color:var(--muted); text-align:center; }
   .sum-cell input {
@@ -953,7 +1081,7 @@
   .sum-cell input:hover { border-color:color-mix(in srgb,var(--accent) 55%,#a9a48a); }
   .sum-cell input:focus { outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 2px var(--press-glow); }
   .sum-cell.big { grid-column:span 1; }
-  .sum-cell.big input { height:74px; font-size:28px; font-family:'Cairo',Tahoma,sans-serif; letter-spacing:.5px; }
+  .sum-cell.big input { height:52px; font-size:20px; font-family:'Cairo',Tahoma,sans-serif; letter-spacing:.3px; }
   .sum-cell.net input { background:linear-gradient(#eaf9dd,#d3f0bb); border:2px solid #5f9f3e; color:#17540d; }
   .sum-cell.paid input { background:linear-gradient(#eef6ff,#d8e9ff); border:2px solid #4f83c0; color:#0f3d70; }
   .sum-cell.remain input { background:linear-gradient(#fff8e2,#ffe9b8); border:2px solid #d0a33a; color:#6b4703; }
@@ -969,21 +1097,27 @@
   }
   .party-add-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
   .party-quick {
-    display:grid; grid-template-columns:1.4fr 1fr .8fr auto auto; gap:6px; align-items:center;
-    margin-top:6px; padding:7px; border-radius:11px; text-align:right;
-    background:linear-gradient(#f7fbff,#eaf2fa); border:1px solid #bfd4e8;
+    display:grid; grid-template-columns:1.3fr 1fr .8fr auto; gap:8px; align-items:end;
+    grid-column:1 / -1; margin-top:8px; padding:9px; border-radius:12px; text-align:right;
+    background:linear-gradient(#f7fbff,#e8f1fa); border:1px solid #b6cde4;
+    box-shadow:inset 0 1px 0 #fff;
   }
   .party-quick[hidden] { display:none !important; }
+  .pq-field { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .pq-field > span { font-size:10px; font-weight:800; color:#3d5670; }
   .party-quick input {
-    font-family:inherit; font-size:11px; padding:5px 8px; border-radius:8px;
-    border:1px solid #b8cde0; background:#fff; min-width:0;
+    font-family:inherit; font-size:12px; padding:5px 9px; height:32px; border-radius:9px;
+    border:1px solid #b8cde0; background:#fff; min-width:0; box-sizing:border-box;
   }
+  .party-quick .pq-balance input { text-align:center; }
+  .pq-actions { display:flex; gap:6px; align-items:center; }
   .party-quick-save, .party-quick-cancel {
-    font-family:inherit; font-size:10.5px; font-weight:800; padding:5px 10px; border-radius:8px; cursor:pointer;
+    font-family:inherit; font-size:11px; font-weight:800; padding:0 12px; height:32px; border-radius:9px; cursor:pointer; white-space:nowrap;
   }
   .party-quick-save { color:#fff; background:linear-gradient(#3f9c68,#23784a); border:1px solid #1a5c37; }
   .party-quick-cancel { color:#5c3a12; background:linear-gradient(#fffaf0,#f5e9d3); border:1px solid #dcc79a; }
-  @media (max-width:760px) { .party-quick { grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px) { .party-quick { grid-template-columns:1fr 1fr; } .pq-actions { grid-column:1 / -1; } }
+  @media (max-width:520px) { .party-quick { grid-template-columns:1fr; } }
 
   /* ---- barcode name search dropdown ---- */
   .scan-input-wrap { position:relative; flex:1 1 auto; min-width:0; }
@@ -1040,22 +1174,6 @@
   .discount-limit[data-state="over"] { background:linear-gradient(#fff2f1,#ffdfdc); border-color:#e8837c; }
 
   /* ---- quick cash buttons + change ---- */
-  .cash-quick {
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:9px;
-    padding:8px 10px; border-radius:var(--radius-btn);
-    background:linear-gradient(#f7fbff,#eaf2fb); border:1px solid var(--line-soft);
-  }
-  .cash-quick-label { font-size:10.5px; font-weight:800; color:#31465c; white-space:nowrap; }
-  .cash-quick-btns { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; justify-content:center; }
-  .cash-chip {
-    min-width:52px; min-height:32px; padding:4px 11px; border-radius:999px;
-    border:1px solid #a9c2dc; background:linear-gradient(#ffffff,#e6f0fa); color:#123a6b;
-    font-size:11.5px; font-weight:800; white-space:nowrap;
-    transition:background .14s, border-color .14s, transform .08s, box-shadow .14s, color .14s;
-  }
-  .cash-chip:hover { background:linear-gradient(#effaff,#bfe1ff); border-color:var(--head-3); box-shadow:0 0 0 2px #0f7c9326; transform:translateY(-1px); }
-  .cash-chip:active { background:var(--head-3); border-color:var(--head-3); color:#fff; transform:translateY(1px) scale(.97); }
-  .cash-chip:first-child { background:linear-gradient(#eefcf3,#cdeedb); border-color:#7fc9a1; color:#12603c; }
   .cash-change {
     display:flex; align-items:center; gap:8px; padding:5px 14px; border-radius:999px;
     background:linear-gradient(#fffdf3,#fff1c9); border:1px solid #d0a33a; white-space:nowrap;
@@ -1064,18 +1182,15 @@
   .cash-change strong { font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#6b4703; }
   .cash-change[data-state="over"] { background:linear-gradient(#eefcf3,#cdeedb); border-color:#5f9f3e; }
   .cash-change[data-state="over"] span, .cash-change[data-state="over"] strong { color:#17540d; }
-  body[data-theme="night"] .cash-quick { background:linear-gradient(#232b3a,#1b2230); border-color:#3f4a63; }
-  body[data-theme="night"] .cash-chip { background:linear-gradient(#2b3450,#232b3f); border-color:#465575; color:#dbe7ff; }
-  body[data-theme="night"] .cash-quick-label { color:#b9c8de; }
   @media (max-width:760px) { .cash-change { width:100%; justify-content:center; } }
 
   /* ---- invoice actions strip ---- */
   .pos-actions-strip {
-    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px;
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin-top:8px;
   }
   .pos-action {
-    display:flex; align-items:center; justify-content:center; gap:6px; min-height:52px; padding:8px 10px;
-    border-radius:var(--radius-btn); border:1px solid var(--line-dark); font-size:12px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; gap:5px; min-height:42px; padding:6px 8px;
+    border-radius:var(--radius-btn); border:1px solid var(--line-dark); font-size:11.5px; font-weight:800; flex-wrap:wrap;
     color:#fff; text-align:center; box-shadow:inset 0 1px 0 #ffffff45, 0 3px 10px #0000001f;
     transition:filter .16s, transform .08s, box-shadow .16s, background .16s;
   }
@@ -1115,13 +1230,21 @@
 
   /* ============ UNIFIED PAGE LAYOUT (every screen like the invoice) ============ */
   .page-bar {
-    display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px;
-    min-height:64px; padding:8px 20px; color:#fff; direction:rtl; margin-bottom:10px;
+    display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+    min-height:56px; padding:6px 12px 6px 18px; color:#fff; direction:rtl; margin-bottom:8px;
     background:linear-gradient(105deg,var(--sec-1,var(--head-1)),var(--sec-mid,var(--head-2)) 55%,var(--sec-2,var(--head-3)));
     border-radius:var(--radius-card); box-shadow:inset 0 1px 0 #ffffff2e, 0 8px 20px #0b1b3026;
   }
+  .page-close-btn {
+    display:inline-flex; align-items:center; gap:5px; flex:0 0 auto;
+    font-family:inherit; font-size:11px; font-weight:800; padding:6px 11px; border-radius:999px; cursor:pointer;
+    color:#fff; background:#ffffff1f; border:1px solid #ffffff4d;
+    transition:background .15s, border-color .15s, transform .12s;
+  }
+  .page-close-btn:hover { background:#d8453c; border-color:#ffb4ae; transform:translateY(-1px); }
+  .page-close-btn:active { transform:translateY(1px); background:#a9251d; }
   .page-bar-title {
-    margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:clamp(16px,2vw,24px); font-weight:800;
+    margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:clamp(15px,1.8vw,21px); font-weight:800;
     color:#fff; text-shadow:0 2px 10px #00000055; line-height:1.3;
   }
   .page-bar-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
@@ -1138,6 +1261,13 @@
     padding:8px 10px; box-shadow:inset 0 1px 0 #ffffffcc;
   }
   .page-tools .page-tabs { display:flex; gap:7px; flex-wrap:wrap; direction:rtl; }
+  .settings-tabs { flex:1 1 auto; }
+  .settings-tabs .pos-tab { min-height:34px; border-radius:10px; }
+  .settings-panels { display:block; }
+  .settings-panel[hidden] { display:none !important; }
+  .settings-panel { animation:settingsIn .22s ease-out both; }
+  @keyframes settingsIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .settings-panel .form-grid-2 { grid-template-columns:1fr 1fr; align-items:start; }
   .page-tools .pos-tab { min-width:132px; min-height:38px; }
   .page-tools-field { display:flex; align-items:center; gap:8px; flex:1 1 240px; direction:rtl; }
   .page-tools-field label { font-size:10.5px; font-weight:800; color:var(--muted); white-space:nowrap; }
@@ -1164,7 +1294,8 @@
 
   .page-table { background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius-card); overflow:hidden; box-shadow:0 4px 14px #0f172a12; }
   .page-table .pos-bar { margin:0; border-end-start-radius:0; border-end-end-radius:0; }
-  .page-table .table-wrap { border:0; border-radius:0; max-height:420px; }
+  .page-table .table-wrap { border:0; border-radius:0; max-height:min(58vh,520px); }
+  .page-table .table-wrap table thead th { position:sticky; top:0; z-index:2; }
 
   /* sections that still use plain action bars get the same rounded strip look */
   .sec-view > .action-bar {
@@ -1177,7 +1308,9 @@
   .sec-view > .panel-box { border-radius:var(--radius-card); }
   body[data-theme="night"] .sec-view > .action-bar { background:linear-gradient(#2e3527,#262c20); border-color:#4a5340; }
   @media (max-width:760px) {
-    .page-bar { grid-template-columns:1fr; justify-items:center; text-align:center; }
+    .page-bar { grid-template-columns:1fr auto; justify-items:stretch; text-align:center; }
+    .page-bar-title { grid-column:1 / -1; text-align:center; }
+    .page-close-btn { justify-self:start; }
     .page-tools .pos-tab { min-width:110px; }
   }
 
@@ -1271,12 +1404,15 @@
     opacity:var(--start-bg-opacity,.5); transition:opacity .2s ease;
   }
   .start-card {
-    position:relative; width:min(430px,100%); max-height:calc(100vh - 36px); overflow:auto;
+    position:relative; width:min(452px,100%); max-height:calc(100vh - 32px); overflow:auto;
     background:linear-gradient(#ffffff,#f4f7fb); color:#1b2a3d;
-    border:1px solid #ffffff59; border-radius:26px; padding:0 0 20px; text-align:center;
+    border:1px solid #ffffff59; border-radius:26px; padding:0 0 18px; text-align:center;
     box-shadow:0 30px 70px #00000066, inset 0 1px 0 #ffffffcc;
     animation:startIn .38s ease-out both;
   }
+  .start-card::-webkit-scrollbar { width:8px; }
+  .start-card::-webkit-scrollbar-thumb { background:#c3d2e2; border-radius:999px; }
+  .start-card { scrollbar-width:thin; }
   @keyframes startIn { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
   .start-art {
     position:relative; padding:26px 22px 20px; color:#fff; overflow:hidden; border-radius:26px 26px 0 0;
@@ -1316,8 +1452,11 @@
   }
   @keyframes loadShine { from { transform:translateX(-100%); } to { transform:translateX(100%); } }
   .start-loader-pct { display:block; margin-top:7px; font-size:10.5px; font-weight:800; color:#5b7080; }
+  .start-loader .start-steps { display:flex; gap:6px; justify-content:center; margin-top:9px; }
+  .start-loader .start-steps i { width:26px; height:4px; border-radius:999px; background:#dbe4ee; }
+  .start-loader .start-steps i.done { background:linear-gradient(90deg,var(--head-2),var(--head-3)); }
 
-  .start-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 0 14px; }
+  .start-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 0 16px; }
   .start-stat {
     display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 6px;
     border-radius:16px; background:linear-gradient(#f2f7fd,#e6eff9); border:1px solid #d3e0ee;
@@ -1328,7 +1467,10 @@
   .start-stat b { font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#123a6b; }
 
   /* login form: rounded fields */
-  .start-login { padding:6px 26px 0; }
+  .start-login { padding:10px 24px 0; }
+  .start-login .start-input { margin-bottom:10px; }
+  .start-divider { display:flex; align-items:center; gap:8px; margin:2px 0 12px; color:#93a4b6; font-size:9.5px; font-weight:800; }
+  .start-divider::before, .start-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,#dbe5f0,#eef3f8); }
   .start-login h3 {
     margin:6px 0 6px; font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#17324f;
   }
@@ -1407,6 +1549,51 @@
   .notice-popup .toast-body span { color:#6d5417; }
   .notice-popup .toast-ico { background:#fffdf3; border-color:#e8ce93; }
 
+  /* ---- invoice tone pickers + A5 templates ---- */
+  .invoice-tone-grid { grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); }
+  .invoice-tone-grid label { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .template-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .template-chip {
+    display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 6px; cursor:pointer;
+    font-family:inherit; border-radius:12px; color:#2d3c2c;
+    background:linear-gradient(#fdfdf6,#ecefdd); border:1px solid #bcc4a8;
+    transition:transform .12s, box-shadow .15s, border-color .15s;
+  }
+  .template-chip:hover { transform:translateY(-1px); box-shadow:0 6px 16px #0b1b301f; }
+  .template-chip[aria-pressed="true"] { border-color:#2f7d32; box-shadow:0 0 0 2px #2f7d3233 inset; background:linear-gradient(#f2fbf4,#dcf0e0); }
+  .template-chip i { display:block; width:100%; height:26px; border-radius:6px; background:linear-gradient(#eef4ea,#dbe7d5); border:1px solid #c3d2ba; }
+  .template-chip[data-doc-template="modern"] i { background:linear-gradient(90deg,#2f7d32,#7ac043); }
+  .template-chip[data-doc-template="minimal"] i { background:repeating-linear-gradient(180deg,#ffffff 0 6px,#eef1e6 6px 7px); }
+  .template-chip b { font-size:11px; font-weight:800; }
+  .template-chip small { font-size:9px; color:#5f6b52; }
+
+  /* ---- invoice log: sales / purchases / quotes are visually distinct ---- */
+  .log-switch { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:9px; direction:rtl; }
+  .log-switch-btn {
+    display:inline-flex; align-items:center; gap:6px; flex:1 1 160px; justify-content:center;
+    font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 12px; border-radius:11px; cursor:pointer;
+    color:#2d3c2c; background:linear-gradient(#fbfcf7,#eaeedd); border:1px solid #bcc4a8;
+    transition:filter .14s, transform .12s, box-shadow .14s;
+  }
+  .log-switch-btn:hover { filter:brightness(1.03); transform:translateY(-1px); }
+  .log-switch-btn.is-active { color:#fff; border-color:#14314f; box-shadow:0 6px 16px #0b1b3026; }
+  .log-switch-btn[data-log-kind="sale"].is-active { background:linear-gradient(#3f9c68,#22764a); border-color:#1a5c37; }
+  .log-switch-btn[data-log-kind="purchase"].is-active { background:linear-gradient(#c9853a,#9a5a16); border-color:#7a4410; }
+  .log-switch-btn[data-log-kind="quote"].is-active { background:linear-gradient(#4aa6d8,#1d5f8a); border-color:#174d70; }
+  .log-switch-btn[data-log-kind="all"].is-active { background:linear-gradient(#7b8fa8,#43597a); border-color:#33455f; }
+  #sec-invlog[data-log-kind="sale"] .page-bar { background:linear-gradient(105deg,#1c5c3a,#3f9c68 62%,#7ac043); }
+  #sec-invlog[data-log-kind="purchase"] .page-bar { background:linear-gradient(105deg,#6d3d0d,#c9853a 62%,#e6b16a); }
+  #sec-invlog[data-log-kind="quote"] .page-bar { background:linear-gradient(105deg,#134963,#4aa6d8 62%,#8fd0ea); }
+  #sec-invlog[data-log-kind="sale"] .page-table { --log-accent:#22764a; --log-soft:#f2fbf5; }
+  #sec-invlog[data-log-kind="purchase"] .page-table { --log-accent:#9a5a16; --log-soft:#fdf6ec; }
+  #sec-invlog[data-log-kind="quote"] .page-table { --log-accent:#1d5f8a; --log-soft:#f1f9fd; }
+  #sec-invlog[data-log-kind="all"] .page-table { --log-accent:#43597a; --log-soft:#f4f6fa; }
+  #sec-invlog .page-table { border:1px solid color-mix(in srgb,var(--log-accent,#888) 40%,#ffffff); border-radius:var(--radius-card); overflow:hidden; }
+  #sec-invlog .page-table .section-bar.pos-bar { background:linear-gradient(180deg,color-mix(in srgb,var(--log-accent,#43597a) 26%,#ffffff),color-mix(in srgb,var(--log-accent,#43597a) 40%,#ffffff)); }
+  #sec-invlog .page-table tbody tr:nth-child(odd) { background:var(--log-soft,#fff); }
+  #sec-invlog .page-table tbody tr:hover { background:color-mix(in srgb,var(--log-accent,#888) 12%,#ffffff); }
+  #sec-invlog[data-log-kind="purchase"] .page-table thead th { background:linear-gradient(#f8ecd9,#f1dfc4); }
+
   /* ---- low stock alerts window ---- */
   .stock-alerts {
     position:fixed; z-index:10360; bottom:52px; inset-inline-end:18px;
@@ -1446,6 +1633,19 @@
   .stock-alerts-act { color:#fff; background:linear-gradient(#3f9c68,#23784a); border:1px solid #1a5c37; }
   .stock-alerts-more { color:#5c3a12; background:linear-gradient(#fffaf0,#f5e9d3); border:1px solid #dcc79a; }
 
+  .change-hint {
+    display:block; margin-top:3px; text-align:center; font-size:10px; font-weight:800; color:#7a4f07;
+    background:linear-gradient(#fffdf3,#fdf1cf); border:1px solid #e0c98f; border-radius:999px; padding:1px 8px;
+  }
+  .change-hint[hidden] { display:none !important; }
+  .change-hint b { font-size:11px; }
+  .change-hint[data-state="over"] { color:#8d1f16; background:linear-gradient(#fff2f1,#ffdfdc); border-color:#e8837c; }
+  .change-hint[data-alert="yes"] {
+    color:#fff; background:linear-gradient(#d8453c,#a31f18); border-color:#7d1510; font-weight:800;
+    animation:changePulse 1.1s ease-in-out infinite;
+  }
+  @keyframes changePulse { 0%,100% { box-shadow:0 0 0 0 #d8453c55; } 50% { box-shadow:0 0 0 5px #d8453c00; } }
+
   .draft-badge {
     display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
     font-size:10px; font-weight:800; color:#fff; background:linear-gradient(#d8453c,#a31f18); box-shadow:0 2px 6px #a31f1844;
@@ -1476,11 +1676,17 @@
     box-shadow:0 8px 24px #0b1b3033; transform-origin:top center;
     font-family:'Cairo',Tahoma,sans-serif;
   }
-  .preview-paper .p-header { text-align:center; border-bottom:2px solid #1c3d1a; padding-bottom:6px; margin-bottom:8px; }
-  .preview-paper .p-header h2 { margin:0; font-size:17px; color:#1c3d1a; }
+  .preview-paper { border-top:6px solid var(--doc-accent,#1c3d1a); }
+  .preview-paper .doc-tag {
+    display:inline-block; font-size:8px; font-weight:800; letter-spacing:1.6px; color:var(--doc-accent,#1c3d1a);
+    border:1px solid var(--doc-accent,#1c3d1a); border-radius:999px; padding:1px 8px; margin-bottom:4px;
+  }
+  .preview-paper .p-header { text-align:center; border-bottom:2px solid var(--doc-accent,#1c3d1a); padding-bottom:6px; margin-bottom:8px; }
+  .preview-paper .p-header h2 { margin:0; font-size:17px; color:var(--doc-accent,#1c3d1a); }
   .preview-paper .p-header p { margin:2px 0; font-size:9.5px; color:#444; }
   .preview-paper .p-header h3 { margin:4px 0 0; font-size:12px; color:#0f4c81; }
-  .preview-paper .p-meta { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:9.5px; margin:6px 0; padding:5px 7px; border:1px solid #ccc; border-radius:4px; background:#fafafa; }
+  .preview-paper .p-meta { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:9.5px; margin:6px 0; padding:5px 7px; border:1px solid #ccc; border-radius:4px; background:var(--doc-soft,#fafafa); }
+  .preview-paper .p-table thead th { background:var(--doc-soft,#e8f0e2); color:var(--doc-head,#1c3d1a); }
   .preview-paper .p-table { width:100%; border-collapse:collapse; margin:6px 0; font-size:9.5px; }
   .preview-paper .p-table th, .preview-paper .p-table td { border:1px solid #999; padding:3px 4px; text-align:center; }
   .preview-paper .p-table thead th { background:#e8f0e2; }
@@ -1890,6 +2096,7 @@
     .quick-items { grid-template-columns:repeat(2,minmax(0,1fr)); }
   }
 </style>
+<style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
 </head>
 <body data-theme="vista-classic">
@@ -2134,7 +2341,7 @@
 <!-- ================= FLOATING WINDOW ================= -->
 <div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
 <div class="workspace">
-  <div class="win-header">
+  <div class="win-header" hidden aria-hidden="true">
     <h2 id="winTitle">📦 بيانات الأصناف والمخزون</h2>
     <div class="win-header-actions">
       <button type="button" class="win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة" title="تصغير">－</button>
@@ -2147,11 +2354,15 @@
 
     <!-- ==================== 1. POINT OF SALE ==================== -->
     <div id="sec-invoice" class="sec-view">
-      <div class="pos-wrap">
+      <div class="pos-wrap" data-mode="sale">
 
         <!-- ===== POS TITLE BAR ===== -->
         <div class="pos-titlebar">
-          <h2 class="pos-title" id="posTitleText">فاتورة مبيعات</h2>
+          <button type="button" class="page-close-btn pos-close" onclick="closeWorkspace()" aria-label="إغلاق شاشة البيع" title="إغلاق (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
+          <div class="pos-title-wrap">
+            <h2 class="pos-title" id="posTitleText">فاتورة مبيعات</h2>
+            <span class="pos-mode-badge" id="posModeBadge">💵 نقدي</span>
+          </div>
           <div class="pos-mode-wrap">
             <label for="invMode">نوع العملية</label>
             <select id="invMode" onchange="changeInvoiceMode(this.value)">
@@ -2162,75 +2373,6 @@
               <option value="quote">عرض أسعار</option>
             </select>
           </div>
-        </div>
-
-        <!-- ===== POS TOOL STRIP: tabs (left) + fields (right) ===== -->
-        <div class="pos-toolbar">
-          <div class="pos-tabs" id="invTabs" role="tablist" aria-label="بيانات الفاتورة">
-            <button type="button" class="pos-tab" data-inv-tab="details" onclick="switchInvoiceTab('details')"><span aria-hidden="true">🧾</span>تفاصيل الفاتورة</button>
-            <button type="button" class="pos-tab" data-inv-tab="discount" onclick="switchInvoiceTab('discount')"><span aria-hidden="true">💰</span>الخصم</button>
-            <button type="button" class="pos-tab" data-inv-tab="party" onclick="switchInvoiceTab('party')"><span aria-hidden="true">👤</span>العميل والحساب</button>
-            <button type="button" class="pos-tab" data-inv-tab="notes" onclick="switchInvoiceTab('notes')"><span aria-hidden="true">📝</span>ملاحظات وطباعة</button>
-          </div>
-          <div class="pos-inline-fields" data-inv-group="party">
-            <div class="pos-field">
-              <label for="invPartySelect" id="lblInvParty">العميل</label>
-              <div class="party-inline">
-                <select id="invPartySelect"></select>
-                <button type="button" class="party-add-btn" id="invQuickPartyBtn" onclick="toggleQuickParty(true)" title="إضافة عميل جديد دون مغادرة الفاتورة">➕ عميل جديد</button>
-              </div>
-              <div class="party-quick" id="invQuickParty" hidden>
-                <input type="text" id="invQuickPartyName" placeholder="اسم العميل" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
-                <input type="text" id="invQuickPartyPhone" placeholder="الهاتف (اختياري)" inputmode="tel" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
-                <input type="number" id="invQuickPartyBalance" placeholder="رصيد افتتاحي" value="0" step="any" aria-label="الرصيد الافتتاحي">
-                <button type="button" class="party-quick-save" onclick="saveQuickParty()">حفظ واختيار</button>
-                <button type="button" class="party-quick-cancel" onclick="toggleQuickParty(false)">إلغاء</button>
-              </div>
-            </div>
-            <div class="pos-field">
-              <label for="invPayType">طريقة الدفع</label>
-              <select id="invPayType" onchange="calcInvoiceTotals()">
-                <option value="cash">نقدي (كاش)</option>
-                <option value="credit">آجل (على الحساب)</option>
-                <option value="partial">دفع جزئي</option>
-              </select>
-            </div>
-          </div>
-          <div class="pos-inline-fields" data-inv-group="discount" hidden>
-            <div class="pos-field">
-              <label for="invDiscAmount">خصم إضافي (مبلغ)</label>
-              <input type="number" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
-            </div>
-            <div class="pos-field">
-              <label for="invDiscPct">خصم (%)</label>
-              <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
-            </div>
-            <div class="discount-limit" id="discountLimitBox">
-              <span aria-hidden="true">🛡️</span>
-              <span>حد الخصم المسموح لك: <b id="discountLimitValue">100%</b></span>
-              <b class="discount-warn" id="discountWarn" hidden>تجاوزت الحد — سيُطلب موافقة المدير</b>
-            </div>
-          </div>
-          <div class="pos-inline-fields" data-inv-group="notes" hidden>
-            <div class="pos-field pos-field-wide">
-              <label for="invPrintNote">ملاحظات تُطبع على الفاتورة</label>
-              <input type="text" id="invPrintNote" placeholder="مثال: الاستبدال خلال أسبوع بشرط الفاتورة" maxlength="120">
-            </div>
-          </div>
-          <div class="pos-inline-fields" data-inv-group="details">
-            <div class="pos-field">
-              <label for="invPriceTier">شريحة التسعير</label>
-              <select id="invPriceTier" onchange="updateCartPricesByTier()">
-                <option value="retail">قطاعي</option>
-                <option value="wholesale">جملة</option>
-              </select>
-            </div>
-            <div class="pos-field" id="invReturnSourceRow" hidden>
-              <label for="invReturnSource">الفاتورة الأصلية للمرتجع</label>
-              <select id="invReturnSource" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
-            </div>
-          </div>
-          <span class="pos-panel-title" id="invPanelTitle">تفاصيل الفاتورة</span>
         </div>
 
         <!-- ===== BARCODE / QTY / SELL BAR ===== -->
@@ -2255,10 +2397,10 @@
           <button type="button" class="sell-btn" onclick="addInvItemFromInput()"><span aria-hidden="true">🛒</span>بيع / إضافة</button>
         </div>
 
-        <!-- ===== POS MAIN: groups+items (right) | cart+summary (left) ===== -->
+        <!-- ===== POS MAIN: cart + invoice data (left) | money + touch actions (right) ===== -->
         <div class="pos-main">
 
-          <!-- ===== GROUPS & QUICK ITEMS ===== -->
+          <!-- ===== GROUPS & QUICK ITEMS + CART ===== -->
           <div class="pos-col pos-col-side">
             <div class="entry-card">
               <div class="section-bar pos-bar">
@@ -2277,6 +2419,83 @@
                 <h3>🧾 بنود الفاتورة الحالية</h3>
                 <span class="bar-mini" id="posCartHint">لا توجد بنود بعد</span>
               </div>
+              <!-- ===== invoice data strip (tabs + contextual fields) ===== -->
+              <div class="pos-cart-data">
+              <div class="pos-tabs" id="invTabs" role="tablist" aria-label="بيانات الفاتورة">
+                <button type="button" class="pos-tab" data-inv-tab="details" onclick="switchInvoiceTab('details')"><span aria-hidden="true">🧾</span>تفاصيل الفاتورة</button>
+                <button type="button" class="pos-tab" data-inv-tab="discount" onclick="switchInvoiceTab('discount')"><span aria-hidden="true">💰</span>الخصم</button>
+                <button type="button" class="pos-tab" data-inv-tab="party" onclick="switchInvoiceTab('party')"><span aria-hidden="true">👤</span>العميل والحساب</button>
+                <button type="button" class="pos-tab" data-inv-tab="notes" onclick="switchInvoiceTab('notes')"><span aria-hidden="true">📝</span>ملاحظات وطباعة</button>
+              </div>
+              <div class="pos-inline-fields" data-inv-group="party" data-inv-always="1">
+                <div class="pos-field">
+                  <label for="invPartySelect" id="lblInvParty">العميل</label>
+                  <div class="party-inline">
+                    <select id="invPartySelect"></select>
+                    <button type="button" class="party-add-btn" id="invQuickPartyBtn" onclick="toggleQuickParty(true)" title="إضافة عميل جديد دون مغادرة الفاتورة">➕ عميل جديد</button>
+                  </div>
+                  <div class="party-quick" id="invQuickParty" hidden>
+                    <label class="pq-field"><span>اسم العميل</span>
+                      <input type="text" id="invQuickPartyName" placeholder="مثال: مدرسة النور" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+                    </label>
+                    <label class="pq-field"><span>الهاتف</span>
+                      <input type="text" id="invQuickPartyPhone" placeholder="01xxxxxxxxx" inputmode="tel" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+                    </label>
+                    <label class="pq-field pq-balance"><span>رصيد افتتاحي</span>
+                      <input type="number" id="invQuickPartyBalance" placeholder="0" value="0" step="any">
+                    </label>
+                    <div class="pq-actions">
+                      <button type="button" class="party-quick-save" onclick="saveQuickParty()">✔ حفظ واختيار</button>
+                      <button type="button" class="party-quick-cancel" onclick="toggleQuickParty(false)">إلغاء</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="pos-field">
+                  <label for="invPayType">طريقة الدفع</label>
+                  <select id="invPayType" onchange="calcInvoiceTotals()">
+                    <option value="cash">نقدي (كاش)</option>
+                    <option value="credit">آجل (على الحساب)</option>
+                    <option value="partial">دفع جزئي</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pos-inline-fields" data-inv-group="discount" hidden>
+                <div class="pos-field">
+                  <label for="invDiscAmount">خصم إضافي (مبلغ)</label>
+                  <input type="number" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
+                </div>
+                <div class="pos-field">
+                  <label for="invDiscPct">خصم (%)</label>
+                  <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
+                </div>
+                <div class="discount-limit" id="discountLimitBox">
+                  <span aria-hidden="true">🛡️</span>
+                  <span>حد الخصم المسموح لك: <b id="discountLimitValue">100%</b></span>
+                  <b class="discount-warn" id="discountWarn" hidden>تجاوزت الحد — سيُطلب موافقة المدير</b>
+                </div>
+              </div>
+              <div class="pos-inline-fields" data-inv-group="notes" hidden>
+                <div class="pos-field pos-field-wide">
+                  <label for="invPrintNote">ملاحظات تُطبع على الفاتورة</label>
+                  <input type="text" id="invPrintNote" placeholder="مثال: الاستبدال خلال أسبوع بشرط الفاتورة" maxlength="120">
+                </div>
+              </div>
+              <div class="pos-inline-fields" data-inv-group="details">
+                <div class="pos-field">
+                  <label for="invPriceTier">شريحة التسعير</label>
+                  <select id="invPriceTier" onchange="updateCartPricesByTier()">
+                    <option value="retail">قطاعي</option>
+                    <option value="wholesale">جملة</option>
+                  </select>
+                </div>
+                <div class="pos-field" id="invReturnSourceRow" hidden>
+                  <label for="invReturnSource">الفاتورة الأصلية للمرتجع</label>
+                  <select id="invReturnSource" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
+                </div>
+              </div>
+              <span class="pos-panel-title" id="invPanelTitle">تفاصيل الفاتورة</span>
+            </div>
+
               <div class="table-wrap pos-table">
                 <table>
                   <thead>
@@ -2301,24 +2520,8 @@
               </div>
               <div class="sum-bar pos-sum pos-sum-major">
                 <div class="sum-cell net big"><label for="invNetTotal">الصافي المطلوب</label><input type="text" id="invNetTotal" readonly value="0.00"></div>
-                <div class="sum-cell paid big"><label for="invPaidAmount">المدفوع</label><input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()"></div>
+                <div class="sum-cell paid big"><label for="invPaidAmount">المدفوع</label><input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()"><span class="change-hint" id="cashChangeBox" aria-live="polite" hidden>الباقي: <b id="cashChangeValue">0.00</b></span></div>
                 <div class="sum-cell remain big"><label for="invRemainAmount">المتبقي (آجل)</label><input type="text" id="invRemainAmount" readonly value="0.00"></div>
-              </div>
-              <div class="cash-quick">
-                <span class="cash-quick-label">دفع سريع</span>
-                <div class="cash-quick-btns" id="cashQuickButtons">
-                  <button type="button" class="cash-chip" onclick="setQuickPaid('exact')">المبلغ بالضبط</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(5)">5</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(10)">10</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(20)">20</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(50)">50</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(100)">100</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid(200)">200</button>
-                  <button type="button" class="cash-chip" onclick="setQuickPaid('round')">تدوير لأقرب 5</button>
-                </div>
-                <div class="cash-change" id="cashChangeBox" aria-live="polite">
-                  <span>الباقي للعميل</span><strong id="cashChangeValue">0.00</strong>
-                </div>
               </div>
               <div class="draft-strip" id="draftStrip">
                 <span class="draft-hint" id="draftHint" hidden>💾 مسودة محفوظة</span>
@@ -2364,6 +2567,7 @@
         <div class="page-bar-meta">
           <span class="bar-chip">الأصناف: <b id="headItemsCount">0</b></span>
           <span class="bar-chip">قيمة المخزن: <b id="headItemsValue">0.00</b></span>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
         </div>
       </div>
 
@@ -2490,6 +2694,7 @@
       <div class="page-bar">
         <h2 class="page-bar-title">📁 مجموعات الأصناف</h2>
         <div class="page-bar-meta"><span class="bar-chip">المجموعات: <b id="headCatsCount">0</b></span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
       <div class="page-form">
         <div class="panel-box">
@@ -2519,6 +2724,7 @@
         <div class="page-bar-meta">
           <span class="bar-chip">الأصناف: <b id="headStockCount">0</b></span>
           <span class="bar-chip">تكلفة المخزن: <b id="headStockCost">0.00</b></span>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
         </div>
       </div>
       <div class="page-tools">
@@ -2547,6 +2753,7 @@
       <div class="page-bar">
         <h2 class="page-bar-title">🏷️ ملصقات الباركود</h2>
         <div class="page-bar-meta"><span class="bar-chip">ملصقات جاهزة: <b id="headLabelsCount">0</b></span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
       <div class="form-grid-2">
         <div class="panel-box">
@@ -2556,6 +2763,10 @@
             <select id="labelCategory" onchange="renderLabels()"><option value="all">كل الأصناف</option></select>
             <label for="labelCopies" style="min-width:auto">نسخ لكل صنف</label>
             <input type="number" id="labelCopies" value="3" min="1" max="40" step="1" oninput="renderLabels()">
+          </div>
+          <div class="f-row">
+            <label for="labelCopiesMap">نسخ مخصّصة لكل صنف</label>
+            <input type="text" id="labelCopiesMap" placeholder="مثال: 1001=20, 1002=5 — اتركه فارغاً لاستخدام العدد أعلاه" autocomplete="off" oninput="renderLabels()">
           </div>
           <div class="f-row">
             <label for="labelCols">أعمدة الورقة</label>
@@ -2571,11 +2782,25 @@
           </div>
           <div class="action-bar" style="margin-bottom:0">
             <button type="button" class="act-btn bg-green" onclick="printLabels()">🖨️ طباعة الملصقات</button>
+            <button type="button" class="act-btn bg-teal" onclick="printSelectedLabels()">✅ طباعة المحدد فقط</button>
             <button type="button" class="act-btn bg-blue" onclick="renderLabels()">🔄 تحديث المعاينة</button>
+            <button type="button" class="act-btn" onclick="toggleAllLabelItems(true)">تحديد الكل</button>
+            <button type="button" class="act-btn" onclick="toggleAllLabelItems(false)">إلغاء التحديد</button>
             <span id="labelCount" class="scope-note" style="margin:0">—</span>
           </div>
           <p class="scope-note">الملصقات تُطبع بنمط Code 39 الحقيقي. جرّب ملصقاً واحداً على طابعتك قبل طباعة كمية كبيرة، وتأكد أن قارئ الباركود يقرأ الأرقام الإنجليزية.</p>
         </div>
+        <div class="panel-box">
+          <div class="panel-title">الأصناف المختارة للطباعة</div>
+          <div class="table-wrap" style="max-height:212px">
+            <table>
+              <thead><tr><th style="width:34px">✔</th><th>الكود</th><th>الصنف</th><th>الرصيد</th><th>نسخ</th></tr></thead>
+              <tbody id="labelItemsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="form-grid-2" style="grid-template-columns:1fr">
         <div class="panel-box">
           <div class="panel-title">معاينة الورقة</div>
           <div class="label-sheet" id="labelPreview"></div>
@@ -2588,6 +2813,7 @@
       <div class="page-bar">
         <h2 class="page-bar-title" id="partiesHeadTitle">👥 إدارة العملاء والموردين</h2>
         <div class="page-bar-meta"><span class="bar-chip">العدد: <b id="headPartiesCount">0</b></span><span class="bar-chip">الأرصدة: <b id="headPartiesBalance">0.00</b></span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
       <div class="form-grid-2">
         <div class="panel-box">
@@ -2642,9 +2868,19 @@
 
     <!-- ==================== 7. INVOICE LOG ==================== -->
     <div id="sec-invlog" class="sec-view">
-      <div class="page-bar">
-        <h2 class="page-bar-title">📑 سجل الفواتير</h2>
-        <div class="page-bar-meta"><span class="bar-chip">النتائج: <b id="headInvLogCount">0</b></span></div>
+      <div class="page-bar" id="invLogBar">
+        <h2 class="page-bar-title" id="invLogTitle">📑 سجل فواتير المبيعات</h2>
+        <div class="page-bar-meta">
+          <span class="bar-chip">النتائج: <b id="headInvLogCount">0</b></span>
+          <span class="bar-chip" id="invLogSumChip">إجمالي: <b id="headInvLogTotal">0.00</b></span>
+        </div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="log-switch" id="logSwitch" role="tablist" aria-label="نوع السجل">
+        <button type="button" class="log-switch-btn is-active" data-log-kind="sale" onclick="setLogKind('sale')"><span aria-hidden="true">🛍️</span>فواتير المبيعات</button>
+        <button type="button" class="log-switch-btn" data-log-kind="purchase" onclick="setLogKind('purchase')"><span aria-hidden="true">🚚</span>فواتير المشتريات</button>
+        <button type="button" class="log-switch-btn" data-log-kind="quote" onclick="setLogKind('quote')"><span aria-hidden="true">🧾</span>عروض الأسعار</button>
+        <button type="button" class="log-switch-btn" data-log-kind="all" onclick="setLogKind('all')"><span aria-hidden="true">📚</span>كل الحركات</button>
       </div>
       <div class="action-bar">
         <label for="logTypeFilter">النوع</label>
@@ -2661,11 +2897,11 @@
         <button type="button" class="act-btn bg-blue" onclick="openInvLog('all')">كل الفواتير</button>
         <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة السجل</button>
       </div>
-      <div class="page-table">
-        <div class="section-bar pos-bar"><h3>📋 الفواتير المسجلة</h3></div>
+      <div class="page-table" id="invLogTable">
+        <div class="section-bar pos-bar"><h3 id="invLogSectionTitle">📋 الفواتير المسجلة</h3></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل / المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th class="no-print">إجراءات</th></tr></thead>
+            <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th id="invLogPartyHead">العميل</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th class="no-print">إجراءات</th></tr></thead>
             <tbody id="invLogTbody"></tbody>
           </table>
         </div>
@@ -2677,6 +2913,7 @@
       <div class="page-bar">
         <h2 class="page-bar-title">💰 الخزنة والحسابات</h2>
         <div class="page-bar-meta"><span class="bar-chip">رصيد الخزنة: <b id="headTreasuryBalance">0.00</b></span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
       <div class="page-form"><div class="panel-box">
         <div class="panel-title">تسجيل حركة خزينة — وارد / منصرف / مصروفات</div>
@@ -2711,6 +2948,7 @@
       <div class="page-bar">
         <h2 class="page-bar-title">📈 التقارير والأرباح</h2>
         <div class="page-bar-meta"><span class="bar-chip">صافي الربح: <b id="headNetProfit">0.00</b></span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
       <div class="action-bar">
         <label for="profDateFrom">من تاريخ</label><input type="date" id="profDateFrom" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
@@ -2742,18 +2980,21 @@
       <div class="page-bar">
         <h2 class="page-bar-title">⚙️ إعدادات النظام</h2>
         <div class="page-bar-meta"><span class="bar-chip">التخصيص يُحفظ على هذا الجهاز</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة (Esc)"><span aria-hidden="true">✕</span> إغلاق</button>
       </div>
-      <div class="page-tools">
-        <div class="page-tabs">
-          <button type="button" class="pos-tab" onclick="document.getElementById('designStudio').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">🎨</span>المظهر والتخصيص</button>
-          <button type="button" class="pos-tab" onclick="document.getElementById('storePanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">🏢</span>بيانات المنشأة</button>
-          <button type="button" class="pos-tab" onclick="document.getElementById('syncPanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">☁️</span>المزامنة والنسخ</button>
-          <button type="button" class="pos-tab" onclick="document.getElementById('staffManagerPanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">👤</span>الموظفون</button>
+      <div class="page-tools settings-tools">
+        <div class="page-tabs settings-tabs" id="settingsTabs" role="tablist" aria-label="أقسام الإعدادات">
+          <button type="button" class="pos-tab is-active" data-settings-tab="look" onclick="switchSettingsTab('look')"><span aria-hidden="true">🎨</span>المظهر</button>
+          <button type="button" class="pos-tab" data-settings-tab="store" onclick="switchSettingsTab('store')"><span aria-hidden="true">🏢</span>بيانات المنشأة</button>
+          <button type="button" class="pos-tab" data-settings-tab="sync" onclick="switchSettingsTab('sync')"><span aria-hidden="true">☁️</span>المزامنة والنسخ</button>
+          <button type="button" class="pos-tab" data-settings-tab="staff" onclick="switchSettingsTab('staff')"><span aria-hidden="true">👤</span>الموظفون والسجل</button>
         </div>
         <div class="page-tools-field" style="justify-content:flex-end">
           <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
       </div>
+      <div class="settings-panels">
+      <div class="settings-panel" data-settings-panel="look">
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title">🎨 مظهر البرنامج — اختر الثيم ثم اضغط عليه ليُفعّل فوراً</div>
@@ -2790,6 +3031,11 @@
             </label>
           </div>
           <div class="f-row">
+            <label for="tenderAlertAmount">حد تنبيه فرق الصندوق</label>
+            <input type="number" id="tenderAlertAmount" min="0" step="1" value="100" onchange="setTenderAlert(this.value)">
+            <span class="scope-note" style="margin:0">يظهر تنبيه إذا زاد «الباقي للعميل» عن هذا المبلغ.</span>
+          </div>
+          <div class="f-row">
             <label for="scanSoundSelect">صوت قراءة الباركود</label>
             <select id="scanSoundSelect" onchange="setScanFeedback(this.value)">
               <option value="beep">صفير قصير (موصى به)</option>
@@ -2803,11 +3049,45 @@
             </label>
             <button type="button" class="act-btn" onclick="playScanFeedback('chime')">🔊 تجربة الصوت</button>
           </div>
+          <div class="design-group">
+            <h4><span aria-hidden="true">🎨</span> ألوان أنواع الفواتير</h4>
+            <div class="design-grid invoice-tone-grid" id="invoiceToneGrid">
+              <label>مبيعات <input type="color" id="toneSale" onchange="setInvoiceTone('sale', this.value)"></label>
+              <label>مشتريات <input type="color" id="tonePurchase" onchange="setInvoiceTone('purchase', this.value)"></label>
+              <label>مرتجع مبيعات <input type="color" id="toneSaleReturn" onchange="setInvoiceTone('sale_return', this.value)"></label>
+              <label>مرتجع مشتريات <input type="color" id="tonePurchaseReturn" onchange="setInvoiceTone('purchase_return', this.value)"></label>
+              <label>عرض سعر <input type="color" id="toneQuote" onchange="setInvoiceTone('quote', this.value)"></label>
+              <button type="button" class="act-btn" onclick="resetInvoiceTones()">↺ الألوان الأصلية</button>
+            </div>
+            <p class="scope-note">الألوان تُطبَّق فوراً على شاشة البيع ومعاينة الفاتورة وملف PDF والطباعة.</p>
+          </div>
+
+          <div class="design-group">
+            <h4><span aria-hidden="true">📄</span> قالب فاتورة A5 / PDF</h4>
+            <div class="template-grid" id="docTemplateGrid">
+              <button type="button" class="template-chip" data-doc-template="classic" onclick="setDocTemplate('classic')" aria-pressed="false"><i></i><b>كلاسيك</b><small>إطار وخطوط تقليدية</small></button>
+              <button type="button" class="template-chip" data-doc-template="modern" onclick="setDocTemplate('modern')" aria-pressed="false"><i></i><b>حديث</b><small>شرائط لونية ومساحات</small></button>
+              <button type="button" class="template-chip" data-doc-template="minimal" onclick="setDocTemplate('minimal')" aria-pressed="false"><i></i><b>مصغّر</b><small>اقتصادي في الورق</small></button>
+            </div>
+            <div class="f-row" style="margin-top:8px">
+              <label for="docAccentInp">لون المستند</label>
+              <input type="color" id="docAccentInp" value="#1c6b34" onchange="setDocAccent(this.value)">
+              <label for="docSignatureImg" style="min-width:auto">توقيع/ختم المكتبة</label>
+              <label class="file-btn">⬆️ رفع صورة<input type="file" accept="image/png,image/jpeg" onchange="uploadDocSignature(this)"></label>
+              <button type="button" class="act-btn" onclick="clearDocSignature()">إزالة التوقيع</button>
+              <small id="docSignatureStatus">لا يوجد توقيع</small>
+            </div>
+          </div>
+
           <p class="scope-note" id="appBadgeHint">—</p>
           <p class="scope-note">كل ثيم يبدّل الشكل والزجاج والحواف والألوان بالكامل، وليس اللون فقط. اختر ثيماً ثم عدّل ما تشاء من استوديو التخصيص بالأسفل.</p>
         </div>
 
-        <!-- ===== DESIGN STUDIO ===== -->
+        </div>
+      </div>
+
+      <!-- ===== DESIGN STUDIO ===== -->
+      <div class="form-grid-2" style="grid-template-columns:1fr">
         <div class="panel-box design-studio" id="designStudio">
           <div class="panel-title">🛠️ استوديو التخصيص الكامل — الألوان، الخلفيات، الصور، الحواف والخطوط</div>
           <p class="scope-note">كل ما تغيّره هنا يُطبَّق فوراً ويُحفظ على هذا الجهاز. «إعادة الضبط» ترجع كل شيء للوضع الأصلي.</p>
@@ -2878,7 +3158,10 @@
             <button type="button" class="act-btn bg-green" onclick="installApp()">⬇️ تثبيت البرنامج على الجهاز</button>
           </div>
         </div>
+      </div>
+      </div>
 
+      <div class="settings-panel" data-settings-panel="store" hidden>
         <div class="panel-box" id="storePanel">
           <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة A5)</div>
           <div class="f-row"><label for="setStoreName">اسم المكتبة</label><input type="text" id="setStoreName"></div>
@@ -2887,7 +3170,9 @@
           <div class="f-row"><label for="setPinCode">الرقم السري للمدير</label><input type="password" id="setPinCode" placeholder="اتركه فارغاً للاحتفاظ بالرقم الحالي" autocomplete="new-password"></div>
           <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
+      </div>
 
+      <div class="settings-panel" data-settings-panel="sync" hidden>
         <div class="panel-box" id="syncPanel">
           <div class="panel-title">☁️ المزامنة مع Neon والنسخ الاحتياطي</div>
           <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية.</p>
@@ -2903,6 +3188,7 @@
         </div>
       </div>
 
+      <div class="settings-panel" data-settings-panel="staff" hidden>
       <div class="staff-audit-grid">
         <div class="panel-box" id="staffManagerPanel">
           <div class="panel-title">👤 الموظفون والصلاحيات</div>
@@ -2924,6 +3210,8 @@
           <div class="table-wrap"><table><thead><tr><th>الوقت</th><th>المستخدم</th><th>النشاط</th></tr></thead><tbody id="auditTbody"></tbody></table></div>
         </div>
       </div>
+      </div><!-- /settings panel: staff -->
+      </div><!-- /settings panels -->
     </div>
 
   </div>
@@ -2988,11 +3276,13 @@
       <span class="start-loader-label" id="startLoaderLabel">جارٍ تحضير البرنامج…</span>
       <div class="load-track"><i class="load-fill" id="startLoadFill"></i></div>
       <span class="start-loader-pct" id="startLoadPct">0%</span>
+      <div class="start-steps" id="startSteps" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     </div>
 
     <div class="start-login" id="startLogin" hidden>
       <h3 id="lockTitle">🔐 تسجيل الدخول</h3>
       <p class="start-hint">اختر حساب الموظف وأدخل الرقم السري للمتابعة.</p>
+      <div class="start-divider">بيانات الدخول</div>
       <label class="start-label" for="loginStaffSelect">المستخدم</label>
       <select id="loginStaffSelect" class="start-input"></select>
       <label class="start-label" for="unlockPinInp">الرقم السري</label>

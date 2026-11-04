@@ -436,7 +436,11 @@ function startScreenProgress(done) {
     if (pct) pct.textContent = `${value}%`;
     const nextStep = Math.min(steps.length - 1, Math.floor(value / 26));
     if (nextStep !== step && label) { step = nextStep; label.textContent = steps[step]; }
-    if (value >= 100) { window.clearInterval(startScreenTimer); window.setTimeout(done, 180); }
+    document.querySelectorAll('#startSteps i').forEach((dot, index) => dot.classList.toggle('done', value >= (index + 1) * 25 - 12));
+    if (value >= 100) {
+      document.querySelectorAll('#startSteps i').forEach(dot => dot.classList.add('done'));
+      window.clearInterval(startScreenTimer); window.setTimeout(done, 180);
+    }
   }, 130);
 }
 function finishStartScreen() {
@@ -539,6 +543,7 @@ function initializeApp() {
   document.body.dataset.appReady = 'true';
   for (const event of ['pointerdown', 'keydown', 'wheel', 'focusin']) window.addEventListener(event, noteActivity, { passive: true });
   rememberDeviceStep(isTrustedDevice());
+  applyInvoiceTones(); applyDocSettingsUI();
   renderActivityLog(); paintDraftHint(); startDraftAutosave(); renderStockAlerts(); syncAppBadge();
   const scan = $('invBarcodeInp');
   if (scan) {
@@ -590,8 +595,6 @@ function openSec(secId, titleText) {
   $(secId)?.classList.add('active');
   $('windowLayer').classList.add('open', 'maximized');
   $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
-  $('maximizeWindowButton').setAttribute('aria-label', 'تصغير النافذة');
-  $('maximizeWindowButton').textContent = '❐';
   document.body.style.overflow = 'hidden';
   $('winTitle').textContent = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
@@ -606,7 +609,6 @@ function openSec(secId, titleText) {
 }
 function closeWorkspace() {
   $('windowLayer').classList.remove('open', 'minimized', 'maximized'); $('windowDock').hidden = true;
-  $('maximizeWindowButton').setAttribute('aria-label', 'تكبير النافذة'); $('maximizeWindowButton').textContent = '□';
   document.body.style.overflow = '';
 }
 function minimizeWorkspace() {
@@ -619,8 +621,6 @@ function restoreWorkspace() {
 }
 function maximizeWorkspace() {
   const maximized = $('windowLayer').classList.toggle('maximized');
-  $('maximizeWindowButton').setAttribute('aria-label', maximized ? 'استعادة حجم النافذة' : 'تكبير النافذة');
-  $('maximizeWindowButton').textContent = maximized ? '❐' : '□';
 }
 function getAppearance() {
   try { return JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') || {}; } catch { return {}; }
@@ -1072,13 +1072,30 @@ function switchInvoiceTab(tab) {
     button.classList.toggle('bg-green', active);
     button.setAttribute('aria-selected', String(active));
   });
-  $$('[data-inv-group]').forEach(group => { group.hidden = group.dataset.invGroup !== tab; });
+  $$('[data-inv-group]').forEach(group => {
+    const sticky = group.dataset.invAlways === '1';
+    group.hidden = sticky ? false : group.dataset.invGroup !== tab;
+  });
   if ($('invPanelTitle')) $('invPanelTitle').textContent = TAB_LABELS[tab] || '';
 }
+const MODE_BADGES = {
+  sale: { icon: '💵', label: 'نقدي — إيراد' },
+  sale_return: { icon: '↩️', label: 'مرتجع — يُخصم من الخزنة' },
+  purchase: { icon: '🚚', label: 'تكلفة — يُخصم من الخزنة' },
+  purchase_return: { icon: '↩️', label: 'مرتجع مشتريات — يُضاف للخزنة' },
+  quote: { icon: '📄', label: 'عرض سعر — بدون تأثير مالي' }
+};
 function updateInvoiceUI() {
   const mode = $('invMode').value; lastInvoiceMode = mode;
   const supplier = mode.startsWith('purchase'), isReturn = mode.endsWith('_return'), quote = mode === 'quote';
   if ($('posTitleText')) $('posTitleText').textContent = MODE_LABELS[mode];
+  const posWrap = document.querySelector('#sec-invoice .pos-wrap');
+  if (posWrap) posWrap.dataset.mode = mode;
+  if ($('posModeBadge')) {
+    const badge = MODE_BADGES[mode] || MODE_BADGES.sale;
+    $('posModeBadge').textContent = `${badge.icon} ${badge.label}`;
+    $('posModeBadge').dataset.tone = mode;
+  }
   $('invPanelTitle').textContent = TAB_LABELS[currentInvoiceTab] || '';
   $('lblInvParty').textContent = supplier ? 'المورد' : 'العميل';
   $('btnConvertQuote').style.display = quote ? 'inline-flex' : 'none';
@@ -1423,7 +1440,8 @@ function calcInvoiceRemaining() {
   const change = roundMoney(paid - net);
   const box = $('cashChangeBox');
   if ($('cashChangeValue')) $('cashChangeValue').textContent = money(Math.max(0, change));
-  if (box) box.dataset.state = change > 0.0001 ? 'over' : 'none';
+  if (box) { box.hidden = !(change > 0.0001); box.dataset.state = change > 0.0001 ? 'over' : 'none'; }
+  if (box) box.dataset.alert = change > tenderAlertLimit() + 0.0001 ? 'yes' : 'no';
   return remain;
 }
 function dispatchInput(field) {
@@ -1825,6 +1843,11 @@ function previewInvoiceA5(invoice) {
   const modal = $('invoicePreview');
   if (!modal) return;
   $('previewPaper').innerHTML = invoiceDocBody(draft, 'a5');
+  const theme = invoiceDocTheme(draft);
+  $('previewPaper').dataset.tone = draft.mode;
+  $('previewPaper').style.setProperty('--doc-accent', theme.accent);
+  $('previewPaper').style.setProperty('--doc-soft', theme.soft);
+  $('previewPaper').style.setProperty('--doc-head', theme.head);
   if ($('previewBadge')) $('previewBadge').textContent = invoice ? `فاتورة محفوظة #${invoice.id}` : 'قبل الحفظ — مسودة';
   if ($('previewTitle')) $('previewTitle').textContent = `معاينة ${MODE_LABELS[draft.mode] || 'فاتورة'} — حجم A5`;
   if ($('previewZoom')) { $('previewZoom').value = '100'; setPreviewZoom('100'); }
@@ -1857,12 +1880,48 @@ function previewSavedInvoice(id, event) {
   previewInvoiceA5(invoice);
 }
 function closeInvoicePreview() { if ($('invoicePreview')) $('invoicePreview').hidden = true; }
+async function confirmTenderDifference() {
+  const net = roundMoney(Number($('invNetTotal')?.value) || 0);
+  const paid = roundMoney(Number($('invPaidAmount')?.value) || 0);
+  const change = roundMoney(paid - net);
+  const limit = tenderAlertLimit();
+  if (!(change > limit + 0.0001)) return true;
+  const approved = await appConfirm(`الباقي للعميل ${money(change)} ج.م أكبر من حد التنبيه (${money(limit)} ج.م). راجع المبلغ المستلم قبل الحفظ.`,
+    { title: 'فرق في الصندوق', icon: '⚠️', confirmText: 'المبلغ صحيح — متابعة', cancelText: 'رجوع للمراجعة', tone: 'cancel' });
+  if (approved) recordAudit(`تنبيه فرق صندوق: باقٍ ${money(change)} على فاتورة ${MODE_LABELS[$('invMode').value]}`);
+  return approved;
+}
+/* ---- 8) selling below cost needs a manager, like an over-limit discount ---- */
+function belowCostLines() {
+  if (!$('invMode').value.startsWith('sale') && $('invMode').value !== 'quote') return [];
+  return invoiceLines({ items: invCart, subtotal: 0, discountTotal: 0, netTotal: 0, mode: $('invMode').value })
+    .filter(line => { const item = db.items.find(entry => entry.id === line.id); return item && Number(item.buy) > 0 && Number(line.price) < Number(item.buy) - 0.0001; })
+    .map(line => ({ name: line.name, price: Number(line.price), cost: Number(db.items.find(entry => entry.id === line.id)?.buy || 0) }));
+}
+async function confirmBelowCost() {
+  const bad = belowCostLines();
+  if (!bad.length || isAdmin()) return true;
+  const detail = bad.slice(0, 4).map(line => `• ${line.name}: بيع ${money(line.price)} / تكلفة ${money(line.cost)}`).join('\n');
+  const approved = await appConfirm(`أصناف تُباع بأقل من سعر التكلفة:
+${detail}${bad.length > 4 ? `\n• و${bad.length - 4} صنف آخر` : ''}`,
+    { title: 'بيع بأقل من التكلفة', icon: '🛑', confirmText: 'طلب موافقة المدير', cancelText: 'تعديل السعر', tone: 'cancel' });
+  if (!approved) return false;
+  const pin = window.prompt('أدخل الرقم السري للمدير للموافقة على البيع بأقل من التكلفة:') || '';
+  if (pin !== (db.settings.pin || '1234')) { alert('الرقم السري للمدير غير صحيح؛ لم تُحفظ الفاتورة.'); return false; }
+  recordAudit(`موافقة مدير على بيع بأقل من التكلفة (${bad.length} صنف)`);
+  return true;
+}
 function saveInvoice(doPrint) {
   const activeMode = $('invMode').value;
   if (!ensurePermission(invoicePermission(activeMode))) return;
-  if (!['sale', 'quote'].includes(activeMode)) { saveInvoiceNow(doPrint); return; }
-  if (invoiceDiscountPercent() <= discountLimitFor() + 0.0001 || isAdmin()) { saveInvoiceNow(doPrint); return; }
-  confirmOverLimitDiscount()
+  // Normal invoices keep saving synchronously; only a real exception opens a dialog.
+  const overDiscount = ['sale', 'quote'].includes(activeMode) && invoiceDiscountPercent() > discountLimitFor() + 0.0001 && !isAdmin();
+  const belowCost = ['sale', 'quote'].includes(activeMode) && belowCostLines().length > 0 && !isAdmin();
+  const tender = roundMoney(Number($('invPaidAmount').value) || 0) - roundMoney(Number($('invNetTotal').value) || 0) > tenderAlertLimit() + 0.0001;
+  if (!overDiscount && !belowCost && !tender) { saveInvoiceNow(doPrint); return; }
+  Promise.resolve(overDiscount ? confirmOverLimitDiscount() : true)
+    .then(approved => (approved && belowCost ? confirmBelowCost() : approved))
+    .then(approved => (approved && tender ? confirmTenderDifference() : approved))
     .then(approved => { if (approved) saveInvoiceNow(doPrint); })
     .catch(error => { console.error(error); });
 }
@@ -1931,43 +1990,203 @@ function invoiceQrMarkup(inv) {
   } catch { return ''; }
 }
 /* ---- A5 document markup shared by print / PDF / WhatsApp share ---- */
-function invoiceDocCss(paper = 'a5') {
+const DOC_THEME = {
+  sale: { accent: '#1c6b34', soft: '#e8f5ea', head: '#0f4c81', tag: 'INVOICE' },
+  purchase: { accent: '#8a4b12', soft: '#fbf0df', head: '#7a3f0c', tag: 'BILL' },
+  sale_return: { accent: '#8a1f6d', soft: '#fbe9f4', head: '#6d1355', tag: 'RETURN' },
+  purchase_return: { accent: '#5c2b7d', soft: '#f2e9fa', head: '#4a2163', tag: 'RETURN-BILL' },
+  quote: { accent: '#1d5f8a', soft: '#e8f2fa', head: '#144a6b', tag: 'QUOTE' }
+};
+/* ---- per-type invoice colours (1) ---- */
+const INVOICE_TONES_KEY = `${DB_KEY}_INVOICE_TONES`;
+const DOC_SETTINGS_KEY = `${DB_KEY}_DOC`;
+const DOC_TEMPLATES = ['classic', 'modern', 'minimal'];
+let docSettingsCache = null;
+function invoiceTones() {
+  let custom = {};
+  try { custom = JSON.parse(localStorage.getItem(INVOICE_TONES_KEY) || '{}') || {}; } catch { custom = {}; }
+  const tones = {};
+  for (const [mode, theme] of Object.entries(DOC_THEME)) tones[mode] = custom[mode] || theme.accent;
+  return tones;
+}
+function setInvoiceTone(mode, color) {
+  if (!DOC_THEME[mode] || !/^#[0-9a-f]{6}$/i.test(String(color || ''))) return;
+  let custom = {};
+  try { custom = JSON.parse(localStorage.getItem(INVOICE_TONES_KEY) || '{}') || {}; } catch { custom = {}; }
+  custom[mode] = color;
+  try { localStorage.setItem(INVOICE_TONES_KEY, JSON.stringify(custom)); } catch { return notify('تعذر حفظ اللون على هذا الجهاز.'); }
+  applyInvoiceTones();
+  recordAudit(`تغيير لون فاتورة ${MODE_LABELS[mode]} إلى ${color}`);
+  notify('تم تحديث لون هذا النوع في الشاشة والمستند.');
+}
+function resetInvoiceTones() {
+  try { localStorage.removeItem(INVOICE_TONES_KEY); } catch { /* ignore */ }
+  applyInvoiceTones();
+  recordAudit('استعادة ألوان أنواع الفواتير الأصلية');
+  notify('تمت استعادة الألوان الأصلية لكل الأنواع.');
+}
+function applyInvoiceTones() {
+  const tones = invoiceTones();
+  const style = $('invoiceToneStyle');
+  if (style) {
+    style.textContent = Object.entries(tones).map(([mode, color]) => `
+      .pos-wrap[data-mode="${mode}"] { --pos-accent:${color}; --pos-accent-2:color-mix(in srgb, ${color} 45%, #ffffff); --pos-surface:color-mix(in srgb, ${color} 6%, #ffffff); --pos-ribbon:linear-gradient(90deg,${color},color-mix(in srgb, ${color} 45%, #ffffff),${color}); }
+      .pos-wrap[data-mode="${mode}"] .pos-titlebar { background:linear-gradient(105deg,${color},color-mix(in srgb, ${color} 66%, #ffffff) 62%,color-mix(in srgb, ${color} 45%, #ffffff)); }
+    `).join('');
+  }
+  const fields = { sale: 'toneSale', purchase: 'tonePurchase', sale_return: 'toneSaleReturn', purchase_return: 'tonePurchaseReturn', quote: 'toneQuote' };
+  for (const [mode, id] of Object.entries(fields)) if ($(id)) $(id).value = tones[mode];
+}
+
+/* ---- A5 document template + accent + signature (2 & 4) ---- */
+function docSettings() {
+  if (docSettingsCache) return docSettingsCache;
+  let stored = {};
+  try { stored = JSON.parse(localStorage.getItem(DOC_SETTINGS_KEY) || '{}') || {}; } catch { stored = {}; }
+  docSettingsCache = {
+    template: DOC_TEMPLATES.includes(stored.template) ? stored.template : 'modern',
+    accent: /^#[0-9a-f]{6}$/i.test(String(stored.accent || '')) ? stored.accent : '',
+    signature: typeof stored.signature === 'string' ? stored.signature : 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="64"><rect x="1" y="1" width="148" height="62" rx="10" fill="none" stroke="#2f7d32" stroke-width="2"/><text x="75" y="30" font-family="Tahoma" font-size="13" font-weight="bold" fill="#2f7d32" text-anchor="middle">ختم المكتبة</text><text x="75" y="48" font-family="Tahoma" font-size="10" fill="#2f7d32" text-anchor="middle">نظام نقاط البيع</text></svg>')
+  };
+  return docSettingsCache;
+}
+function saveDocSettings(patch) {
+  const next = { ...docSettings(), ...patch };
+  docSettingsCache = next;
+  try { localStorage.setItem(DOC_SETTINGS_KEY, JSON.stringify(next)); } catch { notify('تعذر حفظ إعدادات المستند.'); }
+  return next;
+}
+function setDocTemplate(template) {
+  if (!DOC_TEMPLATES.includes(template)) return;
+  saveDocSettings({ template });
+  applyDocSettingsUI();
+  recordAudit(`تغيير قالب الفاتورة إلى ${{ classic: 'كلاسيك', modern: 'حديث', minimal: 'مصغّر' }[template]}`);
+  notify(`قالب الفاتورة الآن «${{ classic: 'كلاسيك', modern: 'حديث', minimal: 'مصغّر' }[template]}».`);
+}
+function setDocAccent(color) {
+  if (!/^#[0-9a-f]{6}$/i.test(String(color || ''))) return;
+  saveDocSettings({ accent: color }); applyDocSettingsUI(); notify('تم تحديث لون المستند.');
+}
+function applyDocSettingsUI() {
+  const settings = docSettings();
+  document.querySelectorAll('#docTemplateGrid .template-chip').forEach(button => {
+    button.setAttribute('aria-pressed', button.dataset.docTemplate === settings.template ? 'true' : 'false');
+  });
+  if ($('docAccentInp')) $('docAccentInp').value = settings.accent || '#1c6b34';
+  if ($('docSignatureStatus')) $('docSignatureStatus').textContent = settings.signature ? 'التوقيع مفعّل ويظهر على الفاتورة' : 'لا يوجد توقيع';
+}
+function uploadDocSignature(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!/^image\/(png|jpeg)$/.test(file.type)) { input.value = ''; return notify('اختر صورة PNG أو JPG فقط.'); }
+  if (file.size > 400 * 1024) { input.value = ''; return notify('حجم صورة التوقيع يجب ألا يزيد عن 400 كيلوبايت.'); }
+  const reader = new FileReader();
+  reader.onload = () => { saveDocSettings({ signature: String(reader.result) }); applyDocSettingsUI(); recordAudit('رفع توقيع/ختم المكتبة للفاتورة'); notify('تم حفظ التوقيع وسيظهر على كل فاتورة.'); };
+  reader.onerror = () => notify('تعذر قراءة الملف.');
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function clearDocSignature() { saveDocSettings({ signature: '' }); applyDocSettingsUI(); notify('تم إزالة التوقيع من الفواتير.'); }
+
+/* ---- tender difference alert (3) ---- */
+function tenderAlertLimit() {
+  const value = Number(getAppearance().tenderAlert);
+  return Number.isFinite(value) && value > 0 ? value : 100;
+}
+function setTenderAlert(value) {
+  const amount = Number(value);
+  const appearance = getAppearance();
+  appearance.tenderAlert = Number.isFinite(amount) && amount > 0 ? Math.min(100000, amount) : 0;
+  saveAppearance(appearance);
+  if ($('tenderAlertAmount')) $('tenderAlertAmount').value = String(appearance.tenderAlert);
+  notify(appearance.tenderAlert ? `سيُنبَّه عند زيادة الباقي عن ${money(appearance.tenderAlert)} ج.م.` : 'تم إيقاف تنبيه فرق الصندوق.');
+}
+
+
+function invoiceDocTheme(inv) {
+  const mode = inv?.mode;
+  const base = DOC_THEME[mode] || DOC_THEME.sale;
+  const settings = docSettings();
+  const accent = settings.accent || invoiceTones()[mode] || base.accent;
+  return { ...base, accent, head: accent, soft: `color-mix(in srgb, ${accent} 12%, #ffffff)`, base };
+}
+function templateCss(template, theme, paper) {
+  if (template === 'classic') {
+    return `.doc{border:2px double ${theme.accent};padding:7px}
+      .p-header h2{font-family:'Cairo',Tahoma,sans-serif;text-transform:none;letter-spacing:.5px}
+      .p-header{border-bottom:2px double ${theme.accent}}
+      .p-table th,.p-table td{border:1px solid #444}
+      .doc-tag{display:none}`;
+  }
+  if (template === 'minimal') {
+    return `.doc{border-top:3px solid ${theme.accent};padding-top:4px}
+      body{font-size:${paper === 'a4' ? '10px' : '8.6px'}}
+      .p-header{padding-bottom:3px;margin-bottom:5px}
+      .p-header h2{font-size:${paper === 'a4' ? '16px' : '13px'}}
+      .p-header p{font-size:${paper === 'a4' ? '9px' : '8px'}}
+      .p-table{margin:3px 0}
+      .p-table th,.p-table td{border:0;border-bottom:1px solid #ddd;padding:2px 3px}
+      .p-table thead th{border-bottom:1.5px solid ${theme.accent}}
+      .p-totals{border:0;padding:2px 4px;margin-top:2px;font-size:${paper === 'a4' ? '10px' : '8.6px'}}
+      .p-sign{margin-top:8px}
+      .doc-tag{font-size:7px;padding:0 6px}`;
+  }
+  return `.doc{background:linear-gradient(180deg,${theme.soft} 0 ${paper === 'a4' ? '34mm' : '26mm'},#fff ${paper === 'a4' ? '34mm' : '26mm'} 100%)}
+    .p-header{text-align:${'right'};border-bottom:0;padding:0 0 6px}
+    .p-header h2{font-size:${paper === 'a4' ? '22px' : '18px'}}
+    .doc-tag{background:${theme.accent};color:#fff;border-color:${theme.accent}}
+    .p-meta{border:0;background:#ffffffcc;box-shadow:0 2px 8px #0000001a}
+    .p-table thead th{background:${theme.accent};color:#fff}
+    .p-totals{border:0;background:${theme.soft};border-radius:6px}
+    .p-sign{margin-top:${paper === 'a4' ? '18px' : '12px'}}`;
+}
+function invoiceDocCss(paper = 'a5', inv) {
   const size = paper === 'a4' ? 'A4' : 'A5';
+  const theme = invoiceDocTheme(inv);
   return `@page{size:${size};margin:${paper === 'a4' ? '10mm' : '7mm'}}
     *{box-sizing:border-box}
+    :root{--doc-accent:${theme.accent};--doc-soft:${theme.soft};--doc-head:${theme.head}}
     body{margin:0;padding:${paper === 'a4' ? '6mm' : '4mm'};background:#fff;color:#111;font-family:'Cairo',Tahoma,Arial,sans-serif}
-    .doc{max-width:${paper === 'a4' ? '190mm' : '138mm'};margin:0 auto}
-    .p-header{text-align:center;border-bottom:2px solid #1c3d1a;padding-bottom:6px;margin-bottom:8px}
-    .p-header h2{margin:0;font-size:${paper === 'a4' ? '20px' : '16px'};color:#1c3d1a}
+    .doc{max-width:${paper === 'a4' ? '190mm' : '138mm'};margin:0 auto;border-top:6px solid ${theme.accent};padding-top:6px}
+    .doc-tag{display:inline-block;font-size:8px;font-weight:800;letter-spacing:1.6px;color:${theme.accent};border:1px solid ${theme.accent};border-radius:999px;padding:1px 8px;margin-bottom:4px}
+    .p-header{text-align:center;border-bottom:2px solid ${theme.accent};padding-bottom:6px;margin-bottom:8px}
+    .p-header h2{margin:0;font-size:${paper === 'a4' ? '20px' : '16px'};color:${theme.accent}}
     .p-header p{margin:2px 0;font-size:${paper === 'a4' ? '11px' : '9.5px'};color:#444}
-    .p-header h3{margin:4px 0 0;font-size:${paper === 'a4' ? '14px' : '12px'};color:#0f4c81}
-    .p-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:${paper === 'a4' ? '11px' : '9.5px'};margin:6px 0;padding:5px 7px;border:1px solid #ccc;border-radius:4px;background:#fafafa}
+    .p-header h3{margin:4px 0 0;font-size:${paper === 'a4' ? '14px' : '12px'};color:${theme.head}}
+    .p-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:${paper === 'a4' ? '11px' : '9.5px'};margin:6px 0;padding:5px 7px;border:1px solid #ccc;border-radius:4px;background:${theme.soft}}
     .p-table{width:100%;border-collapse:collapse;margin:6px 0;font-size:${paper === 'a4' ? '11px' : '9.5px'}}
     .p-table th,.p-table td{border:1px solid #999;padding:${paper === 'a4' ? '4px 5px' : '3px 4px'};text-align:center}
-    .p-table thead th{background:#e8f0e2;font-weight:700}
-    .p-totals{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:${paper === 'a4' ? '11px' : '9.5px'};padding:5px 7px;margin-top:5px;border:1px dashed #999;border-radius:4px}
-    .p-sign{display:flex;justify-content:space-between;margin-top:${paper === 'a4' ? '22px' : '14px'};font-size:${paper === 'a4' ? '11px' : '9.5px'}}
+    .p-table thead th{background:${theme.soft};color:${theme.head};font-weight:700}
+    .p-totals{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:${paper === 'a4' ? '11px' : '9.5px'};padding:5px 7px;margin-top:5px;border:1px dashed ${theme.accent};border-radius:4px;background:#fff}
+    ${templateCss(docSettings().template, theme, paper)}
+    .p-sign{display:flex;justify-content:space-between;align-items:flex-end;margin-top:${paper === 'a4' ? '22px' : '14px'};font-size:${paper === 'a4' ? '11px' : '9.5px'}}
+    .p-signature img{max-height:${paper === 'a4' ? '22mm' : '16mm'};max-width:${paper === 'a4' ? '50mm' : '38mm'};object-fit:contain}
     .p-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:8px;padding-top:6px;border-top:1px solid #ccc;font-size:9px;color:#555}
     .p-foot svg{width:${paper === 'a4' ? '80px' : '62px'};height:auto}
     .p-note{text-align:center;font-size:9.5px;color:#555}`;
 }
+function signatureMarkup() {
+  const signature = docSettings().signature;
+  return signature ? `<span class="p-signature"><img src="${signature}" alt="توقيع المكتبة"></span>` : '';
+}
 function invoiceDocBody(inv, paper = 'a5') {
   const store = inv.store || db.settings;
   const rows = invoiceLines(inv).map((c, index) => `<tr><td>${index + 1}</td><td>${esc(c.code || '')}</td><td style="text-align:right">${esc(c.name)}</td><td>${esc(c.qty)}</td><td>${money(c.price)}</td><td>${esc(c.discPct)}%</td><td>${money(c.netTotal)}</td></tr>`).join('');
+  const theme = invoiceDocTheme(inv);
   return `<div class="doc">
-    <div class="p-header"><h2>${esc(store.name)}</h2><p>${esc(store.address)} | هاتف: ${esc(store.phone)}</p><h3>${esc(MODE_LABELS[inv.mode])} رقم #${inv.id}</h3></div>
+    <div class="p-header"><span class="doc-tag">${esc(theme.tag)}</span><h2>${esc(store.name)}</h2><p>${esc(store.address)} | هاتف: ${esc(store.phone)}</p><h3>${esc(MODE_LABELS[inv.mode])} رقم #${inv.id}</h3></div>
     <div class="p-meta"><span>التاريخ: ${esc(inv.date)} (${esc(inv.time)})</span><span>العميل: ${esc(inv.partyName)}</span><span>الهاتف: ${esc(store.phone)}</span></div>
     <table class="p-table"><thead><tr><th>م</th><th>الكود</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>خصم</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="p-totals"><span>عدد المواد: ${invoiceLines(inv).length}</span><span>إجمالي البنود: ${money(inv.subtotal ?? invoiceLines(inv).reduce((sum, c) => sum + lineGross(c), 0))}</span><span>الخصم الإضافي: ${money(inv.discountTotal ?? 0)}</span></div>
     <div class="p-totals"><span>الصافي: ${money(inv.netTotal)} ج.م</span><span>${inv.mode.startsWith('purchase') ? 'المسدّد للمورد' : 'المدفوع'}: ${money(inv.paidAmount)}</span><span>المتبقي: ${money(inv.remainAmount)}</span></div>
     ${inv.mode !== 'quote' ? `<div class="p-totals"><span>الرصيد السابق: ${money(inv.prevBalance)}</span><span>الرصيد الحالي: ${money(inv.newBalance)} ج.م</span></div>` : '<p class="p-note">عرض أسعار فقط — ليس إيصال دفع ولا يغيّر المخزون.</p>'}
     ${inv.note ? `<p class="p-note">ملاحظات: ${esc(inv.note)}</p>` : ''}
-    <div class="p-sign"><span>توقيع العميل: ........................</span><span>توقيع الموظف: ........................</span></div>
+    <div class="p-sign"><span>توقيع العميل: ........................</span>${signatureMarkup() || '<span>توقيع الموظف: ........................</span>'}</div>
     <div class="p-foot"><span>نظام نقاط البيع وإدارة المكتبات</span>${invoiceQrMarkup(inv)}</div>
   </div>`;
 }
 function invoiceDocHtml(inv, paper = 'a5') {
-  return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(MODE_LABELS[inv.mode])} #${inv.id}</title><style>${invoiceDocCss(paper)}</style></head><body>${invoiceDocBody(inv, paper)}</body></html>`;
+  return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(MODE_LABELS[inv.mode])} #${inv.id}</title><style>${invoiceDocCss(paper, inv)}</style></head><body>${invoiceDocBody(inv, paper)}</body></html>`;
 }
 function openInvoiceDocument(invoiceId, paper = 'a5') {
   const inv = db.invoices.find(entry => entry.id === Number(invoiceId));
@@ -2151,10 +2370,52 @@ function printBarcodeLabel(id) {
 
 /* ---------------- barcode label sheets ---------------- */
 function loadLabelOptions() { populateCategoriesSelect(); renderLabels(); }
+let labelSelected = null;
+function labelCopiesMap() {
+  const raw = String($('labelCopiesMap')?.value || '');
+  const map = new Map();
+  for (const chunk of raw.split(/[,،;\n]+/)) {
+    const match = chunk.match(/([^=]+)=([0-9]+)/);
+    if (match) map.set(match[1].trim(), Math.max(1, Math.min(200, Number(match[2]))));
+  }
+  return map;
+}
+function labelCopiesFor(item, fallback, map) {
+  return map.get(String(item.code)) || map.get(String(item.id)) || fallback;
+}
+function renderLabelItems(list, copies, map) {
+  const body = $('labelItemsTbody');
+  if (!body) return;
+  if (!labelSelected) labelSelected = new Set(list.map(item => item.id));
+  body.innerHTML = list.map(item => `<tr>
+      <td><input type="checkbox" ${labelSelected.has(item.id) ? 'checked' : ''} onchange="toggleLabelItem(${item.id}, this.checked)"></td>
+      <td>${esc(item.code)}</td><td class="cell-name">${esc(item.name)}</td>
+      <td>${roundQuantity(item.qty)}</td>
+      <td><input type="number" min="1" max="200" step="1" value="${labelCopiesFor(item, copies, map)}" style="width:74px" onchange="setLabelCopies('${esc(item.code)}', this.value)"></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty-row">لا توجد أصناف في هذه المجموعة.</td></tr>';
+}
+function toggleLabelItem(id, checked) {
+  if (!labelSelected) labelSelected = new Set();
+  if (checked) labelSelected.add(id); else labelSelected.delete(id);
+  renderLabels();
+}
+function toggleAllLabelItems(select) {
+  labelSelected = new Set(select ? labelCache.map(item => item.id) : []);
+  renderLabels();
+}
+function setLabelCopies(code, value) {
+  const input = $('labelCopiesMap');
+  if (!input) return;
+  const map = labelCopiesMap();
+  map.set(String(code), Math.max(1, Math.min(200, Number(value) || 1)));
+  input.value = [...map.entries()].map(([key, count]) => `${key}=${count}`).join(', ');
+  renderLabels();
+}
 function renderLabels() {
   const preview = $('labelPreview'); if (!preview) return;
   const cat = $('labelCategory').value || 'all';
   const copies = Math.max(1, Math.min(40, Number($('labelCopies').value) || 1));
+  const copiesMap = labelCopiesMap();
   const cols = Math.max(2, Math.min(4, Number($('labelCols').value) || 3));
   const barHeight = Math.max(24, Math.min(80, Number($('labelBarHeight').value) || 44));
   const showStore = $('labelStoreName').checked, showName = $('labelShowName').checked,
@@ -2163,14 +2424,22 @@ function renderLabels() {
   labelCache = list;
   preview.style.gridTemplateColumns = `repeat(${cols},minmax(0,1fr))`;
   if ($('headLabelsCount')) $('headLabelsCount').textContent = String(list.length);
+  if (!labelSelected) labelSelected = new Set(list.map(item => item.id));
+  const selected = list.filter(item => labelSelected.has(item.id));
+  renderLabelItems(list, copies, copiesMap);
   const cells = [];
-  for (const item of list) {
-    for (let copy = 0; copy < copies; copy++) {
+  for (const item of selected) {
+    const count = labelCopiesFor(item, copies, copiesMap);
+    for (let copy = 0; copy < count; copy++) {
       cells.push(`<div class="label-cell">${showStore ? `<i>${esc(db.settings.name)}</i>` : ''}${showName ? `<b>${esc(item.name)}</b>` : ''}${barcodeBlock(item.code, barHeight, !showCode)}${showPrice ? `<span>${money(item.sell)}</span>` : ''}</div>`);
     }
   }
   preview.innerHTML = cells.join('') || '<div class="empty-row">لا توجد أصناف لطباعة ملصقاتها في هذه المجموعة.</div>';
-  if ($('labelCount')) $('labelCount').textContent = `${list.length} صنف × ${copies} = ${cells.length} ملصق`;
+  if ($('labelCount')) $('labelCount').textContent = `${selected.length} من ${list.length} صنف — ${cells.length} ملصق جاهز`;
+}
+function printSelectedLabels() {
+  if (!labelSelected || !labelSelected.size) return notify('حدّد صنفاً واحداً على الأقل لطباعة ملصقاته.');
+  printLabels();
 }
 function printLabels() {
   renderLabels();
@@ -2412,6 +2681,29 @@ function printPartyStatementA5() {
 }
 
 /* ---------------- invoice log ---------------- */
+/* ---- invoice log views: sales, purchases, quotes and everything, each with its own look ---- */
+const LOG_KINDS = {
+  sale: { title: '🛍️ سجل فواتير المبيعات', section: '🛍️ فواتير المبيعات المسجلة', party: 'العميل', chip: 'إجمالي المبيعات',
+    filters: ['sale', 'sale_return'], permission: 'sales-log' },
+  purchase: { title: '🚚 سجل فواتير المشتريات', section: '🚚 فواتير المشتريات المسجلة', party: 'المورد', chip: 'إجمالي المشتريات',
+    filters: ['purchase', 'purchase_return'], permission: 'purchase-log' },
+  quote: { title: '🧾 سجل عروض الأسعار', section: '🧾 عروض الأسعار', party: 'العميل', chip: 'إجمالي العروض',
+    filters: ['quote'], permission: 'sales-log' },
+  all: { title: '📚 سجل كل الحركات', section: '📚 كل الفواتير والحركات', party: 'العميل / المورد', chip: 'إجمالي الحركة',
+    filters: ['sale', 'sale_return', 'purchase', 'purchase_return', 'quote'], permission: 'admin' }
+};
+function logKindForFilter(filter) {
+  if (filter === 'quote') return 'quote';
+  if (String(filter).startsWith('purchase')) return 'purchase';
+  if (String(filter).startsWith('sale')) return 'sale';
+  return 'all';
+}
+function setLogKind(kind) {
+  const config = LOG_KINDS[kind] || LOG_KINDS.sale;
+  if (config.permission === 'admin' ? !ensurePermission('admin') : !ensurePermission(config.permission)) return;
+  $('logTypeFilter').value = config.filters[0];
+  renderInvLog();
+}
 function openInvLog(type, period = false) {
   const permission = String(type).startsWith('purchase') ? 'purchase-log' : 'sales-log';
   if (type === 'all' && !ensurePermission('admin')) return;
@@ -2419,6 +2711,29 @@ function openInvLog(type, period = false) {
   openSec('sec-invlog', period ? '📑 فواتير الفترة — حدد من وإلى التاريخ' : '📑 سجل الفواتير'); $('logTypeFilter').value = type; renderInvLog();
   if (period) $('logDateFrom').focus();
 }
+function applyLogKind(kind, list) {
+  const config = LOG_KINDS[kind] || LOG_KINDS.sale;
+  const section = $('sec-invlog');
+  if (section) section.dataset.logKind = kind;
+  document.querySelectorAll('#logSwitch .log-switch-btn').forEach(button => {
+    const active = button.dataset.logKind === kind;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  for (const [id, text] of [['invLogTitle', config.title], ['invLogSectionTitle', config.section], ['invLogPartyHead', config.party]]) {
+    if ($(id)) $(id).textContent = text;
+  }
+  const sums = list.reduce((acc, invoice) => {
+    acc.net += Number(invoice.netTotal) || 0;
+    acc.paid += Number(invoice.paidAmount) || 0;
+    acc.remain += Number(invoice.remainAmount) || 0;
+    return acc;
+  }, { net: 0, paid: 0, remain: 0 });
+  if ($('headInvLogTotal')) $('headInvLogTotal').textContent = money(sums.net);
+  if ($('invLogSumChip')) $('invLogSumChip').firstChild.textContent = `${config.chip}: `;
+  if ($('invLogSumChip')?.lastElementChild) $('invLogSumChip').lastElementChild.textContent = money(sums.net);
+}
+
 function renderInvLog() {
   let filter = $('logTypeFilter').value;
   if (!isAdmin()) {
@@ -2434,6 +2749,7 @@ function renderInvLog() {
     <td class="no-print"><button type="button" class="act-btn bg-teal" onclick="previewSavedInvoice(${i.id}, event)">معاينة</button> <button type="button" class="act-btn bg-teal" onclick="printInvoiceById(${i.id})">طباعة A5</button> <button type="button" class="act-btn bg-blue" onclick="printInvoiceThermalById(${i.id})">حرارية</button> <button type="button" class="act-btn bg-purple" onclick="exportInvoicePdfById(${i.id})">PDF</button> <button type="button" class="act-btn bg-green" onclick="shareInvoiceOnWhatsApp(${i.id})">واتساب</button>${i.mode === 'quote' && !i.convertedToId ? ` <button type="button" class="act-btn bg-green" onclick="loadQuoteForSale(${i.id})">تحويل للبيع</button>` : ''}${i.convertedToId ? ` <small>محوّلة إلى #${i.convertedToId}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد فواتير في هذه الفترة.</td></tr>';
   const th = document.querySelector('#sec-invlog th:last-child'); if (th) th.classList.add('no-print');
   if ($('headInvLogCount')) $('headInvLogCount').textContent = String(list.length);
+  applyLogKind(logKindForFilter(filter), list);
 }
 
 /* ---------------- treasury & profits ---------------- */
@@ -2490,6 +2806,18 @@ function applySettingsUI() {
   $('lblStoreAddress').hidden = !db.settings.address;
   document.title = `${db.settings.name} | نقاط البيع`;
 }
+const SETTINGS_TABS = ['look', 'store', 'sync', 'staff'];
+function switchSettingsTab(tab) {
+  if (!SETTINGS_TABS.includes(tab)) tab = 'look';
+  document.querySelectorAll('#settingsTabs .pos-tab').forEach(button => {
+    const active = button.dataset.settingsTab === tab;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('[data-settings-panel]').forEach(panel => { panel.hidden = panel.dataset.settingsPanel !== tab; });
+  if ($('windowLayer')) $('windowLayer').scrollTop = 0;
+  if (tab === 'staff') { renderStaffTable(); renderAuditTable(); }
+}
 function loadSettingsForm() {
   $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone;
   $('setPinCode').value = ''; $('setSyncKey').value = sessionToken();
@@ -2498,6 +2826,8 @@ function loadSettingsForm() {
   if ($('autoLockSelect')) $('autoLockSelect').value = String(autoLockMinutes());
   if ($('rememberDeviceSettings')) $('rememberDeviceSettings').checked = isTrustedDevice();
   applyScanFeedbackUI();
+  applyInvoiceTones(); applyDocSettingsUI();
+  if ($('tenderAlertAmount')) $('tenderAlertAmount').value = String(tenderAlertLimit());
   $('staffManagerPanel').hidden = !isAdmin();
   renderStaffTable(); renderAuditTable(); applyAppearance();
 }
@@ -2698,10 +3028,15 @@ Object.assign(window, {
   handleScanKey, showSuggestions, hideSuggestions, moveSuggestion, pickSuggestion, suggestionMatches,
   playScanFeedback, setScanFeedback, setScanVibrate, applyScanFeedbackUI,
   openCameraScanner, closeCameraScanner, handleCameraCode, cameraSupported,
+  switchSettingsTab, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
+  setInvoiceTone, resetInvoiceTones, applyInvoiceTones, invoiceTones,
+  setDocTemplate, setDocAccent, applyDocSettingsUI, uploadDocSignature, clearDocSignature, docSettings,
+  tenderAlertLimit, setTenderAlert, confirmTenderDifference, belowCostLines, confirmBelowCost,
+  setLogKind, applyLogKind, logKindForFilter,
   toggleStockAlerts, renderStockAlerts, openStockAlertsPage, quickPurchaseForItem, openPurchaseOrderFromLowStock, lowStockItems,
   syncAppBadge, paintBadgeHints,
   previewInvoiceA5, previewSavedInvoice, closeInvoicePreview, printPreviewA5, setPreviewZoom, previewInvoiceDraft,
-  invoiceDocHtml, invoiceDocBody, openInvoiceDocument, exportInvoicePdfById, invoiceShareText, whatsappLink, shareInvoiceOnWhatsApp, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
+  invoiceDocHtml, invoiceDocBody, openInvoiceDocument, invoiceDocTheme, DOC_THEME, exportInvoicePdfById, invoiceShareText, whatsappLink, shareInvoiceOnWhatsApp, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
   holdCurrentInvoice, restoreHeldInvoice, convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, printInvoiceThermalById,
   openPartySec, openPartyReport, resetPartyForm, saveParty, editParty, deleteParty, savePartyVoucher, toggleQuickParty, saveQuickParty, showStatementFor, renderPartyStatement,
   printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
