@@ -131,7 +131,7 @@ test('user text is escaped in tables and print, and CSV neutralizes formulas', a
 });
 
 test('screen printing reflects edited input values and omits action buttons', async t => {
-  const f = await ready(t, { db: seedDatabase() }); f.window.toggleQuickEditItems();
+  const f = await ready(t, { db: seedDatabase() }); f.window.openSec('sec-items', 'الأصناف'); f.window.toggleQuickEditItems();
   f.$('itemsTbody').querySelector('input[type="number"]').value = 7;
   f.window.printCurrentScreenA5(); assert.match(f.prints.at(-1), />7</); assert.doesNotMatch(f.prints.at(-1), /<button/); assert.doesNotMatch(f.prints.at(-1), /<input/);
 });
@@ -200,10 +200,10 @@ test('dashboard, responsive navigation, window controls and themes work', async 
   f.window.openSec('sec-items', 'الأصناف');
   assert.equal(f.$('windowLayer').classList.contains('open'), true);
   assert.equal(f.$('sec-items').classList.contains('active'), true);
-  // screens now open large by default: the maximize button toggles back to normal
-  assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
-  f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
+  // the reference layout opens the section as an inline content card, not a maximized modal
+  assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
   f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
+  f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
   f.window.minimizeWorkspace(); assert.equal(f.$('windowDock').hidden, false);
   f.window.restoreWorkspace(); assert.equal(f.$('windowDock').hidden, true);
   f.window.selectTheme('vista-emerald');
@@ -565,8 +565,9 @@ test('app badge counts held invoices plus the auto draft', async t => {
   assert.equal(f.$('draftBadge').textContent, '1');
 });
 
-test('every page has its own close button and the window toolbar is gone', async t => {
+test('every page has its own close button and the inline content header is visible', async t => {
   const f = await ready(t, { db: seedDatabase() });
+  // shell v2: the tab bar is the single close control, so the window header is hidden
   assert.equal(f.window.document.querySelector('.win-header').hidden, true);
   for (const id of ['sec-items', 'sec-categories', 'sec-stock', 'sec-labels', 'sec-parties', 'sec-invlog', 'sec-treasury', 'sec-profits', 'sec-settings']) {
     const view = f.$(id);
@@ -576,6 +577,7 @@ test('every page has its own close button and the window toolbar is gone', async
   f.window.openSec('sec-items', 'الأصناف');
   const closeButton = f.window.document.querySelector('#sec-items .page-close-btn');
   assert.match(closeButton.getAttribute('onclick'), /closeWorkspace\(\)/);
+  assert.equal(closeButton.hidden, true);
   f.window.closeWorkspace();
   assert.equal(f.$('windowLayer').classList.contains('open'), false);
 });
@@ -758,7 +760,9 @@ test('SVG icon set replaces emoji and switches back without losing an icon', asy
   assert.ok(painted > 30, `expected many icons, got ${painted}`);
   assert.match(f.$('darkModeButton').innerHTML, /look-svg-ico/);
   f.window.paintIconMode('emoji');
-  assert.equal(f.window.document.querySelectorAll('.look-svg-ico').length, 0);
+  const swapped = ['.button-icon .look-svg-ico', '.nav-icon .look-svg-ico', '.head-icon-btn .look-svg-ico',
+    '.pos-action span[aria-hidden="true"] .look-svg-ico', '.y-btn .y-ico .look-svg-ico'];
+  assert.equal(f.window.document.querySelectorAll(swapped.join(',')).length, 0);
   assert.equal(f.$('darkModeButton').textContent.trim(), '🌙');
   assert.equal(f.window.document.querySelector('[onclick="saveInvoice(false)"] span[aria-hidden="true"]').textContent.trim(), '💾');
 });
@@ -932,4 +936,77 @@ test('button shapes and the colour-blind safe palette switch the whole UI', asyn
   f.window.setLookOption('cvd', 'on');
   assert.equal(html.getAttribute('data-cvd'), 'on');
   assert.equal(JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_LOOK`)).cvd, 'on');
+});
+
+test('shell v2 builds the blue navbar, the dropdowns and the tab bar', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  const bar = f.$('appNavbar');
+  assert.ok(bar.querySelectorAll('.nv-btn').length >= 8);
+  const sales = bar.querySelector('.nv-btn[data-menu="sales"]');
+  f.window.toggleNavMenu('sales', sales);
+  const layer = f.$('navMenuLayer');
+  assert.equal(layer.hidden, false);
+  assert.equal(sales.getAttribute('aria-expanded'), 'true');
+  assert.match(layer.innerHTML, /فاتورة مبيعات/);
+  // arrow keys walk the menu (jsdom focus is not guaranteed, so seed it explicitly), Escape closes it
+  const items = [...layer.querySelectorAll('.nm-item')];
+  assert.equal(items.length, 5);
+  items[0].focus();
+  f.window.document.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+  const activeItem = f.window.document.activeElement;
+  assert.ok(activeItem?.classList?.contains('nm-item'), 'an arrow key focus the menu items');
+  assert.equal(items.indexOf(activeItem), 1);
+  f.window.document.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(layer.hidden, true);
+  assert.equal(sales.getAttribute('aria-expanded'), 'false');
+  // the tab bar starts with the pinned home tab only
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 1);
+  assert.equal(f.$('tabBar').querySelector('.tab').classList.contains('is-home'), true);
+});
+
+test('opening a page from the dropdown registers a tab, re-opening reuses it and closing falls back', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('sale');
+  let tabs = [...f.$('tabBar').querySelectorAll('.tab')];
+  assert.equal(tabs.length, 2);
+  assert.equal(tabs[1].querySelector('span').textContent, 'فاتورة مبيعات');
+  assert.equal(tabs[1].getAttribute('aria-selected'), 'true');
+  f.window.openPage('items');
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 3);
+  // opening the same page again must activate its tab, not duplicate it
+  f.window.openPage('sale');
+  tabs = [...f.$('tabBar').querySelectorAll('.tab')];
+  assert.equal(tabs.length, 3);
+  assert.equal(tabs[1].getAttribute('aria-selected'), 'true');
+  assert.equal(f.$('sec-invoice').classList.contains('active'), true);
+  // activating a tab switches the screen
+  f.window.activatePage('items');
+  assert.equal(f.$('sec-items').classList.contains('active'), true);
+  // the home tab never closes
+  f.window.closeTab('home');
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 3);
+  assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  // closing the active tab falls back to the dashboard
+  f.window.closeTab('items');
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 2);
+  f.window.closeAllTabs();
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 1);
+});
+
+test('the dashboard shows a KPI strip and framed feature groups', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  assert.equal(f.$('dashKpis').querySelectorAll('.dash-kpi').length, 4);
+  assert.equal(f.$('dashBody').querySelectorAll('.dash-group').length, 6);
+  assert.ok(f.$('dashBody').querySelectorAll('.dash-card').length >= 20);
+  assert.equal(f.$('dashKpiCash').textContent, '0.00');
+  // a card opens its page and registers a tab
+  assert.match(f.$('dashBody').querySelector('.dash-card[data-page="customers"]').getAttribute('onclick'), /openPage\('customers'\)/);
+  f.window.openPage('customers');
+  assert.equal(f.$('sec-parties').classList.contains('active'), true);
+  assert.match(f.$('tabBar').textContent, /إدارة العملاء/);
+  // title bar, footer and status chrome are populated from the store data
+  assert.equal(f.$('titleBarName').textContent, 'مكتبة الجمال');
+  assert.match(f.$('footerPhone').textContent, /01000000000/);
+  assert.match(f.$('titleBarUser').textContent, /مكتبة الجمال|مدير/);
 });

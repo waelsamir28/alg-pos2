@@ -11,9 +11,9 @@ const STAFF_KEY = `${DB_KEY}_STAFF`;
 const AUDIT_KEY = `${DB_KEY}_AUDIT`;
 const HELD_CARTS_KEY = `${DB_KEY}_HELD_CARTS`;
 const ACTIVE_STAFF_KEY = `${DB_KEY}_ACTIVE_STAFF`;
-const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'night', 'custom'];
-const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', night: '#8fb4ff' };
-const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', night: 'الوضع الليلي', custom: 'تخصيص كامل' };
+const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'ref-light-blue', 'ref-light-purple', 'ref-light-maroon', 'ref-dark-gray', 'ref-dark-purple', 'night', 'custom'];
+const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', 'ref-light-blue': '#1e6fb8', 'ref-light-purple': '#6a5acd', 'ref-light-maroon': '#8b1e1e', 'ref-dark-gray': '#4a9eff', 'ref-dark-purple': '#a855f7', night: '#8fb4ff' };
+const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', 'ref-light-blue': 'مرجعي أزرق فاتح', 'ref-light-purple': 'مرجعي بنفسجي فاتح', 'ref-light-maroon': 'مرجعي عنابي', 'ref-dark-gray': 'مرجعي رمادي داكن', 'ref-dark-purple': 'مرجعي بنفسجي داكن', night: 'الوضع الليلي', custom: 'تخصيص كامل' };
 
 const $ = id => document.getElementById(id);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -112,6 +112,7 @@ function ensurePermission(permission) {
 function roleLabel(role) { return ({ admin: 'مدير', cashier: 'كاشير', inventory: 'مخزن' })[role] || 'موظف'; }
 function updateActiveUserBadge() {
   paintStaffAvatar();
+  if ($('titleBarUser')) $('titleBarUser').textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
   if ($('statusUser')) $('statusUser').textContent = activeStaff().name;
   if ($('statusRole')) $('statusRole').textContent = activeStaff().role === 'admin' ? 'مدير عام' : roleLabel(activeStaff().role);
 }
@@ -266,6 +267,7 @@ function setSyncStatus(message) {
   }
   const navStatus = document.querySelector('.side-nav-foot .nav-label');
   if (navStatus) navStatus.textContent = badge?.dataset.state === 'synced' ? 'متصل ومتزامن مع Neon' : badge?.dataset.state === 'error' ? 'يحتاج مراجعة' : 'محفوظ على هذا الجهاز';
+  updateSyncStateBox();
   renderSystemAlerts();
 }
 function readMeta() {
@@ -352,6 +354,9 @@ function updateClock() {
   const weekday = new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now);
   if ($('liveDate')) { $('liveDate').textContent = date; $('liveDate').title = weekday; }
   if ($('liveTime')) $('liveTime').textContent = time;
+  if ($('statusDate')) $('statusDate').textContent = date;
+  if ($('statusTime')) $('statusTime').textContent = time;
+  if ($('titleBarClock')) $('titleBarClock').textContent = `${date} ${now.toTimeString().slice(0, 5)}`;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
 /* ------------------------------------------------------------------ */
@@ -532,7 +537,14 @@ function initializeApp() {
     document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('selected', item === link));
     if (window.innerWidth <= 760) toggleSidebar(false);
   });
+  document.querySelectorAll('[data-theme-choice]').forEach(button => {
+    button.addEventListener('mouseenter', () => previewTheme(button.dataset.themeChoice));
+    button.addEventListener('mouseleave', restoreThemePreview);
+    button.addEventListener('focus', () => previewTheme(button.dataset.themeChoice));
+    button.addEventListener('blur', restoreThemePreview);
+  });
   $('windowLayer').addEventListener('click', event => { if (event.target === $('windowLayer')) closeWorkspace(); });
+  $('floatWindows').addEventListener('click', event => { if (event.target === $('floatWindows')) closeWorkspace(); });
   window.addEventListener('keydown', handleGlobalShortcut);
   let rememberedStaff = '';
   try { rememberedStaff = sessionStorage.getItem(ACTIVE_STAFF_KEY) || ''; } catch { /* Session storage may be disabled. */ }
@@ -548,6 +560,17 @@ function initializeApp() {
   for (const event of ['pointerdown', 'keydown', 'wheel', 'focusin']) window.addEventListener(event, noteActivity, { passive: true });
   rememberDeviceStep(isTrustedDevice());
   applyInvoiceTones(); applyDocSettingsUI();
+  document.body.classList.add('shell-v2');
+  paintNavbar(); renderDashboard(); renderTabs(); paintTitleChrome(); shellSecondaryNav();
+  ['wallet', 'cart', 'chart', 'alert'].forEach((name, index) => {
+    const slot = document.querySelectorAll('#dashKpis .dk-ico')[index];
+    if (slot) slot.innerHTML = lookIcon(name);
+  });
+  window.addEventListener('resize', closeMenus, { passive: true });
+  document.addEventListener('click', event => {
+    if (!$('navMenuLayer') || $('navMenuLayer').hidden) return;
+    if (!event.target.closest('.app-navbar') && !event.target.closest('.nav-menu')) closeMenus();
+  }, true);
   applyAutoNight(); applyLook(); updateDashboardKPIs();
   renderActivityLog(); paintDraftHint(); startDraftAutosave(); renderStockAlerts(); syncAppBadge();
   const scan = $('invBarcodeInp');
@@ -566,6 +589,17 @@ function handleGlobalShortcut(event) {
   }
   const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName);
   const inInvoice = $('windowLayer').classList.contains('open') && $('sec-invoice').classList.contains('active');
+  if (event.altKey && !event.ctrlKey && /^[1-9]$/.test(event.key)) {
+    const menu = SHELL_MENUS[Number(event.key) - 1];
+    const button = document.querySelector(`.app-navbar .nv-btn[data-menu="${menu?.key}"]`);
+    if (menu && button) { event.preventDefault(); toggleNavMenu(menu.key, button); }
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w' && document.body.classList.contains('shell-v2')) {
+    if (activeTab && activeTab !== 'home') { event.preventDefault(); closeTab(activeTab); }
+    return;
+  }
+  if (event.key === 'Escape' && openMenuKey) { event.preventDefault(); closeMenus(); return; }
   if (event.key === 'Escape' && document.body.dataset.focus === 'on') { exitFocusMode(); return; }
   if (event.key === 'F9' && event.shiftKey && !typing) { event.preventDefault(); toggleFocusMode(); return; }
   if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) { closeWorkspace(); return; }
@@ -582,28 +616,329 @@ function handleGlobalShortcut(event) {
   if (event.key === 'F11') { event.preventDefault(); openInvLog('sale'); return; }
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && inInvoice) { event.preventDefault(); saveInvoice('thermal'); return; }
   if (!typing && event.key === 'Delete' && inInvoice && selectedCartIndex >= 0) { event.preventDefault(); removeCartRow(selectedCartIndex); }
+  if (openMenuKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+    const items = [...document.querySelectorAll('.nav-menu .nm-item')];
+    if (!items.length) return;
+    event.preventDefault();
+    const index = items.indexOf(document.activeElement);
+    const next = event.key === 'ArrowDown' ? (index + 1) % items.length : (index - 1 + items.length) % items.length;
+    items[next].focus();
+  }
 }
 
 /* ------------------------------------------------------------------ */
 /* Shell: screens, window, navigation, appearance                      */
 /* ------------------------------------------------------------------ */
+/* ===================== SHELL V2: navbar menus, dropdowns, page tabs, dashboard cards ===================== */
+const SHELL_MENUS = [
+  { key: 'home', label: 'الرئيسية', icon: 'home', items: [
+    { label: 'لوحة المتابعة', page: 'home', icon: 'grid' },
+    { label: 'تنبيهات النظام', page: 'home', icon: 'alert' }
+  ] },
+  { key: 'sales', label: 'المبيعات', icon: 'cart', items: [
+    { label: 'فاتورة مبيعات', page: 'sale', icon: 'cart', kbd: 'F2' },
+    { label: 'مرتجع مبيعات', page: 'sale_return', icon: 'swap' },
+    { label: 'عرض أسعار', page: 'quote', icon: 'doc' },
+    { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt', kbd: 'F11' },
+    { label: 'مبيعات فترة', page: 'log-sale-period', icon: 'chart' }
+  ] },
+  { key: 'purchases', label: 'المشتريات', icon: 'truck', items: [
+    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
+    { label: 'مرتجع مشتريات', page: 'purchase_return', icon: 'swap' },
+    { label: 'فواتير المشتريات', page: 'log-purchase', icon: 'receipt' }
+  ] },
+  { key: 'stock', label: 'المخازن', icon: 'box', items: [
+    { label: 'بيانات الأصناف', page: 'items', icon: 'box' },
+    { label: 'المجموعات', page: 'categories', icon: 'folder' },
+    { label: 'كشف النواقص', page: 'stock-zero', icon: 'alert' },
+    { label: 'حد الطلب', page: 'stock-low', icon: 'alert' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' },
+    { label: 'ملصقات الباركود', page: 'labels', icon: 'tag' }
+  ] },
+  { key: 'people', label: 'العملاء', icon: 'users', items: [
+    { label: 'إدارة العملاء', page: 'customers', icon: 'users' },
+    { label: 'أرصدة العملاء', page: 'customers-balances', icon: 'chart' },
+    { label: 'كشف حساب عميل', page: 'customers-statement', icon: 'receipt' }
+  ] },
+  { key: 'suppliers', label: 'الموردون', icon: 'truck', items: [
+    { label: 'إدارة الموردين', page: 'suppliers', icon: 'truck' },
+    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' },
+    { label: 'كشف حساب مورد', page: 'suppliers-statement', icon: 'receipt' }
+  ] },
+  { key: 'money', label: 'الخزينة', icon: 'wallet', items: [
+    { label: 'الخزينة', page: 'treasury-all', icon: 'wallet', kbd: 'F1' },
+    { label: 'وارد الخزينة', page: 'treasury-in', icon: 'plus' },
+    { label: 'منصرف الخزينة', page: 'treasury-out', icon: 'download' },
+    { label: 'المصروفات', page: 'treasury-expense', icon: 'money' }
+  ] },
+  { key: 'reports', label: 'التقارير', icon: 'chart', items: [
+    { label: 'التقرير العام وصافي الأرباح', page: 'profits-general', icon: 'chart' },
+    { label: 'أرباح صنف', page: 'profits-item', icon: 'chart' },
+    { label: 'أرباح فترة', page: 'profits-period', icon: 'chart' },
+    { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
+  ] },
+  { key: 'file', label: 'ملف', icon: 'doc', items: [
+    { label: 'إعدادات النظام', page: 'settings', icon: 'settings' },
+    { label: 'تغيير المستخدم', page: 'lock', icon: 'lock' },
+    { label: 'إغلاق كل الشاشات', page: 'close-all', icon: 'trash' }
+  ] }
+];
+const PAGE_DEFS = {
+  home: { title: 'لوحة المتابعة', home: true },
+  sale: { title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
+  purchase: { title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
+  sale_return: { title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
+  purchase_return: { title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
+  quote: { title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
+  'log-sale': { title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
+  'log-purchase': { title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
+  'log-sale-period': { title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
+  items: { title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
+  categories: { title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
+  labels: { title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
+  'stock-zero': { title: 'كشف النواقص', run: () => openStockFilter('zero') },
+  'stock-low': { title: 'حد الطلب', run: () => openStockFilter('low') },
+  'stock-all': { title: 'جرد المخزن', run: () => openStockFilter('all') },
+  customers: { title: 'إدارة العملاء', run: () => openPartySec('customer') },
+  suppliers: { title: 'إدارة الموردين', run: () => openPartySec('supplier') },
+  'customers-balances': { title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
+  'suppliers-balances': { title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
+  'customers-statement': { title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
+  'suppliers-statement': { title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
+  'treasury-all': { title: 'الخزينة', run: () => openTreasury('all') },
+  'treasury-in': { title: 'وارد الخزينة', run: () => openTreasury('in') },
+  'treasury-out': { title: 'منصرف الخزينة', run: () => openTreasury('out') },
+  'treasury-expense': { title: 'المصروفات', run: () => openTreasury('expense') },
+  'profits-general': { title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
+  'profits-item': { title: 'أرباح صنف', run: () => openProfitSec('item') },
+  'profits-period': { title: 'أرباح فترة', run: () => openProfitSec('period') },
+  settings: { title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
+  activity: { title: 'سجل النشاط', run: () => openActivityPage() },
+  lock: { title: 'قفل الشاشة', action: () => lockApp() },
+  'close-all': { title: 'إغلاق الكل', action: () => closeAllTabs() }
+};
+const DASH_GROUPS = [
+  { key: 'cash', title: 'النقدية والخزنة', tint: 'cash', icon: 'wallet', items: [
+    { label: 'الخزينة', page: 'treasury-all', icon: 'wallet' },
+    { label: 'وارد', page: 'treasury-in', icon: 'plus' },
+    { label: 'منصرف', page: 'treasury-out', icon: 'download' },
+    { label: 'المصروفات', page: 'treasury-expense', icon: 'money' }
+  ] },
+  { key: 'invoice', title: 'الفواتير', tint: 'invoice', icon: 'cart', items: [
+    { label: 'فاتورة مبيعات', page: 'sale', icon: 'cart' },
+    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
+    { label: 'مرتجع مبيعات', page: 'sale_return', icon: 'swap' },
+    { label: 'عرض أسعار', page: 'quote', icon: 'doc' }
+  ] },
+  { key: 'people', title: 'العملاء والموردون', tint: 'people', icon: 'users', items: [
+    { label: 'العملاء', page: 'customers', icon: 'users' },
+    { label: 'الموردون', page: 'suppliers', icon: 'truck' },
+    { label: 'أرصدة العملاء', page: 'customers-balances', icon: 'chart' },
+    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' }
+  ] },
+  { key: 'stock', title: 'المخزون والأصناف', tint: 'stock', icon: 'box', items: [
+    { label: 'الأصناف', page: 'items', icon: 'box' },
+    { label: 'المجموعات', page: 'categories', icon: 'folder' },
+    { label: 'النواقص', page: 'stock-zero', icon: 'alert' },
+    { label: 'الملصقات', page: 'labels', icon: 'tag' }
+  ] },
+  { key: 'reports', title: 'التقارير', tint: 'reports', icon: 'chart', items: [
+    { label: 'الأرباح', page: 'profits-general', icon: 'chart' },
+    { label: 'أرباح صنف', page: 'profits-item', icon: 'chart' },
+    { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' }
+  ] },
+  { key: 'settings', title: 'البرنامج', tint: 'settings', icon: 'settings', items: [
+    { label: 'الإعدادات', page: 'settings', icon: 'settings' },
+    { label: 'المستخدمون', page: 'lock', icon: 'lock' },
+    { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
+  ] }
+];
+let openTabs = [];
+let activeTab = '';
+let openMenuKey = '';
+function pageDef(key) { return PAGE_DEFS[key] || null; }
+function navIconMarkup(name) {
+  const svg = lookIcon(name);
+  return `<span class="nm-ico" aria-hidden="true">${svg || ''}</span>`;
+}
+function openPage(key) {
+  const def = pageDef(key);
+  if (!def) return;
+  if (def.action) { def.action(); return; }
+  if (def.home) { activatePage('home'); return; }
+  // permission-guarded pages return early: only register a tab when the screen actually opened
+  def.run();
+  // a permission guard aborts the screen, so no tab is registered for it
+  if (!$('windowLayer').classList.contains('open')) return;
+  registerTab(key, def.title);
+  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+}
+function registerTab(key, title) {
+  const existing = openTabs.find(tab => tab.key === key);
+  if (existing) { existing.title = title || existing.title; activeTab = key; }
+  else { openTabs.push({ key, title }); activeTab = key; }
+  renderTabs();
+}
+function activatePage(key) {
+  closeMenus();
+  if (key === 'home') {
+    activeTab = 'home';
+    closeWorkspace();
+    document.body.classList.remove('screen-open');
+    renderTabs();
+    return;
+  }
+  const def = pageDef(key);
+  if (!def) return;
+  if (!openTabs.some(tab => tab.key === key)) { openPage(key); return; }
+  activeTab = key;
+  def.run();
+  document.body.classList.add('screen-open');
+  renderTabs();
+}
+function closeTab(key) {
+  if (key === 'home') { activatePage('home'); return; }
+  const index = openTabs.findIndex(tab => tab.key === key);
+  if (index < 0) return;
+  const wasActive = activeTab === key;
+  openTabs.splice(index, 1);
+  if (wasActive) {
+    const next = openTabs[Math.max(0, index - 1)];
+    if (next) activatePage(next.key); else activatePage('home');
+  } else renderTabs();
+}
+function closeAllTabs() {
+  openTabs = openTabs.filter(tab => tab.key === 'home');
+  activatePage('home');
+  notify('تم إغلاق كل الشاشات.');
+}
+function renderTabs() {
+  const bar = $('tabBar');
+  if (!bar) return;
+  if (!openTabs.some(tab => tab.key === 'home')) openTabs.unshift({ key: 'home', title: 'الرئيسية', home: true });
+  bar.innerHTML = openTabs.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
+      data-tab="${esc(tab.key)}" aria-selected="${String(tab.key === activeTab)}" onclick="activatePage('${esc(tab.key)}')">
+      <span>${esc(tab.title)}</span>
+      <span class="tab-x" role="button" tabindex="-1" aria-label="إغلاق ${esc(tab.title)}" onclick="event.stopPropagation();closeTab('${esc(tab.key)}')">✕</span>
+    </button>`).join('') + '<button type="button" class="tab-add" onclick="openHomeMenu()" title="شاشة أخرى" aria-label="فتح شاشة أخرى">+</button>';
+}
+function paintNavbar() {
+  const bar = $('appNavbar');
+  if (!bar) return;
+  const theme = db.settings || {};
+  bar.innerHTML = SHELL_MENUS.map(menu => `<button type="button" class="nv-btn" data-menu="${menu.key}"
+      aria-haspopup="menu" aria-expanded="false" onclick="toggleNavMenu('${menu.key}', this)">
+      <span aria-hidden="true">${lookIcon(menu.icon)}</span><span>${esc(menu.label)}</span><span class="nv-caret" aria-hidden="true">▾</span>
+    </button>`).join('')
+    + `<span class="nv-spacer"></span>
+      <button type="button" class="nv-icon-btn nv-bell" title="التنبيهات" aria-label="التنبيهات" onclick="openStockAlertsPage()">
+        ${lookIcon('bell')}<b id="navBellCount" hidden>0</b>
+      </button>
+      <button type="button" class="nv-icon-btn" title="تثبيت التطبيق" aria-label="تثبيت التطبيق" onclick="installApp()">${lookIcon('download')}</button>
+      <button type="button" class="nv-icon-btn" title="${theme.name ? esc(theme.name) : 'المستخدم'}" aria-label="قفل الشاشة" onclick="lockApp()">${lookIcon('user')}</button>`;
+  paintNavBell();
+}
+function paintNavBell() {
+  const bell = $('navBellCount');
+  if (!bell) return;
+  const count = lowStockItems().length;
+  bell.hidden = count === 0;
+  bell.textContent = String(count);
+}
+function findMenu(key) { return SHELL_MENUS.find(menu => menu.key === key) || null; }
+function toggleNavMenu(key, button) {
+  if (openMenuKey === key) { closeMenus(); return; }
+  openNavMenu(key, button);
+}
+function openNavMenu(key, button) {
+  const menu = findMenu(key);
+  const layer = $('navMenuLayer');
+  if (!menu || !layer) return;
+  openMenuKey = key;
+  layer.innerHTML = `<div class="nav-menu" role="menu" aria-label="${esc(menu.label)}">
+      <div class="nm-head">${esc(menu.label)}</div>
+      ${menu.items.map(item => `<button type="button" class="nm-item" role="menuitem" data-page="${esc(item.page)}" onclick="openPage('${esc(item.page)}')">
+        ${navIconMarkup(item.icon)}<span class="nm-label">${esc(item.label)}</span>${item.kbd ? `<span class="nm-kbd">${esc(item.kbd)}</span>` : ''}
+      </button>`).join('')}
+    </div>`;
+  layer.hidden = false;
+  document.querySelectorAll('.app-navbar .nv-btn').forEach(btn => btn.setAttribute('aria-expanded', String(btn.dataset.menu === key)));
+  const box = layer.querySelector('.nav-menu');
+  const rect = button.getBoundingClientRect();
+  const width = Math.min(300, Math.max(250, rect.width + 60));
+  box.style.width = `${width}px`;
+  const rtl = (window.getComputedStyle?.(document.documentElement)?.direction || 'rtl') === 'rtl';
+  let left = rtl ? rect.right - width : rect.left;
+  left = Math.max(6, Math.min(window.innerWidth - width - 6, left));
+  box.style.top = `${Math.round(rect.bottom + 4)}px`;
+  box.style.left = `${Math.round(left)}px`;
+  window.requestAnimationFrame(() => box.classList.add('in'));
+  box.querySelector('.nm-item')?.focus({ preventScroll: true });
+}
+function openHomeMenu() {
+  const first = document.querySelector('.app-navbar .nv-btn[data-menu="sales"]');
+  if (first) openNavMenu('sales', first); else { const m = document.querySelector('.app-navbar .nv-btn'); if (m) openNavMenu(m.dataset.menu, m); }
+}
+function closeMenus() {
+  const layer = $('navMenuLayer');
+  if (!layer || layer.hidden) { openMenuKey = ''; return; }
+  layer.hidden = true;
+  layer.innerHTML = '';
+  openMenuKey = '';
+  document.querySelectorAll('.app-navbar .nv-btn').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+}
+function renderDashboard() {
+  const host = $('dashBody');
+  if (!host) return;
+  host.innerHTML = DASH_GROUPS.map(group => `<section class="dash-group" data-tint="${esc(group.tint)}">
+      <h3><span class="dg-ico" aria-hidden="true">${lookIcon(group.icon)}</span>${esc(group.title)}</h3>
+      <div class="dg-grid">
+        ${group.items.map(item => `<button type="button" class="dash-card" data-page="${esc(item.page)}" onclick="openPage('${esc(item.page)}')">
+          <span class="dc-ico" aria-hidden="true">${lookIcon(item.icon)}</span><span>${esc(item.label)}</span>
+        </button>`).join('')}
+      </div>
+    </section>`).join('');
+}
+function paintTitleChrome() {
+  if ($('titleBarName')) $('titleBarName').textContent = db.settings.name;
+  if ($('titleBarLogo')) $('titleBarLogo').src = lookSettings().storeLogo || '/icon-192.png';
+  if ($('titleBarUser')) $('titleBarUser').textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
+  if ($('titleBarClock')) $('titleBarClock').textContent = `${localDate()} ${new Date().toTimeString().slice(0, 5)}`;
+  if ($('footerBrand')) $('footerBrand').textContent = db.settings.name;
+  if ($('footerPhone')) $('footerPhone').textContent = db.settings.phone ? `☎ ${db.settings.phone}` : '';
+  if ($('footerAddress')) $('footerAddress').textContent = db.settings.address || '';
+  document.title = `${db.settings.name} | نقاط البيع`;
+  paintNavBell();
+}
+function shellSecondaryNav() {
+  // keep exactly one close control per screen: the tab bar replaces the in-page ✕
+  document.querySelectorAll('.page-close-btn').forEach(button => { button.hidden = true; button.style.display = 'none'; });
+  document.querySelectorAll('.win-header, #winHeader').forEach(header => { header.hidden = true; });
+}
+
 const SEC_TITLES = {
   'sec-invoice': '🛒 شاشة البيع والاستعلام', 'sec-items': '📦 بيانات الأصناف والمخزون',
   'sec-categories': '📁 بيانات المجموعات', 'sec-stock': '🏢 جرد المخزن',
   'sec-labels': '🏷️ طباعة ملصقات الباركود', 'sec-parties': '👥 إدارة العملاء والموردين',
   'sec-invlog': '📑 سجل الفواتير', 'sec-treasury': '💰 الخزنة والحسابات',
-  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام'
+  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام',
+  'sec-contact': '📞 اتصل بنا', 'sec-maintenance': '🛠️ الصيانة'
 };
+const floatWindows = new Map();
+let activeFloatId = null;
+let floatZ = 6000;
 function openSec(secId, titleText) {
   const permission = ({ 'sec-items': 'inventory', 'sec-categories': 'inventory', 'sec-stock': 'stock', 'sec-settings': 'admin', 'sec-profits': 'admin', 'sec-treasury': 'cash', 'sec-labels': 'inventory' })[secId];
   if (permission && !ensurePermission(permission)) return;
   if (secId === 'sec-parties' && !ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
-  document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
+  const title = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
   $(secId)?.classList.add('active');
-  $('windowLayer').classList.add('open', 'maximized');
-  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
+  document.body.classList.add('section-open');
   document.body.style.overflow = 'hidden';
-  $('winTitle').textContent = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
+  setActiveNav(({ 'sec-settings': 'settings', 'sec-parties': 'customers', 'sec-invoice': 'sale' })[secId] || '');
+  $('winTitle').textContent = title;
+  openFloatWindow(secId, title);
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
   if (secId === 'sec-parties') renderPartiesTable();
@@ -613,22 +948,204 @@ function openSec(secId, titleText) {
   if (secId === 'sec-profits') renderProfits();
   if (secId === 'sec-labels') { loadLabelOptions(); renderLabels(); }
   if (secId === 'sec-invoice') renderPosTiles();
+  if (secId === 'sec-contact') renderContactMessages();
+  if (secId === 'sec-maintenance') renderMaintenanceRequests();
+}
+function openFloatWindow(secId, title) {
+  const section = $(secId);
+  if (!section) return;
+  let win = floatWindows.get(secId);
+  if (!win) {
+    const el = document.createElement('div');
+    el.className = 'float-window';
+    el.dataset.section = secId;
+    el.innerHTML = `<div class="float-titlebar"><span class="float-title">${esc(title)}</span><div class="float-controls"><button type="button" class="float-btn" data-float-min title="تصغير" aria-label="تصغير">—</button><button type="button" class="float-btn" data-float-max title="تكبير" aria-label="تكبير">▢</button><button type="button" class="float-btn float-close" data-float-close title="إغلاق" aria-label="إغلاق">✕</button></div></div><div class="float-body"></div>`;
+    const body = el.querySelector('.float-body');
+    body.appendChild(section);
+    el.querySelector('[data-float-min]').addEventListener('click', () => minimizeFloat(secId));
+    el.querySelector('[data-float-max]').addEventListener('click', () => maximizeFloat(secId));
+    el.querySelector('[data-float-close]').addEventListener('click', () => closeFloat(secId));
+    const bar = el.querySelector('.float-titlebar');
+    bar.addEventListener('pointerdown', event => {
+      if (event.target.closest('button') || window.innerWidth <= 760) return;
+      focusFloat(secId);
+      const startX = event.clientX, startY = event.clientY;
+      const rect = el.getBoundingClientRect();
+      const offsetX = startX - rect.left, offsetY = startY - rect.top;
+      const move = ev => {
+        const x = Math.min(Math.max(0, ev.clientX - offsetX), window.innerWidth - 140);
+        const y = Math.min(Math.max(0, ev.clientY - offsetY), window.innerHeight - 140);
+        el.style.left = `${x}px`; el.style.top = `${y}px`;
+      };
+      const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    });
+    $('floatWindows').appendChild(el);
+    win = { el, body, section };
+    floatWindows.set(secId, win);
+  }
+  const count = floatWindows.size;
+  const offset = (count - 1) * 26;
+  win.el.style.left = `${72 + offset}px`;
+  win.el.style.top = `${56 + offset}px`;
+  win.el.style.width = 'min(980px, calc(100vw - 144px))';
+  win.el.style.height = 'min(660px, calc(100vh - 190px))';
+  win.el.classList.remove('minimized', 'maximized');
+  $('windowLayer').classList.add('open');
+  $('windowLayer').classList.remove('minimized', 'maximized');
+  $('windowDock').hidden = true;
+  focusFloat(secId);
+  updateFloatTaskbar();
+}
+function focusFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  activeFloatId = secId;
+  floatWindows.forEach((w, id) => w.el.classList.toggle('active', id === secId));
+  win.el.style.zIndex = String(++floatZ);
+  win.el.classList.remove('minimized');
+  updateFloatTaskbar();
+}
+function closeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  const pool = $('sectionPool')?.querySelector('.win-body');
+  if (pool) pool.appendChild(win.section);
+  win.section.classList.remove('active');
+  win.el.remove();
+  floatWindows.delete(secId);
+  if (activeFloatId === secId) activeFloatId = [...floatWindows.keys()].at(-1) || null;
+  if (!floatWindows.size) {
+    $('windowLayer').classList.remove('open', 'minimized', 'maximized');
+    $('windowDock').hidden = true;
+    document.body.classList.remove('section-open');
+    document.body.style.overflow = '';
+    setActiveNav('home');
+  } else if (activeFloatId) focusFloat(activeFloatId);
+  updateFloatTaskbar();
+}
+function closeAllFloat() {
+  for (const secId of [...floatWindows.keys()]) closeFloat(secId);
+  $('windowLayer').classList.remove('open', 'minimized', 'maximized');
+  $('windowDock').hidden = true;
+  document.body.classList.remove('section-open');
+  document.body.style.overflow = '';
+  setActiveNav('home');
+}
+function minimizeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  win.el.classList.add('minimized');
+  if (activeFloatId === secId) activeFloatId = [...floatWindows.keys()].filter(id => !floatWindows.get(id).el.classList.contains('minimized')).at(-1) || null;
+  if ([...floatWindows.values()].some(w => w.el.classList.contains('minimized'))) $('windowDock').hidden = false;
+  updateFloatTaskbar();
+}
+function maximizeFloat(secId) {
+  const win = floatWindows.get(secId);
+  if (!win) return;
+  win.el.classList.toggle('maximized');
+  $('windowLayer').classList.toggle('maximized', win.el.classList.contains('maximized'));
+}
+function updateFloatTaskbar() {
+  const taskbar = $('floatTaskbar');
+  if (!taskbar) return;
+  const entries = [...floatWindows.entries()];
+  taskbar.hidden = entries.length === 0;
+  taskbar.innerHTML = `<span class="taskbar-label">النوافذ المفتوحة</span>` + entries.map(([id]) => `<button type="button" class="taskbar-btn ${id === activeFloatId ? 'active' : ''}" onclick="focusFloat('${id}')"><span>${esc(SEC_TITLES[id] || 'نافذة')}</span></button>`).join('');
+}
+function setActiveNav(name) {
+  document.querySelectorAll('#mainNav .main-nav-link').forEach(link => link.classList.toggle('active', link.dataset.nav === name));
+}
+function quickPlaceholder(name) {
+  const title = $('placeholderTitle'), heading = $('placeholderHeading'), text = $('placeholderText');
+  if (title) title.textContent = `🚧 ${name}`;
+  if (heading) heading.textContent = `قسم ${name}`;
+  if (text) text.textContent = `قسم «${name}» من ضمن التخطيط الجديد للبرنامج وسيتم تفعيله في التحديث القادم. باقي الشاشات تعمل بشكل كامل.`;
+  openSec('sec-placeholder', `🚧 ${name}`);
+}
+const CONTACT_KEY = `${DB_KEY}_CONTACT_MESSAGES`;
+const MAINTENANCE_KEY = `${DB_KEY}_MAINTENANCE_REQUESTS`;
+function readLocalList(key) {
+  try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
+  catch { return []; }
+}
+function writeLocalList(key, list) {
+  try { localStorage.setItem(key, JSON.stringify(list)); }
+  catch { notify('تعذر حفظ البيانات محلياً. تحقق من مساحة التخزين.'); }
+}
+function saveContactMessage() {
+  const name = $('contactName').value.trim(), phone = $('contactPhone').value.trim(), email = $('contactEmail').value.trim();
+  const subject = $('contactSubject').value.trim(), message = $('contactMessage').value.trim();
+  if (!name || !message) return alert('الاسم والرسالة مطلوبان.');
+  const list = readLocalList(CONTACT_KEY);
+  list.unshift({ id: Date.now(), date: localDate(), time: new Date().toTimeString().slice(0, 5), name, phone, email, subject, message, read: false });
+  writeLocalList(CONTACT_KEY, list);
+  ['contactName', 'contactPhone', 'contactEmail', 'contactSubject', 'contactMessage'].forEach(id => { $(id).value = ''; });
+  renderContactMessages();
+  notify('✅ تم حفظ الرسالة على هذا الجهاز.');
+}
+function renderContactMessages() {
+  const list = readLocalList(CONTACT_KEY);
+  $('contactTbody').innerHTML = list.map((m, index) => `<tr><td>${index + 1}</td><td>${esc(m.date)} ${esc(m.time || '')}</td><td>${esc(m.name)}</td><td>${esc(m.subject || '-')}</td><td>${m.read ? 'مقروءة' : 'جديدة'}</td><td class="no-print"><button type="button" class="act-btn bg-blue" onclick="markContactRead(${m.id})">تعيين كمقروء</button><button type="button" class="act-btn bg-red" onclick="deleteContactMessage(${m.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty-row">لا توجد رسائل بعد.</td></tr>';
+}
+function markContactRead(id) {
+  writeLocalList(CONTACT_KEY, readLocalList(CONTACT_KEY).map(m => m.id === id ? { ...m, read: true } : m));
+  renderContactMessages();
+}
+function deleteContactMessage(id) {
+  writeLocalList(CONTACT_KEY, readLocalList(CONTACT_KEY).filter(m => m.id !== id));
+  renderContactMessages();
+}
+function saveMaintenanceRequest() {
+  const device = $('maintDevice').value.trim(), issue = $('maintIssue').value.trim(), priority = $('maintPriority').value;
+  if (!device || !issue) return alert('اسم الجهاز والمشكلة مطلوبان.');
+  const list = readLocalList(MAINTENANCE_KEY);
+  list.unshift({ id: Date.now(), date: localDate(), device, issue, priority, status: 'new' });
+  writeLocalList(MAINTENANCE_KEY, list);
+  $('maintDevice').value = ''; $('maintIssue').value = ''; $('maintPriority').value = 'medium';
+  renderMaintenanceRequests();
+  notify('✅ تم تسجيل طلب الصيانة.');
+}
+function renderMaintenanceRequests() {
+  const labels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', new: 'جديد', progress: 'قيد التنفيذ', done: 'مكتمل' };
+  const list = readLocalList(MAINTENANCE_KEY);
+  $('maintenanceTbody').innerHTML = list.map((m, index) => `<tr><td>${index + 1}</td><td>${esc(m.date)}</td><td>${esc(m.device)}</td><td>${esc(m.issue)}</td><td>${esc(labels[m.priority] || m.priority)}</td><td>${esc(labels[m.status] || m.status)}</td><td class="no-print"><button type="button" class="act-btn bg-blue" onclick="advanceMaintenanceStatus(${m.id})">تحديث الحالة</button><button type="button" class="act-btn bg-red" onclick="deleteMaintenanceRequest(${m.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="7" class="empty-row">لا توجد طلبات صيانة.</td></tr>';
+}
+function advanceMaintenanceStatus(id) {
+  const order = ['new', 'progress', 'done'];
+  writeLocalList(MAINTENANCE_KEY, readLocalList(MAINTENANCE_KEY).map(m => m.id === id ? { ...m, status: order[(order.indexOf(m.status) + 1) % order.length] } : m));
+  renderMaintenanceRequests();
+}
+function deleteMaintenanceRequest(id) {
+  writeLocalList(MAINTENANCE_KEY, readLocalList(MAINTENANCE_KEY).filter(m => m.id !== id));
+  renderMaintenanceRequests();
 }
 function closeWorkspace() {
-  $('windowLayer').classList.remove('open', 'minimized', 'maximized'); $('windowDock').hidden = true;
-  document.body.style.overflow = '';
+  if (activeFloatId) closeFloat(activeFloatId);
+  else closeAllFloat();
 }
 function minimizeWorkspace() {
-  if (!$('windowLayer').classList.contains('open')) return;
-  $('windowLayer').classList.add('minimized'); $('windowDock').hidden = false; document.body.style.overflow = '';
+  if (activeFloatId) { minimizeFloat(activeFloatId); $('windowDock').hidden = false; }
+  else if ($('windowLayer').classList.contains('open')) { $('windowLayer').classList.add('minimized'); $('windowDock').hidden = false; }
 }
 function restoreWorkspace() {
-  $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
+  let win = activeFloatId ? floatWindows.get(activeFloatId) : null;
+  if (!win || !win.el.classList.contains('minimized')) {
+    const first = [...floatWindows.entries()].find(([, w]) => w.el.classList.contains('minimized'));
+    if (first) win = first[1];
+  }
+  if (win) {
+    win.el.classList.remove('minimized');
+    focusFloat(win.section.id);
+  }
+  $('windowDock').hidden = true;
   document.body.style.overflow = 'hidden';
 }
 function maximizeWorkspace() {
-  const maximized = $('windowLayer').classList.toggle('maximized');
+  if (activeFloatId) maximizeFloat(activeFloatId);
+  else $('windowLayer').classList.toggle('maximized');
 }
+
 function getAppearance() {
   try { return JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') || {}; } catch { return {}; }
 }
@@ -637,7 +1154,7 @@ function saveAppearance(settings) {
 }
 function applyAppearance() {
   const appearance = getAppearance();
-  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'vista-classic';
+  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'win11-indigo';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
   if ($('darkModeButton')) {
@@ -676,6 +1193,22 @@ function selectTheme(theme) {
   const label = THEME_LABELS[theme] || theme;
   notify(`تم تفعيل الثيم: ${label}. يمكنك تغيير اللون الأساسي من الأسفل.`);
 }
+function previewTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  document.body.dataset.theme = theme;
+  const accent = ACCENT_DEFAULTS[theme];
+  if (accent) {
+    const root = document.body.style;
+    root.setProperty('--accent', accent);
+    root.setProperty('--g-bar', accent);
+    root.setProperty('--g-dark', `color-mix(in srgb, ${accent} 82%, #000000)`);
+    root.setProperty('--g-line', `color-mix(in srgb, ${accent} 68%, #000000)`);
+    root.setProperty('--press-glow', `${accent}55`);
+  }
+}
+function restoreThemePreview() {
+  applyAppearance();
+}
 function setCustomAccent(color) {
   if (!/^#[0-9a-f]{6}$/i.test(color)) return;
   const appearance = getAppearance(); appearance.accent = color; saveAppearance(appearance); applyAppearance();
@@ -705,7 +1238,8 @@ function toggleSidebar(force) {
   const appearance = getAppearance(); appearance.sidebarCollapsed = collapsed; saveAppearance(appearance);
 }
 function showHome() {
-  closeWorkspace(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
+  closeAllFloat(); $('appShell').classList.remove('sidebar-open'); $('navScrim').hidden = true;
+  setActiveNav('home');
   document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('selected', link.textContent.includes('الرئيسية')));
   $('homeDashboard').scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
@@ -842,6 +1376,13 @@ function updateDashboardKPIs() {
   const lowCount = db.items.filter(i => i.qty <= i.minQty).length;
   if ($('kpiLowStock')) $('kpiLowStock').textContent = lowCount;
   paintKpiStates({ cash, salesToday, lowCount });
+  if ($('dashKpiCash')) $('dashKpiCash').textContent = money(cash);
+  if ($('dashKpiSales')) $('dashKpiSales').textContent = money(salesToday);
+  if ($('dashKpiProfit')) $('dashKpiProfit').textContent = money(calculateTotalProfits().net);
+  if ($('dashKpiLow')) $('dashKpiLow').textContent = String(lowCount);
+  const kpiStrip = [['dashKpiCash', cash < 0 ? 'bad' : cash === 0 ? 'warn' : 'good'], ['dashKpiSales', salesToday > 0 ? 'good' : 'warn'],
+    ['dashKpiProfit', calculateTotalProfits().net > 0 ? 'good' : 'warn'], ['dashKpiLow', lowCount === 0 ? 'good' : lowCount > 5 ? 'bad' : 'warn']];
+  for (const [id, state] of kpiStrip) { const card = $(id)?.closest('.dash-kpi'); if (card) card.dataset.state = state; }
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(cash);
 }
 
@@ -1161,6 +1702,8 @@ function applyLook(settings = lookSettings()) {
   paintAppIconPreview();
   paintLookControls(look);
   paintIconMode(look.icons);
+  if ($('appNavbar') && $('appNavbar').children.length) { paintNavbar(); renderDashboard(); }
+  if ($('titleBarLogo')) $('titleBarLogo').src = look.storeLogo || '/icon-192.png';
   return look;
 }
 function paintLookControls(look) {
@@ -1534,10 +2077,9 @@ function openInvoiceSec(mode) {
   if (!ensurePermission(invoicePermission(mode))) return;
   if (mode !== $('invMode').value && invCart.length && !confirm('تغيير نوع العملية سيفرغ الفاتورة غير المحفوظة. هل تريد المتابعة؟')) return;
   openSec('sec-invoice', SEC_TITLES['sec-invoice']);
+  setActiveNav(mode.startsWith('purchase') ? 'purchase' : 'sale');
   if (mode !== $('invMode').value) clearInvCart();
   $('invMode').value = mode; updateInvoiceUI();
-  // every floating screen opens large: the whole app width is the working area
-  if (!$('windowLayer').classList.contains('maximized')) maximizeWorkspace();
   paintDraftHint();
   window.setTimeout(() => { if ($('windowLayer').classList.contains('open')) $('invBarcodeInp').focus(); }, 0);
 }
@@ -2980,6 +3522,7 @@ function lowStockItems() {
 }
 function stockAlertOpen() { const box = $('stockAlerts'); return Boolean(box && !box.hidden); }
 function renderStockAlerts() {
+  paintNavBell();
   const list = $('stockAlertsList');
   if (!list) return;
   const rows = lowStockItems();
@@ -3054,6 +3597,7 @@ function openPartySec(type) {
   if ($('partyType').value !== type) resetPartyForm();
   $('partyType').value = type;
   openSec('sec-parties', type === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس');
+  setActiveNav('customers');
   $('partyFormTitle').textContent = type === 'supplier' ? 'بيانات المورد' : 'بيانات العميل'; renderPartiesTable();
 }
 function openPartyReport(type, report) {
@@ -3302,6 +3846,7 @@ function renderProfits() {
 }
 /* ---------------- settings, sync, backup ---------------- */
 function applySettingsUI() {
+  paintTitleChrome();
   $('lblStoreName').textContent = db.settings.name;
   $('lblStorePhone').textContent = db.settings.phone || '';
   $('lblStoreAddress').textContent = db.settings.address || '';
@@ -3331,7 +3876,59 @@ function loadSettingsForm() {
   applyInvoiceTones(); applyDocSettingsUI();
   if ($('tenderAlertAmount')) $('tenderAlertAmount').value = String(tenderAlertLimit());
   $('staffManagerPanel').hidden = !isAdmin();
-  renderStaffTable(); renderAuditTable(); applyAppearance();
+  if ($('backupReminderSelect')) $('backupReminderSelect').value = String(backupReminderDays());
+  if ($('lastBackupDate')) { let last = '—'; try { last = localStorage.getItem(LAST_BACKUP_KEY) || '—'; } catch { /* ignore */ } $('lastBackupDate').textContent = last; }
+  renderStaffTable(); renderAuditTable(); applyAppearance(); updateSyncStateBox();
+}
+function openSettingsTab(tab = 'look') {
+  openSec('sec-settings', '⚙️ إعدادات النظام');
+  setActiveNav(tab === 'staff' ? 'staff' : 'settings');
+  switchSettingsTab(tab);
+  if (tab === 'sync') {
+    loadSettingsForm();
+    updateSyncStateBox();
+    window.setTimeout(() => $('setSyncKey')?.focus(), 60);
+  }
+}
+function updateSyncStateBox() {
+  if (!$('syncStateText')) return;
+  const state = $('syncStatusBadge')?.dataset.state || 'local';
+  const labels = { local: 'محفوظ محلياً — غير متزامن', synced: 'متزامن مع Neon ✅', error: 'يحتاج مراجعة المزامنة' };
+  $('syncStateText').textContent = labels[state] || labels.local;
+  $('syncRevisionText').textContent = syncMeta.revision === null || syncMeta.revision === undefined ? 'غير مرتبط' : String(syncMeta.revision);
+  let saved = false;
+  try { saved = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)); } catch { saved = false; }
+  $('syncKeyStateText').textContent = saved ? 'محفوظ على هذا الجهاز 🔒' : 'غير محفوظ';
+}
+function saveSyncKey() {
+  if (!ensurePermission('admin')) return;
+  const token = $('setSyncKey').value.trim(), remember = $('rememberSyncKey').checked;
+  try {
+    if (token) {
+      if (token.length < 32) { notify('مفتاح المزامنة يجب أن يكون 32 حرفاً على الأقل.'); return; }
+      sessionStorage.setItem(TOKEN_KEY, token);
+      if (remember) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
+      else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    }
+  } catch {
+    notify('تعذر حفظ مفتاح المزامنة. اسمح بتخزين بيانات الموقع أو أوقف خيار التذكر.');
+    return;
+  }
+  $('setSyncKey').value = '';
+  setSyncStatus(token ? (remember ? 'تم حفظ مفتاح المزامنة على هذا الجهاز' : 'المفتاح محفوظ لهذه الجلسة فقط') : 'محفوظ محلياً — المزامنة غير مفعلة');
+  updateSyncStateBox();
+  notify(token ? (remember ? '✅ تم حفظ مفتاح المزامنة على هذا الجهاز. لن تكتبه مرة أخرى.' : '✅ تم حفظ المفتاح لهذه الجلسة فقط.') : 'تم مسح مفتاح المزامنة.');
+}
+function clearRememberedSyncKey() {
+  try { localStorage.removeItem(REMEMBERED_TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+  if ($('setSyncKey')) $('setSyncKey').value = '';
+  if ($('rememberSyncKey')) $('rememberSyncKey').checked = false;
+  setSyncStatus('محفوظ محلياً — المزامنة غير مفعلة');
+  updateSyncStateBox();
+  notify('🧹 تم مسح مفتاح المزامنة المحفوظ من هذا الجهاز.');
 }
 function saveSettings() {
   if (!ensurePermission('admin')) return;
@@ -3435,7 +4032,43 @@ function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type })), link = document.createElement('a');
   link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportFullBackup() { if (!ensurePermission('admin')) return; download(JSON.stringify(db, null, 2), 'application/json', `POS_Backup_${localDate()}.json`); recordAudit('تصدير نسخة احتياطية'); }
+const BACKUP_REMINDER_KEY = `${DB_KEY}_BACKUP_REMINDER_DAYS`;
+const LAST_BACKUP_KEY = `${DB_KEY}_LAST_BACKUP_DATE`;
+function backupReminderDays() {
+  try {
+    const raw = localStorage.getItem(BACKUP_REMINDER_KEY);
+    if (raw === null) return 7;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 ? value : 7;
+  } catch { return 7; }
+}
+function setBackupReminder(days) {
+  const value = Number(days);
+  if (!Number.isFinite(value) || value < 0) return;
+  try { localStorage.setItem(BACKUP_REMINDER_KEY, String(value)); } catch { /* ignore */ }
+  notify(value ? `✅ سيظهر تذكير النسخ الاحتياطي كل ${value} يوم.` : 'تم إيقاف تذكير النسخ الاحتياطي.');
+}
+function setBackupReminderFromUI() { setBackupReminder(Number($('backupReminderSelect').value) || 0); }
+function checkBackupReminder() {
+  const days = backupReminderDays();
+  if (!days) return;
+  let last = '';
+  try { last = localStorage.getItem(LAST_BACKUP_KEY) || ''; } catch { last = ''; }
+  const lastDate = last ? new Date(`${last}T00:00:00`) : null;
+  const diff = lastDate ? (Date.now() - lastDate.getTime()) / 86400000 : Infinity;
+  if (diff < days) return;
+  const message = lastDate ? `آخر نسخة احتياطية كانت في ${last} (منذ ${Math.floor(diff)} يوم). يُفضّل تنزيل نسخة جديدة الآن.` : 'لم تقم بعمل نسخة احتياطية بعد. يُفضّل تنزيل نسخة الآن لحماية بياناتك.';
+  const box = $('appNotice');
+  if (!box) return;
+  box.innerHTML = `<button type="button" aria-label="إغلاق التنبيه" onclick="this.parentElement.hidden=true">×</button><div>💾 <strong>تذكير النسخ الاحتياطي</strong><br>${esc(message)}</div><div style="margin-top:8px"><button type="button" class="act-btn bg-green" onclick="exportFullBackup(); document.getElementById('appNotice').hidden=true;">⬇️ نسخ احتياطي الآن</button></div>`;
+  box.hidden = false;
+}
+function exportFullBackup() {
+  if (!ensurePermission('admin')) return;
+  download(JSON.stringify(db, null, 2), 'application/json', `POS_Backup_${localDate()}.json`);
+  try { localStorage.setItem(LAST_BACKUP_KEY, localDate()); } catch { /* ignore */ }
+  recordAudit('تصدير نسخة احتياطية');
+}
 function exportRecovery() { if (recoveryRaw !== null) download(recoveryRaw, 'application/json', `POS_Recovery_${localDate()}.json`); }
 async function importFullBackup(event) {
   if (!ensurePermission('admin')) { event.target.value = ''; return; }
@@ -3456,6 +4089,30 @@ function exportItemsCSV() {
   const cell = value => { let string = String(value ?? ''); if (typeof value !== 'number' && /^[\s]*[=+\-@]|[\t\r]/.test(string)) string = `'${string}`; return `"${string.replaceAll('"', '""')}"`; };
   const rows = [['الكود', 'اسم الصنف', 'المجموعة', 'الكمية', 'الوحدة', 'سعر الشراء', 'سعر البيع', 'سعر الجملة'], ...db.items.map(i => [i.code, i.name, i.cat, i.qty, i.unit, i.buy, i.sell, i.wholesale])];
   download('\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8;', 'POS_Items.csv');
+}
+function activeReportTable() {
+  const active = document.querySelector('.float-window.active .sec-view.active') || document.querySelector('.sec-view.active');
+  return { active, table: active?.querySelector('table') };
+}
+function exportCurrentReportExcel() {
+  const { active, table } = activeReportTable();
+  if (!table) return alert('لا يوجد جدول في هذه الشاشة لتصديره.');
+  const cell = value => { let string = String(value ?? '').trim(); if (/^[=\-+@\t\r]/.test(string)) string = `'${string}`; return `"${string.replaceAll('"', '""')}"`; };
+  const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => {
+    const input = td.querySelector('input, select, textarea');
+    if (input) return input.tagName === 'SELECT' ? input.selectedOptions[0]?.textContent || '' : input.value;
+    return td.textContent;
+  }));
+  const csv = '\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n');
+  download(csv, 'text/csv;charset=utf-8;', `POS_Report_${active?.id || 'report'}_${localDate()}.csv`);
+  notify('✅ تم تصدير التقرير بصيغة Excel/CSV.');
+}
+function exportCurrentReportPDF() {
+  const { active, table } = activeReportTable();
+  if (!table) return alert('لا يوجد جدول في هذه الشاشة لتصديره.');
+  const title = active?.querySelector('.page-bar-title, .pos-title')?.textContent || $('winTitle').textContent;
+  triggerA5Print(`<div class="p-header"><h2>${esc(db.settings.name)}</h2><p>${esc(db.settings.address)} | هاتف: ${esc(db.settings.phone)}</p><h3>${esc(title)}</h3></div>${printableTable(table)}<p class="p-foot">تاريخ التصدير: ${esc(localDate())}</p>`);
+  notify('اختر «حفظ كملف PDF» من نافذة الطباعة.');
 }
 
 /* ---------------- printing ---------------- */
@@ -3490,7 +4147,7 @@ function renderStartStats() {
   if ($('startStatToday')) $('startStatToday').textContent = String(invoicesToday);
 }
 function lockApp() {
-  closeWorkspace(); closeKeypad(); closeWelcomePopup();
+  closeAllFloat(); closeKeypad(); closeWelcomePopup();
   window.clearTimeout(autoLockTimer);
   renderStartStats();
   beforeLockFocus = document.activeElement;
@@ -3515,11 +4172,55 @@ function unlockApp() {
   try { localStorage.setItem(LAST_STAFF_KEY, activeStaffId); } catch { /* private mode */ }
   armAutoLock();
   showWelcomePopup(loginName(user));
+  try { if (!localStorage.getItem(WELCOME_KEY)) showWelcomeWizard(); } catch { /* storage disabled */ }
+  window.setTimeout(() => { if ($('welcomeWizard')?.hidden !== false) checkBackupReminder(); }, 1800);
   beforeLockFocus?.focus();
+}
+const WELCOME_KEY = `${DB_KEY}_WELCOME_DONE`;
+function showWelcomeWizard() {
+  if (!$('welcomeWizard')) return;
+  $('wizStoreName').value = db.settings.name || '';
+  $('wizStoreAddress').value = db.settings.address || '';
+  $('wizStorePhone').value = db.settings.phone || '';
+  $('wizSyncKey').value = '';
+  $('wizRememberKey').checked = true;
+  $('welcomeWizard').hidden = false;
+  document.body.style.overflow = 'hidden';
+  window.setTimeout(() => $('wizStoreName')?.focus(), 60);
+}
+function hideWelcomeWizard() {
+  if ($('welcomeWizard')) $('welcomeWizard').hidden = true;
+  document.body.style.overflow = '';
+}
+function skipWelcomeWizard() {
+  try { localStorage.setItem(WELCOME_KEY, '1'); } catch { /* ignore */ }
+  hideWelcomeWizard();
+  notify('يمكنك تخصيص بيانات المنشأة والمظهر في أي وقت من الإعدادات.');
+}
+function saveWelcomeWizard() {
+  const name = $('wizStoreName').value.trim() || db.settings.name;
+  const address = $('wizStoreAddress').value.trim();
+  const phone = $('wizStorePhone').value.trim();
+  const token = $('wizSyncKey').value.trim();
+  const remember = $('wizRememberKey').checked;
+  if (!commitDB(draft => { Object.assign(draft.settings, { name, address, phone }); })) return;
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+      if (remember) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
+      else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    }
+    localStorage.setItem(WELCOME_KEY, '1');
+  } catch { notify('تعذر حفظ مفتاح المزامنة. يمكنك إدخاله لاحقاً من الإعدادات.'); }
+  applySettingsUI(); applyAppearance(); updateActiveUserBadge(); hideWelcomeWizard();
+  notify('✅ تم حفظ بيانات المنشأة. يمكنك تخصيص البرنامج بالكامل من الإعدادات.');
 }
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
+  openPage, activatePage, registerTab, closeTab, closeAllTabs, renderTabs, paintNavbar, renderDashboard,
+  toggleNavMenu, openNavMenu, closeMenus, openHomeMenu, paintTitleChrome, paintNavBell, shellSecondaryNav,
+  SHELL_MENUS, PAGE_DEFS, DASH_GROUPS,
   openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, resetAccent, setReceiptWidth,
   toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice,
   saveItem, resetItemForm, saveStaff, deleteStaff, renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem,
@@ -3530,7 +4231,7 @@ Object.assign(window, {
   handleScanKey, showSuggestions, hideSuggestions, moveSuggestion, pickSuggestion, suggestionMatches,
   playScanFeedback, setScanFeedback, setScanVibrate, applyScanFeedbackUI,
   openCameraScanner, closeCameraScanner, handleCameraCode, cameraSupported,
-  switchSettingsTab, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
+  switchSettingsTab, openSettingsTab, saveSyncKey, clearRememberedSyncKey, updateSyncStateBox, setActiveNav, quickPlaceholder, focusFloat, showWelcomeWizard, hideWelcomeWizard, skipWelcomeWizard, saveWelcomeWizard, saveContactMessage, renderContactMessages, markContactRead, deleteContactMessage, saveMaintenanceRequest, renderMaintenanceRequests, advanceMaintenanceStatus, deleteMaintenanceRequest, setBackupReminderFromUI, checkBackupReminder, printSelectedLabels, toggleLabelItem, toggleAllLabelItems, setLabelCopies, labelCopiesMap,
   setInvoiceTone, resetInvoiceTones, applyInvoiceTones, invoiceTones,
   setDocTemplate, setDocAccent, applyDocSettingsUI, uploadDocSignature, clearDocSignature, docSettings,
   tenderAlertLimit, setTenderAlert, confirmTenderDifference, belowCostLines, confirmBelowCost,
@@ -3542,7 +4243,7 @@ Object.assign(window, {
   holdCurrentInvoice, restoreHeldInvoice, convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, printInvoiceThermalById,
   openPartySec, openPartyReport, resetPartyForm, saveParty, editParty, deleteParty, savePartyVoucher, toggleQuickParty, saveQuickParty, showStatementFor, renderPartyStatement,
   printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
-  exportFullBackup, importFullBackup, exportItemsCSV, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
+  exportFullBackup, importFullBackup, exportItemsCSV, exportCurrentReportExcel, exportCurrentReportPDF, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
   switchInvoiceTab, switchItemsTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
   renderPosTiles, renderLabels, printLabels,
   toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,

@@ -137,6 +137,14 @@
   .sync-chip[data-state="synced"] .status-dot { background:#2ee08a; box-shadow:0 0 0 3px #2ee08a3d; animation:none; }
   .sync-chip[data-state="error"] { border-color:#f8717166; background:#7f1d1d33; color:#ffdad6; }
   .sync-chip[data-state="error"] .status-dot { background:#ff5a4d; box-shadow:0 0 0 3px #ff5a4d3d; animation:none; }
+  .sync-state-box {
+    display:grid; gap:4px; margin:8px 0; padding:9px 11px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:color-mix(in srgb,var(--accent) 7%,#fff);
+  }
+  .sync-state-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11.5px; }
+  .sync-state-label { color:var(--muted); font-weight:bold; }
+  .sync-state-row strong { color:var(--accent); font-weight:800; }
   @keyframes dotPulse { 0%,100% { opacity:.35; box-shadow:0 0 0 3px #f2c14e22; } 50% { opacity:1; box-shadow:0 0 0 6px #f2c14e33; } }
   .clock-pill {
     display:grid; place-items:center; gap:1px; min-width:104px; height:44px;
@@ -2410,13 +2418,506 @@
   .appicon-preview { width:64px; height:64px; border-radius:14px; display:grid; place-items:center; color:#fff;
     font-weight:900; font-size:22px; box-shadow:0 6px 16px #0b1b3024; overflow:hidden; }
   .appicon-preview img { width:100%; height:100%; object-fit:cover; }
+
+  /* ================= REFERENCE LAYOUT (POS / ERP) ================= */
+  :root {
+    --ref-nav-bg: #ffffff;
+    --ref-nav-border: #d8dee9;
+    --ref-nav-active: #eef4ff;
+    --ref-sidebar-w: 228px;
+    --ref-status-bg: #f8fafc;
+  }
+  .main-nav {
+    display:flex; align-items:center; gap:2px; flex-wrap:wrap;
+    padding:0 18px; background:linear-gradient(180deg,#ffffff,#f4f7fb);
+    border-bottom:1px solid var(--line); box-shadow:0 2px 6px #0f172a0a;
+    position:sticky; top:0; z-index:40;
+  }
+  .main-nav-link {
+    display:inline-flex; align-items:center; gap:7px; padding:10px 16px;
+    border:0; border-bottom:3px solid transparent; background:transparent;
+    color:var(--ink); font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800;
+    cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+  }
+  .main-nav-link span { font-size:15px; }
+  .main-nav-link:hover { background:#eef4ff; color:var(--accent); }
+  .main-nav-link.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--ref-nav-active); }
+  /* the section window is the main content card, not a modal */
+  body.section-open .home-dashboard,
+  body.section-open .alerts-panel,
+  body.section-open .classic-panel { display:none !important; }
+  .window-layer {
+    display:none; position:static; inset:auto; z-index:auto; padding:0;
+    background:transparent; align-items:stretch; justify-content:stretch;
+  }
+  .window-layer.open { display:block; }
+  .window-layer .workspace {
+    width:100%; max-width:none; height:auto; max-height:none;
+    border:1px solid var(--line-dark); border-radius:14px;
+    box-shadow:0 10px 28px #0f172a1f; overflow:visible;
+    background:var(--panel);
+  }
+  .window-layer.maximized { padding:0; }
+  .window-layer.maximized .workspace { height:auto; width:100%; }
+  .window-layer .win-header {
+    display:flex !important; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-radius:14px 14px 0 0;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3));
+    color:#fff; border-bottom:1px solid var(--line-dark);
+  }
+  .window-layer .win-header h2 { color:#fff; font-size:15px; font-weight:800; }
+  .window-layer .win-header h2::before { color:var(--head-gold); }
+  .window-layer .win-header .win-close[onclick="minimizeWorkspace()"],
+  .window-layer .win-header .win-close[onclick="maximizeWorkspace()"] { display:none; }
+  .window-layer .win-body { padding:12px; overflow:visible; background:var(--paper); border-radius:0 0 14px 14px; }
+  .window-layer .sec-view { padding-bottom:4px; }
+  /* side quick icon toolbar */
+  .side-quick { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; padding:6px 4px 8px; }
+  .side-quick button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:6px 2px; border:1px solid #ffffff2b; border-radius:8px;
+    background:#ffffff14; color:#eaf4ff; font-family:'Cairo',Tahoma,sans-serif;
+    font-size:9px; font-weight:bold; cursor:pointer; transition:background .15s,transform .1s;
+  }
+  .side-quick button span { font-size:15px; line-height:1; }
+  .side-quick button:hover { background:#ffffff2e; transform:translateY(-1px); }
+  /* bottom status bar */
+  .status-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:7px 18px; background:linear-gradient(180deg,#f8fafc,#eef2f7);
+    border-top:1px solid var(--line-dark); color:var(--muted);
+    font-family:'Cairo',Tahoma,sans-serif; font-size:10.5px; font-weight:bold;
+  }
+  .status-bar strong { color:var(--ink); }
+  .status-bar .status-item { display:inline-flex; align-items:center; gap:6px; }
+  .status-bar .status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 2px #22c55e33; }
+  .status-bar .status-license { color:var(--accent); }
+  .status-bar { position:sticky; bottom:0; z-index:30; }
+  .app-shell { grid-template-columns:var(--ref-sidebar-w) minmax(0,1fr); }
+  .side-nav { top:64px; max-height:calc(100vh - 84px); }
+  /* reference light themes */
+  body[data-theme="ref-light-blue"] {
+    --accent:#1e6fb8; --g-bar:#2b82c9; --g-dark:#1a5a94; --g-line:#144a7a; --g-soft:#e3f1fb;
+    --paper:#f2f7fc; --paper-2:#e8f1f9; --panel:#ffffff; --panel-2:#eef5fb;
+    --ink:#152a3a; --muted:#5b7080;
+    --line:#c3d6e6; --line-dark:#93b0c6; --line-soft:#dce9f3;
+    --thead:#e3eff9; --row-alt:#f7fbfe; --row-sel:#d9ecfb; --row-hover:#eaf5fd;
+    --btn:#eef5fb; --btn-2:#e0edf7; --btn-hover:#ffffff;
+    --ok:#2f8f6b; --ok-dark:#1e6a4d; --danger:#c0392b; --info:#1e6fb8; --warn:#c47a12; --purple:#6a52a8;
+    --shell-bg:#e8f0f7; --press-glow:#1e6fb855;
+    --head-1:#071a2e; --head-2:#0d3355; --head-3:#155a8a; --head-gold:#8fd3ff;
+  }
+  body[data-theme="ref-light-purple"] {
+    --accent:#6a5acd; --g-bar:#7b6bdd; --g-dark:#5847b0; --g-line:#463a91; --g-soft:#eeecfb;
+    --paper:#f5f4fc; --paper-2:#eceaf8; --panel:#ffffff; --panel-2:#f1effb;
+    --ink:#211d38; --muted:#6b6685;
+    --line:#d0cce8; --line-dark:#a9a3cc; --line-soft:#e2dff2;
+    --thead:#eae7f9; --row-alt:#f8f7fe; --row-sel:#e4e0fb; --row-hover:#f0edfd;
+    --btn:#f1effb; --btn-2:#e6e2f7; --btn-hover:#ffffff;
+    --ok:#219a6f; --ok-dark:#157251; --danger:#c8392f; --info:#2f74c0; --warn:#c47a1c; --purple:#7a4fd0;
+    --shell-bg:#e9e6f5; --press-glow:#6a5acd55;
+    --head-1:#120a24; --head-2:#241344; --head-3:#3b2470; --head-gold:#c4b5fd;
+  }
+  body[data-theme="ref-light-maroon"] {
+    --accent:#8b1e1e; --g-bar:#a32a2a; --g-dark:#741717; --g-line:#5c1010; --g-soft:#f8e7e7;
+    --paper:#fbf5f4; --paper-2:#f4eae8; --panel:#ffffff; --panel-2:#f9efee;
+    --ink:#331b1b; --muted:#7d5f5f;
+    --line:#e3c9c9; --line-dark:#c9a3a3; --line-soft:#f0dede;
+    --thead:#f6e6e6; --row-alt:#fdf8f8; --row-sel:#f7dede; --row-hover:#fcf0f0;
+    --btn:#f9eeee; --btn-2:#f1dede; --btn-hover:#ffffff;
+    --ok:#2f8f6b; --ok-dark:#1e6a4d; --danger:#8b1e1e; --info:#7a5bb5; --warn:#c07a25; --purple:#8a4f9e;
+    --shell-bg:#f0e4e3; --press-glow:#8b1e1e55;
+    --head-1:#1c0707; --head-2:#380d0d; --head-3:#5c1717; --head-gold:#ffb3b3;
+  }
+  /* reference dark themes: reuse the night rules via duplicated selectors */
+  body[data-theme="ref-dark-gray"] {
+    --paper:#1b1d21; --paper-2:#16181c; --panel:#25282e; --panel-2:#1f2227;
+    --ink:#e5e7eb; --muted:#a1a8b3; --line:#3a3f47; --line-dark:#4b515b; --line-soft:#30343b;
+    --thead:#333842; --row-alt:#2a2e35; --row-sel:#2f3a4a; --row-hover:#313640;
+    --btn:#333842; --btn-2:#2a2e35; --btn-hover:#3b414b; --g-soft:#2b3340;
+    --accent:#4a9eff; --g-bar:#3b82c4; --g-dark:#255a8a; --g-line:#1d4a70;
+    --shell-bg:#111317; --press-glow:#4a9eff44;
+    --head-1:#0b0d10; --head-2:#161b22; --head-3:#1f2937; --head-gold:#93c5fd;
+  }
+  body[data-theme="ref-dark-purple"] {
+    --paper:#0f0a1a; --paper-2:#0b0714; --panel:#171126; --panel-2:#130d20;
+    --ink:#ede9fe; --muted:#a79fc4; --line:#332a4a; --line-dark:#453a63; --line-soft:#2a223d;
+    --thead:#2a2140; --row-alt:#1c1530; --row-sel:#3b2a5e; --row-hover:#241a3a;
+    --btn:#2a2140; --btn-2:#211934; --btn-hover:#332a4a; --g-soft:#2e2447;
+    --accent:#a855f7; --g-bar:#7c3aed; --g-dark:#5b21b6; --g-line:#4c1d95;
+    --shell-bg:#08050f; --press-glow:#a855f744;
+    --head-1:#0d0618; --head-2:#1e0b33; --head-3:#3b1d6e; --head-gold:#d8b4fe;
+  }
+  body[data-theme="ref-dark-gray"] .sec-view > .action-bar { background:linear-gradient(#2e333b,#262b32); border-color:#4b515b; }
+  body[data-theme="ref-dark-purple"] .sec-view > .action-bar { background:linear-gradient(#2a2140,#211934); border-color:#453a63; }
+  body[data-theme="ref-dark-gray"] .win-header,
+  body[data-theme="ref-dark-purple"] .win-header { border-bottom-color:#00000055; }
+  body[data-theme="ref-dark-gray"] .panel-title,
+  body[data-theme="ref-dark-purple"] .panel-title { text-shadow:0 1px 5px #00000066; }
+  body[data-theme="ref-dark-gray"] .kpi-box, body[data-theme="ref-dark-gray"] .c-btn, body[data-theme="ref-dark-gray"] .act-btn,
+  body[data-theme="ref-dark-gray"] .pos-field select, body[data-theme="ref-dark-gray"] .pos-field input,
+  body[data-theme="ref-dark-gray"] .f-row input, body[data-theme="ref-dark-gray"] .f-row select { background:#2c3138; color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .kpi-box, body[data-theme="ref-dark-purple"] .c-btn, body[data-theme="ref-dark-purple"] .act-btn,
+  body[data-theme="ref-dark-purple"] .pos-field select, body[data-theme="ref-dark-purple"] .pos-field input,
+  body[data-theme="ref-dark-purple"] .f-row input, body[data-theme="ref-dark-purple"] .f-row select { background:#2a2140; color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] .table-wrap, body[data-theme="ref-dark-gray"] td input,
+  body[data-theme="ref-dark-gray"] .sum-cell input, body[data-theme="ref-dark-gray"] .item-tile { background:#22262c; color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .table-wrap, body[data-theme="ref-dark-purple"] td input,
+  body[data-theme="ref-dark-purple"] .sum-cell input, body[data-theme="ref-dark-purple"] .item-tile { background:#1c1530; color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] thead th { background:#333842; color:#eef3f8; }
+  body[data-theme="ref-dark-purple"] thead th { background:#2a2140; color:#f3e8ff; }
+  body[data-theme="ref-dark-gray"] .nav-link { color:#e6eef8; border-color:#ffffff1f; background:linear-gradient(#3a4560,#2b3450); }
+  body[data-theme="ref-dark-gray"] .nav-link:hover { background:linear-gradient(#4a5679,#39456b); color:#fff; }
+  body[data-theme="ref-dark-purple"] .nav-link { color:#ede9fe; border-color:#ffffff1f; background:linear-gradient(#3b2a5e,#2a2140); }
+  body[data-theme="ref-dark-purple"] .nav-link:hover { background:linear-gradient(#4c3a75,#3b2a5e); color:#fff; }
+  body[data-theme="ref-dark-gray"] .side-nav { background:linear-gradient(180deg,#0b0d10,#161b22 60%,#1f2937); }
+  body[data-theme="ref-dark-purple"] .side-nav { background:linear-gradient(180deg,#0d0618,#1e0b33 60%,#3b1d6e); }
+  body[data-theme="ref-dark-gray"] .board-toggle, body[data-theme="ref-dark-gray"] .section-bar { background:linear-gradient(105deg,#0b0d10,#1f2937 55%,#2e3b4e); }
+  body[data-theme="ref-dark-purple"] .board-toggle, body[data-theme="ref-dark-purple"] .section-bar { background:linear-gradient(105deg,#0d0618,#2a1245 55%,#4c1d95); }
+  body[data-theme="ref-dark-gray"] .win-body { background:#1b1d21; }
+  body[data-theme="ref-dark-purple"] .win-body { background:#171126; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-green, body[data-theme="ref-dark-purple"] .act-btn.bg-green { background:linear-gradient(#4f9c36,var(--ok) 55%,var(--ok-dark)); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-red, body[data-theme="ref-dark-purple"] .act-btn.bg-red { background:linear-gradient(#d05046,var(--danger) 60%,#8c1a14); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-blue, body[data-theme="ref-dark-purple"] .act-btn.bg-blue { background:linear-gradient(#4b82b5,var(--info) 60%,#1f4a72); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-teal, body[data-theme="ref-dark-purple"] .act-btn.bg-teal { background:linear-gradient(#4aa79b,#237a70 60%,#17594f); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-orange, body[data-theme="ref-dark-purple"] .act-btn.bg-orange { background:linear-gradient(#e2a258,var(--warn) 60%,#83500f); color:#fff; }
+  body[data-theme="ref-dark-gray"] .act-btn.bg-purple, body[data-theme="ref-dark-purple"] .act-btn.bg-purple { background:linear-gradient(#a084d3,var(--purple) 60%,#503778); color:#fff; }
+  body[data-theme="ref-dark-gray"] .status-bar { background:linear-gradient(180deg,#1b1f26,#12151a); border-top-color:#3a3f47; color:#a1a8b3; }
+  body[data-theme="ref-dark-purple"] .status-bar { background:linear-gradient(180deg,#1c1530,#0f0a1a); border-top-color:#453a63; color:#a79fc4; }
+  body[data-theme="ref-dark-gray"] .main-nav { background:linear-gradient(180deg,#1b1f26,#12151a); border-bottom-color:#3a3f47; }
+  body[data-theme="ref-dark-purple"] .main-nav { background:linear-gradient(180deg,#1c1530,#0f0a1a); border-bottom-color:#453a63; }
+  body[data-theme="ref-dark-gray"] .main-nav-link { color:#e5e7eb; }
+  body[data-theme="ref-dark-purple"] .main-nav-link { color:#ede9fe; }
+  body[data-theme="ref-dark-gray"] .main-nav-link:hover { background:#2a2f38; color:#fff; }
+  body[data-theme="ref-dark-purple"] .main-nav-link:hover { background:#2a2140; color:#fff; }
+  body[data-theme="ref-dark-gray"] .main-nav-link.active { background:#2a2f38; color:#fff; border-bottom-color:var(--accent); }
+  body[data-theme="ref-dark-purple"] .main-nav-link.active { background:#2a2140; color:#fff; border-bottom-color:var(--accent); }
+
+  /* ================= MULTI-WINDOW FLOATING DESKTOP ================= */
+  .window-layer {
+    display:none; position:fixed; inset:0; z-index:5000; padding:0;
+    background:rgba(15,23,42,0.38); backdrop-filter:blur(2px);
+  }
+  .window-layer.open { display:block; }
+  .window-layer .workspace { display:none !important; }
+  .float-windows { position:absolute; inset:0 0 58px 0; overflow:hidden; }
+  .float-taskbar {
+    position:absolute; bottom:0; left:0; right:0; min-height:58px; z-index:6000;
+    display:flex; align-items:center; gap:6px; padding:6px 12px; overflow-x:auto;
+    background:linear-gradient(180deg,#f8fafc,#e2e8f0); border-top:1px solid var(--line-dark);
+    box-shadow:0 -6px 20px #0f172a22;
+  }
+  .float-taskbar[hidden] { display:none !important; }
+  .float-window {
+    position:absolute; display:flex; flex-direction:column; min-width:360px; min-height:240px;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:12px;
+    box-shadow:0 18px 50px #0f172a55; overflow:hidden;
+  }
+  .float-window.active { box-shadow:0 22px 60px #0f172a77, 0 0 0 2px var(--accent); }
+  .float-window.minimized { display:none; }
+  .float-window.maximized { inset:8px 8px 66px 8px !important; width:auto !important; height:auto !important; min-width:0; min-height:0; }
+  .float-titlebar {
+    display:flex; align-items:center; gap:8px; padding:7px 10px; cursor:grab; user-select:none;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+  }
+  .float-titlebar:active { cursor:grabbing; }
+  .float-title { flex:1; font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800; }
+  .float-controls { display:flex; gap:4px; }
+  .float-btn {
+    width:26px; height:24px; display:grid; place-items:center; border:1px solid #ffffff40;
+    border-radius:6px; background:#ffffff1f; color:#fff; font-size:12px; cursor:pointer;
+  }
+  .float-btn:hover { background:#ffffff38; }
+  .float-btn.float-close:hover { background:#c0392b; }
+  .float-body { flex:1; overflow:auto; padding:10px; background:var(--paper); }
+  .taskbar-label {
+    font-family:'Cairo',Tahoma,sans-serif; font-size:11px; font-weight:800; color:var(--muted);
+    white-space:nowrap; margin-inline-end:4px;
+  }
+  .taskbar-btn {
+    display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line-dark);
+    border-radius:8px; background:var(--panel); color:var(--ink); font-family:'Cairo',Tahoma,sans-serif;
+    font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;
+  }
+  .taskbar-btn:hover { background:var(--btn); }
+  .taskbar-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .window-dock { bottom:70px; }
+  @media (max-width:760px) {
+    .float-window { inset:0 !important; width:100% !important; height:100% !important; min-width:0; min-height:0; border-radius:0; border:0; }
+    .float-window.maximized { inset:0 !important; }
+    .float-titlebar { cursor:default; }
+  }
+
+  /* ================= FIRST-RUN WELCOME WIZARD ================= */
+  .wizard-modal {
+    position:fixed; inset:0; z-index:9000; display:flex; align-items:center; justify-content:center;
+    padding:16px; background:rgba(15,23,42,0.55); backdrop-filter:blur(3px);
+  }
+  .wizard-modal[hidden] { display:none !important; }
+  .wizard-card {
+    width:min(720px,100%); max-height:calc(100vh - 32px); overflow:auto;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:16px;
+    box-shadow:0 24px 70px #0f172a66;
+  }
+  .wizard-head {
+    display:flex; align-items:center; gap:12px; padding:16px 18px;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+  }
+  .wizard-mark {
+    width:48px; height:48px; display:grid; place-items:center; border-radius:12px;
+    background:#ffffff26; border:1px solid #ffffff40; font-size:24px; flex:0 0 48px;
+  }
+  .wizard-head h2 { margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:18px; font-weight:800; }
+  .wizard-head p { margin:2px 0 0; font-size:11.5px; color:#dbeafe; }
+  .wizard-body { padding:14px 18px; }
+  .wizard-section {
+    border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    margin-bottom:10px; background:var(--paper);
+  }
+  .wizard-section h3 {
+    margin:0 0 8px; font-family:'Cairo',Tahoma,sans-serif; font-size:13px;
+    font-weight:800; color:var(--accent);
+  }
+  .wizard-themes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .wizard-theme {
+    display:flex; align-items:center; gap:6px; padding:7px 8px; border:1px solid var(--line);
+    border-radius:8px; background:var(--panel); color:var(--ink);
+    font-family:'Cairo',Tahoma,sans-serif; font-size:11px; font-weight:bold; cursor:pointer;
+  }
+  .wizard-theme i { width:16px; height:16px; border-radius:50%; border:1px solid #ffffff80; flex:0 0 16px; }
+  .wizard-theme:hover { border-color:var(--accent); background:var(--btn); }
+  .wizard-actions {
+    display:flex; justify-content:flex-end; gap:8px; padding:12px 18px;
+    border-top:1px solid var(--line); background:var(--paper);
+  }
+  @media (max-width:600px) { .wizard-themes { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+</style>
+<style id="shellV2Style">
+  /* ================= SHELL V2: title bar -> navbar -> tabs -> content -> footer ================= */
+  body.shell-v2 {
+    --shell-top: 36px;
+    --nav-h: 40px;
+    --tab-h: 34px;
+    --bar-h: calc(var(--shell-top) + var(--nav-h) + var(--tab-h));
+    --content-bg: #f4f6fa;
+    --card-bg: #ffffff;
+    --card-line: #e2e8f1;
+    --card-shadow: 0 1px 2px #0f172a0a, 0 8px 24px #0f172a0d;
+    background: var(--content-bg);
+  }
+  body[data-theme="night"].shell-v2 { --content-bg:#141810; --card-bg:#20251b; --card-line:#3a4132; --card-shadow:0 8px 24px #00000055; }
+
+  /* ---- 1. title bar ---- */
+  .titlebar {
+    display:flex; align-items:center; gap:10px; height:var(--shell-top); padding:0 12px;
+    background:linear-gradient(180deg,#ffffff,#eef2f8); border-bottom:1px solid #d7dfea; color:#1f2a37;
+    position:sticky; top:0; z-index:60;
+  }
+  .titlebar .tb-logo { display:flex; align-items:center; gap:7px; min-width:0; }
+  .titlebar .tb-logo img { width:20px; height:20px; border-radius:5px; object-fit:cover; }
+  .titlebar .tb-name { font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .titlebar .tb-spacer { flex:1 1 auto; }
+  .titlebar .tb-chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#4a5568;
+    padding:2px 8px; border-radius:999px; background:#ffffff; border:1px solid #dbe3ee; white-space:nowrap; }
+  .titlebar .tb-btn { display:none; }
+
+  /* ---- 2. navbar (the blue bar) ---- */
+  .app-navbar {
+    display:flex; align-items:stretch; gap:2px; height:var(--nav-h); padding:0 8px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--head-3) 92%,#ffffff),var(--head-2) 55%,color-mix(in srgb,var(--head-1) 92%,#000000));
+    border-bottom:1px solid color-mix(in srgb,var(--head-1) 70%,#000000); color:#fff;
+    position:sticky; top:var(--shell-top); z-index:55; box-shadow:0 2px 8px #0b1b3022;
+  }
+  .app-navbar .nv-btn {
+    display:inline-flex; align-items:center; gap:6px; height:100%; padding:0 12px; border:0; background:none;
+    color:#ffffffdd; font-size:12.5px; font-weight:800; white-space:nowrap; cursor:pointer;
+    border-bottom:3px solid transparent; transition:background .14s, color .14s, border-color .14s;
+  }
+  .app-navbar .nv-btn:hover, .app-navbar .nv-btn[aria-expanded="true"] { background:#ffffff1f; color:#fff; }
+  .app-navbar .nv-btn[aria-expanded="true"] { border-bottom-color:var(--head-gold, #ffd166); }
+  .app-navbar .nv-caret { font-size:9px; opacity:.75; }
+  .app-navbar .nv-spacer { flex:1 1 auto; }
+  .app-navbar .nv-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:34px; border:0; background:none; color:#fff; opacity:.85; }
+  .app-navbar .nv-icon-btn:hover { opacity:1; background:#ffffff1f; }
+  .app-navbar .nv-bell { position:relative; }
+  .app-navbar .nv-bell b { position:absolute; inset-block-start:6px; inset-inline-end:6px; min-width:14px; height:14px; border-radius:999px;
+    background:#ef4444; color:#fff; font-size:9px; line-height:14px; text-align:center; padding:0 3px; }
+
+  /* ---- dropdown ---- */
+  .nav-menu-layer { position:fixed; inset:0; z-index:70; }
+  .nav-menu-layer[hidden] { display:none !important; }
+  .nav-menu {
+    position:absolute; min-width:250px; max-width:300px; padding:6px;
+    background:var(--card-bg); border:1px solid var(--card-line); border-radius:12px;
+    box-shadow:0 18px 44px #0b1b3033, 0 2px 6px #0b1b3014;
+    opacity:0; transform:translateY(-6px) scale(.985); transform-origin:top;
+    transition:opacity .13s ease, transform .13s ease; direction:rtl;
+  }
+  .nav-menu.in { opacity:1; transform:none; }
+  .nav-menu .nm-head { padding:6px 10px 4px; font-size:10.5px; font-weight:800; letter-spacing:.6px; color:var(--muted); }
+  .nav-menu .nm-item {
+    display:flex; align-items:center; gap:9px; width:100%; padding:7px 9px; border:0; border-radius:8px;
+    background:none; color:var(--ink); font-size:12px; font-weight:700; text-align:right; cursor:pointer;
+  }
+  .nav-menu .nm-item:hover, .nav-menu .nm-item:focus-visible { background:color-mix(in srgb,var(--head-3) 14%,#ffffff); outline:none; }
+  .nav-menu .nm-item .nm-ico { display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; flex:none;
+    border-radius:6px; background:color-mix(in srgb,var(--head-3) 12%,#ffffff); color:color-mix(in srgb,var(--head-2) 80%,#000000); }
+  .nav-menu .nm-item .nm-ico .look-svg-ico { width:14px; height:14px; }
+  .nav-menu .nm-item .nm-label { flex:1 1 auto; }
+  .nav-menu .nm-item .nm-kbd { font-size:9.5px; color:var(--muted); }
+  .nav-menu .nm-sep { height:1px; margin:5px 8px; background:var(--card-line); }
+
+  /* ---- 3. tab bar ---- */
+  .tabbar {
+    display:flex; align-items:flex-end; gap:4px; height:var(--tab-h); padding:4px 8px 0;
+    background:linear-gradient(180deg,#e7ecf4,#dde4ee); border-bottom:1px solid #c9d3e0;
+    position:sticky; top:calc(var(--shell-top) + var(--nav-h)); z-index:50; overflow-x:auto; overflow-y:hidden;
+    scrollbar-width:thin;
+  }
+  body[data-theme="night"].shell-v2 .tabbar { background:linear-gradient(180deg,#252b21,#1d2219); border-bottom-color:#39402f; }
+  .tab {
+    display:inline-flex; align-items:center; gap:7px; height:calc(var(--tab-h) - 4px); padding:0 10px;
+    border:1px solid #c9d3e0; border-bottom:0; border-start-start-radius:9px; border-start-end-radius:9px;
+    background:#eef2f7; color:#41505f; font-size:11.5px; font-weight:700; white-space:nowrap; cursor:pointer;
+    transition:background .12s, color .12s;
+  }
+  .tab:hover { background:#f7f9fc; color:#1f2a37; }
+  .tab[aria-selected="true"] { background:var(--card-bg); color:#12243a; box-shadow:0 -2px 0 var(--head-3) inset; }
+  .tab .tab-x { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border:0; border-radius:50%;
+    background:#00000010; color:inherit; font-size:10px; line-height:1; cursor:pointer; }
+  .tab .tab-x:hover { background:#ef4444; color:#fff; }
+  .tab.is-home .tab-x { display:none; }
+  .tab-add { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; margin-bottom:2px; border:1px dashed #a9b6c7;
+    border-radius:8px; background:none; color:#5a6b7d; font-size:14px; cursor:pointer; }
+  .tab-add:hover { background:#ffffff; color:#12243a; }
+  body[data-theme="night"].shell-v2 .tab { background:#242a20; border-color:#39402f; color:#c9d3bd; }
+  body[data-theme="night"].shell-v2 .tab[aria-selected="true"] { background:#20251b; color:#f0f4e8; }
+
+  /* ---- 4. content area: the workspace lives inline under the tabs ---- */
+  .app-shell { padding:0 12px 12px; gap:12px; }
+  .main-content { gap:10px; padding-top:10px; }
+  body.shell-v2 .window-layer {
+    position:static; display:none; inset:auto; padding:0; background:none; box-shadow:none;
+  }
+  body.shell-v2 .window-layer.open { display:block; }
+  body.shell-v2 .window-layer .workspace {
+    height:auto; min-height:calc(100vh - var(--bar-h) - 150px); max-height:none;
+    border:1px solid var(--card-line); border-radius:14px; box-shadow:var(--card-shadow); background:var(--card-bg);
+  }
+  body.shell-v2 .win-body { background:var(--content-bg); padding:12px; }
+  body.shell-v2 .sec-view { padding-bottom:8px; }
+  body.shell-v2.screen-open #homeDashboard,
+  body.shell-v2.screen-open .alerts-panel,
+  body.shell-v2.screen-open .section-bar,
+  body.shell-v2.screen-open .action-groups-grid,
+  body.shell-v2.screen-open .classic-panel { display:none !important; }
+  body[data-focus="on"] .titlebar, body[data-focus="on"] .app-navbar, body[data-focus="on"] .tabbar { display:none !important; }
+
+  /* ---- dashboard: framed groups + clean cards ---- */
+  .dash-wrap { display:flex; flex-direction:column; gap:12px; }
+  .dash-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .dash-kpi {
+    display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:14px; background:var(--card-bg);
+    border:1px solid var(--card-line); box-shadow:var(--card-shadow); text-align:right;
+  }
+  .dash-kpi .dk-ico { display:grid; place-items:center; width:38px; height:38px; flex:none; border-radius:11px; color:#fff;
+    background:linear-gradient(140deg,var(--head-3),var(--head-2)); }
+  .dash-kpi .dk-ico .look-svg-ico { width:19px; height:19px; }
+  .dash-kpi .dk-body { min-width:0; }
+  .dash-kpi small { display:block; font-size:10.5px; font-weight:700; color:var(--muted); }
+  .dash-kpi strong { display:block; font-size:17px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .dash-kpi[data-state="good"] .dk-ico { background:linear-gradient(140deg,#12805a,#2ec27e); }
+  .dash-kpi[data-state="warn"] .dk-ico { background:linear-gradient(140deg,#a35a12,#eab23f); }
+  .dash-kpi[data-state="bad"] .dk-ico { background:linear-gradient(140deg,#9d1c1c,#e0503f); }
+
+  .dash-groups { display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px; align-items:start; }
+  .dash-group {
+    --tint: var(--head-3);
+    border:1px solid color-mix(in srgb,var(--tint) 34%,var(--card-line));
+    border-radius:16px; background:var(--card-bg); box-shadow:var(--card-shadow); overflow:hidden;
+  }
+  .dash-group > h3 {
+    display:flex; align-items:center; gap:8px; margin:0; padding:9px 12px;
+    font-size:12px; font-weight:800; color:#fff;
+    background:linear-gradient(105deg,color-mix(in srgb,var(--tint) 88%,#000000),var(--tint));
+  }
+  .dash-group > h3 .dg-ico .look-svg-ico { width:15px; height:15px; }
+  .dash-group .dg-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:10px; }
+  .dash-card {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:82px; padding:8px 6px;
+    border:1px solid color-mix(in srgb,var(--tint) 18%,var(--card-line)); border-radius:12px; background:color-mix(in srgb,var(--tint) 4%,var(--card-bg));
+    color:var(--ink); font-size:11.5px; font-weight:800; text-align:center; cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s;
+  }
+  .dash-card:hover { transform:translateY(-2px); box-shadow:0 10px 22px #0f172a14; border-color:var(--tint); background:var(--card-bg); }
+  .dash-card .dc-ico { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:#fff;
+    background:linear-gradient(140deg,color-mix(in srgb,var(--tint) 90%,#000000),var(--tint)); }
+  .dash-card .dc-ico .look-svg-ico { width:18px; height:18px; }
+  .dash-group[data-tint="cash"] { --tint:#0f7c93; }
+  .dash-group[data-tint="invoice"] { --tint:#2f6bd8; }
+  .dash-group[data-tint="people"] { --tint:#7c4dff; }
+  .dash-group[data-tint="stock"] { --tint:#b4761a; }
+  .dash-group[data-tint="money"] { --tint:#12805a; }
+  .dash-group[data-tint="reports"] { --tint:#b3366f; }
+  .dash-group[data-tint="settings"] { --tint:#4a5568; }
+
+  /* ---- 5. footer banner + status bar ---- */
+  .app-footer {
+    display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap;
+    margin:12px 12px 0; padding:10px 16px; border-radius:12px 12px 0 0;
+    background:linear-gradient(100deg,#7a3b12,#b4600f 55%,#8a4310); color:#fff; font-size:11.5px; font-weight:700;
+  }
+  .app-footer .af-item { display:inline-flex; align-items:center; gap:6px; }
+  .app-footer .af-item .look-svg-ico { width:14px; height:14px; opacity:.9; }
+  .app-footer .af-brand { font-weight:800; letter-spacing:.3px; }
+  .app-status {
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 12px 10px; padding:5px 12px;
+    border-radius:0 0 12px 12px; background:var(--card-bg); border:1px solid var(--card-line); border-top:0;
+    color:var(--muted); font-size:10.5px; font-weight:700;
+  }
+  .app-status .st-item { padding-inline:8px; border-inline-end:1px solid var(--card-line); }
+  .app-status .st-item:last-child { border:0; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 900px) {
+    .dash-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .app-navbar { overflow-x:auto; overflow-y:hidden; }
+    .titlebar .tb-btn { display:inline-flex; align-items:center; justify-content:center; width:26px; height:22px; border:1px solid #d7dfea;
+      border-radius:6px; background:#fff; color:#1f2a37; }
+    .titlebar .tb-chip.is-wide { display:none; }
+  }
+  @media (max-width: 760px) {
+    body.shell-v2 { --shell-top:34px; }
+    .app-shell, .app-shell.sidebar-collapsed, .app-shell.sidebar-open { display:block; }
+    .main-content { padding:8px 4px; }
+    .app-footer { gap:10px; font-size:10.5px; }
+  }
 </style>
 <style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
 </head>
-<body data-theme="vista-classic">
+<body data-theme="win11-indigo">
 
 <!-- ================= APP HEADER ================= -->
+<!-- ================= TITLE BAR ================= -->
+<div class="titlebar" id="titleBar">
+  <button type="button" class="tb-btn" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰</button>
+  <div class="tb-logo">
+    <img id="titleBarLogo" src="/icon-192.png" alt="">
+    <span class="tb-name" id="titleBarName">مكتبة الجمال</span>
+  </div>
+  <span class="tb-spacer"></span>
+  <span class="tb-chip is-wide" id="titleBarUser">المدير</span>
+  <span class="tb-chip" id="titleBarClock">—</span>
+  </div>
+
+<!-- ================= MAIN NAVBAR (blue bar) ================= -->
+<nav class="app-navbar" id="appNavbar" aria-label="قائمة البرنامج الرئيسية"></nav>
+<div class="nav-menu-layer" id="navMenuLayer" hidden></div>
+
+<!-- ================= OPEN PAGES AS TABS ================= -->
+<div class="tabbar" id="tabBar" role="tablist" aria-label="الشاشات المفتوحة"></div>
+
 <header class="top-bar" id="appHeader" data-header="name" data-align="start">
   <div class="head-id">
     <span class="head-logo" id="headLogo"><img id="headLogoImg" alt="شعار المكتبة" src="/icon-192.png"></span>
@@ -2428,6 +2929,8 @@
   </div>
   <div class="head-side">
     <div class="head-icons">
+      <button type="button" class="head-icon-btn" onclick="openSettingsTab('sync')" title="مركز المزامنة والنسخ الاحتياطي" aria-label="مركز المزامنة">☁️</button>
+      <button type="button" class="head-icon-btn" onclick="openSettingsTab('look')" title="الإعدادات وتخصيص المظهر" aria-label="الإعدادات">⚙️</button>
       <button type="button" class="head-icon-btn" id="darkModeButton" onclick="toggleDarkMode()" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
       <button type="button" class="head-icon-btn" onclick="installApp()" title="تثبيت البرنامج على الجهاز" aria-label="تثبيت البرنامج">⬇️</button>
       <button type="button" class="head-icon-btn" onclick="lockApp()" title="دخول / تبديل المستخدم" aria-label="تبديل المستخدم">👤</button>
@@ -2436,10 +2939,20 @@
     <div class="head-meta">
       <div class="clock-pill"><small>التاريخ</small><span id="liveDate">2025/01/01</span></div>
       <div class="clock-pill is-time"><small>الوقت</small><span id="liveTime">12:00:00</span></div>
-      <span id="syncStatusBadge" class="sync-chip" role="status" data-state="local" title="حالة حفظ البيانات"><i class="status-dot"></i><span class="sync-text">محفوظ محلياً</span></span>
+      <span id="syncStatusBadge" class="sync-chip" role="button" tabindex="0" data-state="local" title="فتح مركز المزامنة" onclick="openSettingsTab('sync')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSettingsTab('sync');}" style="cursor:pointer"><i class="status-dot"></i><span class="sync-text">محفوظ محلياً</span></span>
     </div>
   </div>
 </header>
+
+<!-- ================= MAIN NAVIGATION TABS ================= -->
+<nav class="main-nav" id="mainNav" aria-label="التنقل الرئيسي">
+  <button type="button" class="main-nav-link active" data-nav="home" onclick="showHome()"><span aria-hidden="true">⌂</span> الرئيسية</button>
+  <button type="button" class="main-nav-link" data-nav="sale" onclick="openInvoiceSec('sale')"><span aria-hidden="true">🛒</span> فاتورة مبيعات</button>
+  <button type="button" class="main-nav-link" data-nav="purchase" onclick="openInvoiceSec('purchase')"><span aria-hidden="true">📥</span> فاتورة مشتريات</button>
+  <button type="button" class="main-nav-link" data-nav="customers" onclick="openPartySec('customer')"><span aria-hidden="true">👥</span> العملاء</button>
+  <button type="button" class="main-nav-link" data-nav="settings" onclick="openSettingsTab('look')"><span aria-hidden="true">⚙️</span> الإعدادات</button>
+  <button type="button" class="main-nav-link" data-nav="staff" onclick="openSettingsTab('staff')"><span aria-hidden="true">👤</span> إدارة الموظفين</button>
+</nav>
 
 <!-- ================= MAIN ACTION BAR ================= -->
 <div class="tool-strip">
@@ -2462,6 +2975,23 @@
 
   <aside class="side-nav" id="sideNav" aria-label="القائمة الرئيسية">
     <div class="side-brand"><span class="brand-mark" aria-hidden="true">📚</span><div><strong>نظام نقاط البيع</strong><small>إدارة المكتبات</small></div></div>
+
+    <div class="side-quick" aria-label="أدوات سريعة">
+      <button type="button" onclick="openPartySec('supplier')" title="الموردون"><span aria-hidden="true">🚚</span>الموردون</button>
+      <button type="button" onclick="openSettingsTab('staff')" title="الموظفون"><span aria-hidden="true">👤</span>الموظفون</button>
+      <button type="button" onclick="openInvoiceSec('purchase')" title="فاتورة مشتريات"><span aria-hidden="true">📥</span>مشتريات</button>
+      <button type="button" onclick="openInvoiceSec('sale_return')" title="مرتجع مبيعات"><span aria-hidden="true">↩️</span>مرتجع مبيعات</button>
+      <button type="button" onclick="quickPlaceholder('التحويلات')" title="تحويلات"><span aria-hidden="true">🔄</span>تحويلات</button>
+      <button type="button" onclick="openStockFilter('all')" title="المخازن"><span aria-hidden="true">📦</span>المخازن</button>
+      <button type="button" onclick="quickPlaceholder('الحضور والانصراف')" title="حضور وانصراف"><span aria-hidden="true">🕒</span>حضور</button>
+      <button type="button" onclick="openTreasury('all')" title="الخزينة"><span aria-hidden="true">💰</span>الخزينة</button>
+      <button type="button" onclick="openTreasury('expense')" title="المصروفات"><span aria-hidden="true">💸</span>المصروفات</button>
+      <button type="button" onclick="openInvoiceSec('purchase_return')" title="مرتجع مشتريات"><span aria-hidden="true">↩️</span>مرتجع مشتريات</button>
+      <button type="button" onclick="openProfitSec('general')" title="إحصائيات"><span aria-hidden="true">📊</span>إحصائيات</button>
+      <button type="button" onclick="openSettingsTab('sync')" title="المزامنة"><span aria-hidden="true">☁️</span>المزامنة</button>
+      <button type="button" onclick="openSec('sec-maintenance','🛠️ الصيانة')" title="الصيانة"><span aria-hidden="true">🛠️</span>الصيانة</button>
+      <button type="button" onclick="openSec('sec-contact','📞 اتصل بنا')" title="اتصل بنا"><span aria-hidden="true">📞</span>اتصل بنا</button>
+    </div>
 
     <div class="nav-caption">الرئيسية</div>
     <div class="nav-group">
@@ -2535,6 +3065,29 @@
   <main class="main-content" id="mainContent">
 
     <!-- ============ HOME ============ -->
+    <!-- ============ HOME: KPI STRIP + DASHBOARD GROUPS ============ -->
+    <div class="dash-wrap" id="dashWrap">
+      <div class="dash-kpis" id="dashKpis">
+        <button type="button" class="dash-kpi" onclick="openPage('treasury-all')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>رصيد الخزنة</small><strong id="dashKpiCash">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('log-sale')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>مبيعات اليوم</small><strong id="dashKpiSales">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('profits-general')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>صافي الأرباح</small><strong id="dashKpiProfit">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('stock-zero')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>أصناف تحت حد الطلب</small><strong id="dashKpiLow">0</strong></span>
+        </button>
+      </div>
+      <div class="dash-groups" id="dashBody"></div>
+    </div>
+
     <section class="home-dashboard collapsed" id="homeDashboard" aria-label="لوحة المتابعة اليومية">
       <button type="button" class="board-toggle" id="boardToggle" onclick="toggleDashboard()" aria-expanded="false" aria-controls="boardBody">
         <span class="board-arrow" aria-hidden="true">▾</span>
@@ -2652,15 +3205,11 @@
       </div>
     </div>
 
-  </main>
-</div>
-<div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
-<button type="button" class="focus-exit" id="focusExitBtn" onclick="exitFocusMode()">✕ إنهاء التركيز</button>
-
-<!-- ================= FLOATING WINDOW ================= -->
-<div class="window-layer" id="windowLayer" role="dialog" aria-modal="true" aria-labelledby="winTitle">
-<div class="workspace">
-  <div class="win-header" hidden aria-hidden="true">
+<div class="window-layer" id="windowLayer" role="region" aria-labelledby="winTitle">
+  <div class="float-windows" id="floatWindows" aria-live="polite"></div>
+  <div class="float-taskbar" id="floatTaskbar" hidden></div>
+  <div class="workspace" id="sectionPool" hidden>
+  <div class="win-header">
     <h2 id="winTitle">📦 بيانات الأصناف والمخزون</h2>
     <div class="win-header-actions">
       <button type="button" class="win-close" onclick="minimizeWorkspace()" aria-label="تصغير النافذة" title="تصغير">－</button>
@@ -2879,7 +3428,7 @@
     </div>
 
     <!-- ==================== 2. ITEMS & STOCK ==================== -->
-    <div id="sec-items" class="sec-view active">
+    <div id="sec-items" class="sec-view">
       <!-- title bar -->
       <div class="page-bar">
         <h2 class="page-bar-title">📦 بيانات الأصناف والمخزون</h2>
@@ -3283,6 +3832,8 @@
         <label for="profDateTo">إلى تاريخ</label><input type="date" id="profDateTo" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
         <label for="profItemFilter">تصفية بصنف</label><select id="profItemFilter" class="plain-input" style="flex:0 0 200px" onchange="renderProfits()"><option value="all">كل الأصناف</option></select>
         <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة التقرير</button>
+        <button type="button" class="act-btn bg-green" onclick="exportCurrentReportExcel()">📤 تصدير Excel</button>
+        <button type="button" class="act-btn bg-blue" onclick="exportCurrentReportPDF()">📄 تصدير PDF</button>
       </div>
       <p id="profitScopeNote" class="scope-note">الأرباح محسوبة بعد خصومات الفواتير ومرتجع المبيعات وتكلفة البيع التاريخية، بعد خصم المصروفات العامة.</p>
       <div class="t-foot-bar" style="margin-bottom:8px;font-size:11.5px">
@@ -3327,13 +3878,18 @@
         <div class="panel-box">
           <div class="panel-title">🎨 مظهر البرنامج — اختر الثيم ثم اضغط عليه ليُفعّل فوراً</div>
           <div class="appearance-grid" id="themeChoices">
-            <button type="button" class="theme-choice" data-theme-choice="vista-classic" onclick="selectTheme('vista-classic')" aria-pressed="true">كلاسيكي أخضر <span class="theme-swatches"><i style="background:#3b7323"></i><i style="background:#f4f2e4"></i><i style="background:#b1251d"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="vista-classic" onclick="selectTheme('vista-classic')" aria-pressed="false">كلاسيكي أخضر <span class="theme-swatches"><i style="background:#3b7323"></i><i style="background:#f4f2e4"></i><i style="background:#b1251d"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-blue" onclick="selectTheme('vista-blue')" aria-pressed="false">Vista — أزرق زجاجي <span class="theme-swatches"><i style="background:#1f74a8"></i><i style="background:#eef5fa"></i><i style="background:#2f8f6b"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-emerald" onclick="selectTheme('vista-emerald')" aria-pressed="false">Vista — أخضر طبيعي <span class="theme-swatches"><i style="background:#1f8a5c"></i><i style="background:#eef7f2"></i><i style="background:#c47a12"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="vista-rose" onclick="selectTheme('vista-rose')" aria-pressed="false">Vista — وردي أنيق <span class="theme-swatches"><i style="background:#b04a76"></i><i style="background:#faf1f5"></i><i style="background:#8a4f9e"></i></span></button>
-            <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')" aria-pressed="false">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f1f2fa"></i><i style="background:#7a4fd0"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="win11-indigo" onclick="selectTheme('win11-indigo')" aria-pressed="true">Windows 11 — نيلي <span class="theme-swatches"><i style="background:#5b5bd6"></i><i style="background:#f1f2fa"></i><i style="background:#7a4fd0"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-mint" onclick="selectTheme('win11-mint')" aria-pressed="false">Windows 11 — نعناعي <span class="theme-swatches"><i style="background:#12857a"></i><i style="background:#eef7f6"></i><i style="background:#2f74c0"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="win11-sunset" onclick="selectTheme('win11-sunset')" aria-pressed="false">Windows 11 — غروب دافئ <span class="theme-swatches"><i style="background:#c8603f"></i><i style="background:#faf2ee"></i><i style="background:#b5761b"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-blue" onclick="selectTheme('ref-light-blue')" aria-pressed="false">مرجعي — أزرق فاتح <span class="theme-swatches"><i style="background:#1e6fb8"></i><i style="background:#f2f7fc"></i><i style="background:#2f8f6b"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-purple" onclick="selectTheme('ref-light-purple')" aria-pressed="false">مرجعي — بنفسجي فاتح <span class="theme-swatches"><i style="background:#6a5acd"></i><i style="background:#f5f4fc"></i><i style="background:#7a4fd0"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-light-maroon" onclick="selectTheme('ref-light-maroon')" aria-pressed="false">مرجعي — عنابي <span class="theme-swatches"><i style="background:#8b1e1e"></i><i style="background:#fbf5f4"></i><i style="background:#c07a25"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-dark-gray" onclick="selectTheme('ref-dark-gray')" aria-pressed="false">مرجعي — رمادي داكن <span class="theme-swatches"><i style="background:#1b1d21"></i><i style="background:#333842"></i><i style="background:#4a9eff"></i></span></button>
+            <button type="button" class="theme-choice" data-theme-choice="ref-dark-purple" onclick="selectTheme('ref-dark-purple')" aria-pressed="false">مرجعي — بنفسجي داكن <span class="theme-swatches"><i style="background:#0f0a1a"></i><i style="background:#2a2140"></i><i style="background:#a855f7"></i></span></button>
             <button type="button" class="theme-choice" data-theme-choice="night" onclick="selectTheme('night')" aria-pressed="false">الوضع الليلي <span class="theme-swatches"><i style="background:#111827"></i><i style="background:#263349"></i><i style="background:#8fb4ff"></i></span></button>
           </div>
           <div class="f-row">
@@ -3699,17 +4255,42 @@
 
       <div class="settings-panel" data-settings-panel="sync" hidden>
         <div class="panel-box" id="syncPanel">
-          <div class="panel-title">☁️ المزامنة مع Neon والنسخ الاحتياطي</div>
-          <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية.</p>
+          <div class="panel-title">☁️ مركز المزامنة مع Neon والنسخ الاحتياطي</div>
+          <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية. اكتب المفتاح مرة واحدة وفعّل «تذكّره» ليُحفظ على هذا الجهاز.</p>
           <div class="f-row"><label for="setSyncKey">مفتاح المزامنة</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
-          <label style="display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:bold"><input type="checkbox" id="rememberSyncKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز</label>
+          <label style="display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:bold"><input type="checkbox" id="rememberSyncKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز (اكتبه مرة واحدة)</label>
           <p class="scope-note">عند التفعيل يُحفظ المفتاح في تخزين المتصفح؛ لا تفعّله على جهاز مشترك. لا يدخل المفتاح في النسخ الاحتياطية.</p>
+          <div class="sync-state-box" id="syncStateBox" aria-live="polite">
+            <div class="sync-state-row"><span class="sync-state-label">حالة المزامنة</span><strong id="syncStateText">محفوظ محلياً</strong></div>
+            <div class="sync-state-row"><span class="sync-state-label">إصدار السحابة</span><strong id="syncRevisionText">غير مرتبط</strong></div>
+            <div class="sync-state-row"><span class="sync-state-label">المفتاح المحفوظ</span><strong id="syncKeyStateText">غير محفوظ</strong></div>
+          </div>
+          <div class="action-bar" style="margin-bottom:6px">
+            <button type="button" class="act-btn bg-green" onclick="saveSyncKey()">🔑 حفظ مفتاح المزامنة</button>
+            <button type="button" class="act-btn bg-orange" onclick="clearRememberedSyncKey()">🧹 مسح المفتاح المحفوظ</button>
+          </div>
           <div class="action-bar" style="margin-bottom:0">
             <button type="button" class="act-btn bg-blue" onclick="syncToCloud('push')">⬆️ رفع البيانات</button>
             <button type="button" class="act-btn bg-teal" onclick="syncToCloud('pull')">⬇️ سحب البيانات</button>
             <button type="button" class="act-btn bg-green" onclick="exportFullBackup()">💾 نسخة احتياطية (JSON)</button>
             <label class="act-btn bg-orange" style="cursor:pointer">📂 استعادة نسخة <input type="file" accept=".json" style="display:none" onchange="importFullBackup(event)"></label>
           </div>
+        </div>
+        <div class="panel-box" style="margin-top:10px">
+          <div class="panel-title">🗓️ النسخ الاحتياطي المجدول والتذكير</div>
+          <div class="f-row">
+            <label for="backupReminderSelect">تذكير النسخ الاحتياطي</label>
+            <select id="backupReminderSelect">
+              <option value="0">بدون تذكير</option>
+              <option value="1">كل يوم</option>
+              <option value="3">كل 3 أيام</option>
+              <option value="7">كل أسبوع</option>
+              <option value="14">كل أسبوعين</option>
+              <option value="30">كل شهر</option>
+            </select>
+            <button type="button" class="act-btn bg-green" onclick="setBackupReminderFromUI()">💾 حفظ التذكير</button>
+          </div>
+          <p class="scope-note">يظهر تذكير أعلى الشاشة إذا مرّت المدة المحددة بدون نسخة احتياطية. آخر نسخة: <strong id="lastBackupDate">—</strong></p>
         </div>
       </div>
 
@@ -3739,9 +4320,88 @@
       </div><!-- /settings panels -->
     </div>
 
+    <!-- ==================== REFERENCE PLACEHOLDER ==================== -->
+    <div id="sec-placeholder" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title" id="placeholderTitle">🚧 قسم قيد التطوير</h2>
+        <div class="page-bar-meta"><span class="bar-chip">قسم جديد</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="panel-box" style="text-align:center;padding:42px 20px;">
+        <div style="font-size:46px;line-height:1.2" aria-hidden="true">🚧</div>
+        <h3 id="placeholderHeading" style="margin:8px 0 4px;font-size:18px;font-weight:800">قسم قيد التطوير</h3>
+        <p id="placeholderText" style="margin:0 auto;max-width:520px;color:var(--muted);line-height:1.9">هذا القسم من ضمن التخطيط الجديد للبرنامج وسيتم تفعيله في التحديث القادم. باقي الشاشات تعمل بشكل كامل.</p>
+        <div class="action-bar" style="justify-content:center;margin-top:14px">
+          <button type="button" class="act-btn bg-blue" onclick="closeWorkspace()">⌂ العودة للرئيسية</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CONTACT ==================== -->
+    <div id="sec-contact" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">📞 اتصل بنا</h2>
+        <div class="page-bar-meta"><span class="bar-chip">رسائل محفوظة على هذا الجهاز</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="form-grid-2">
+        <div class="panel-box">
+          <div class="panel-title">✉️ إرسال رسالة</div>
+          <div class="f-row"><label for="contactName">الاسم</label><input type="text" id="contactName" autocomplete="off"></div>
+          <div class="f-row"><label for="contactPhone">الهاتف</label><input type="text" id="contactPhone" autocomplete="off"></div>
+          <div class="f-row"><label for="contactEmail">البريد الإلكتروني</label><input type="email" id="contactEmail" autocomplete="off"></div>
+          <div class="f-row"><label for="contactSubject">الموضوع</label><input type="text" id="contactSubject"></div>
+          <div class="f-row"><label for="contactMessage">الرسالة</label><textarea id="contactMessage" rows="4"></textarea></div>
+          <button type="button" class="act-btn bg-green" onclick="saveContactMessage()">📨 إرسال الرسالة</button>
+        </div>
+        <div class="panel-box">
+          <div class="panel-title">📬 الرسائل المحفوظة</div>
+          <div class="table-wrap" style="max-height:360px">
+            <table><thead><tr><th>#</th><th>التاريخ</th><th>الاسم</th><th>الموضوع</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="contactTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MAINTENANCE ==================== -->
+    <div id="sec-maintenance" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">🛠️ الصيانة</h2>
+        <div class="page-bar-meta"><span class="bar-chip">طلبات صيانة الأجهزة</span></div>
+        <button type="button" class="page-close-btn" onclick="closeWorkspace()" aria-label="إغلاق الصفحة" title="إغلاق الصفحة"><span aria-hidden="true">✕</span> إغلاق</button>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">🛠️ تسجيل طلب صيانة</div>
+        <div class="f-row">
+          <label for="maintDevice">الجهاز</label><input type="text" id="maintDevice" placeholder="اسم الجهاز / الكاشير / الطابعة">
+          <label for="maintIssue">المشكلة</label><input type="text" id="maintIssue" placeholder="وصف المشكلة">
+          <label for="maintPriority">الأولوية</label>
+          <select id="maintPriority"><option value="low">منخفضة</option><option value="medium">متوسطة</option><option value="high">عالية</option></select>
+          <button type="button" class="act-btn bg-green" onclick="saveMaintenanceRequest()">➕ إضافة الطلب</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>التاريخ</th><th>الجهاز</th><th>المشكلة</th><th>الأولوية</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="maintenanceTbody"></tbody></table>
+      </div>
+    </div>
+
   </div>
 </div>
+
+  </main>
 </div>
+
+<footer class="status-bar" aria-label="شريط حالة النظام">
+  <div class="status-item"><span class="status-dot" aria-hidden="true"></span> المستخدم: <strong id="statusUser">المدير</strong></div>
+  <div class="status-item">التاريخ: <strong id="statusDate">2025/01/01</strong></div>
+  <div class="status-item">الوقت: <strong id="statusTime">12:00:00</strong></div>
+  <div class="status-item status-license">ترخيص البرنامج: نسخة تجريبية — 2026</div>
+</footer>
+
+<div class="mobile-nav-scrim" id="navScrim" onclick="toggleSidebar(false)" hidden></div>
+<button type="button" class="focus-exit" id="focusExitBtn" onclick="exitFocusMode()">✕ إنهاء التركيز</button>
+
+<!-- ================= FLOATING WINDOW ================= -->
 
 <div class="window-dock" id="windowDock" hidden><span>نافذة مفتوحة في الخلفية</span><button type="button" class="act-btn bg-blue" onclick="restoreWorkspace()">↗ استعادة النافذة</button></div>
 
@@ -3822,6 +4482,48 @@
       <small class="remember-hint" id="rememberDeviceHint">غير موثوق: ستظهر شاشة البداية والدخول في كل تشغيل.</small>
       <button type="button" class="start-btn" onclick="unlockApp()">دخول إلى البرنامج</button>
       <small class="start-foot">البيانات محفوظة على هذا الجهاز — <span id="startFooterUser">مدير</span></small>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FIRST-RUN WELCOME WIZARD ================= -->
+<div id="welcomeWizard" class="wizard-modal" role="dialog" aria-modal="true" aria-labelledby="wizardTitle" hidden>
+  <div class="wizard-card">
+    <div class="wizard-head">
+      <div class="wizard-mark" aria-hidden="true">📚</div>
+      <div>
+        <h2 id="wizardTitle">أهلاً بك في نظام إدارة المكتبة</h2>
+        <p>خطوات سريعة لتخصيص البرنامج على جهازك — بياناتك تُحفظ محلياً.</p>
+      </div>
+    </div>
+    <div class="wizard-body">
+      <div class="wizard-section">
+        <h3>🏢 بيانات المنشأة</h3>
+        <div class="f-row"><label for="wizStoreName">اسم المكتبة</label><input type="text" id="wizStoreName" autocomplete="off"></div>
+        <div class="f-row"><label for="wizStoreAddress">العنوان</label><input type="text" id="wizStoreAddress" autocomplete="off"></div>
+        <div class="f-row"><label for="wizStorePhone">رقم الهاتف</label><input type="text" id="wizStorePhone" autocomplete="off"></div>
+      </div>
+      <div class="wizard-section">
+        <h3>☁️ المزامنة (اختياري)</h3>
+        <div class="f-row"><label for="wizSyncKey">مفتاح المزامنة</label><input type="password" id="wizSyncKey" autocomplete="off" placeholder="اتركه فارغاً إذا لم تُفعّل المزامنة بعد"></div>
+        <label class="remember-row"><input type="checkbox" id="wizRememberKey" checked> تذكّر مفتاح المزامنة على هذا الجهاز</label>
+        <p class="scope-note">يمكنك إدخال المفتاح لاحقاً من الإعدادات ← المزامنة.</p>
+      </div>
+      <div class="wizard-section">
+        <h3>🎨 الثيم الافتراضي</h3>
+        <div class="wizard-themes">
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-blue')"><i style="background:#1e6fb8"></i>أزرق فاتح</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-purple')"><i style="background:#6a5acd"></i>بنفسجي فاتح</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('win11-indigo')"><i style="background:#5b5bd6"></i>Windows 11</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-light-maroon')"><i style="background:#8b1e1e"></i>عنابي</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-dark-gray')"><i style="background:#1b1d21"></i>رمادي داكن</button>
+          <button type="button" class="wizard-theme" onclick="selectTheme('ref-dark-purple')"><i style="background:#0f0a1a"></i>بنفسجي داكن</button>
+        </div>
+      </div>
+    </div>
+    <div class="wizard-actions">
+      <button type="button" class="act-btn bg-orange" onclick="skipWelcomeWizard()">تخطي الآن</button>
+      <button type="button" class="act-btn bg-green" onclick="saveWelcomeWizard()">💾 حفظ ومتابعة</button>
     </div>
   </div>
 </div>
@@ -3930,6 +4632,14 @@
     <button type="button" class="activity-log-more" onclick="openActivityPage()">عرض السجل الكامل</button>
   </div>
 </aside>
+
+<!-- ================= FOOTER BANNER ================= -->
+<footer class="app-footer" id="appFooter">
+  <span class="af-item"><b class="af-brand" id="footerBrand">مكتبة الجمال</b></span>
+  <span class="af-item"><span id="footerPhone">—</span></span>
+  <span class="af-item"><span id="footerAddress">—</span></span>
+  <span class="af-item"><span>&copy; نظام نقاط البيع وإدارة المكتبات</span></span>
+</footer>
 
 <!-- ================= STATUS BAR ================= -->
 <footer class="app-status">
