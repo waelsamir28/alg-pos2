@@ -417,3 +417,150 @@ test('clearing a quote draft removes its conversion link', async t => {
   f.window.loadQuoteForSale(1); f.window.clearInvCart(); assert.equal(f.$('invCartTbody').dataset.quoteId, undefined);
   addLine(f); f.window.saveInvoice(false); assert.equal(f.saved().invoices[0].convertedToId, undefined);
 });
+
+test('quick cash chips fill the paid amount and show the change', async t => {
+  const f = await ready(t, { db: seedDatabase() }); f.window.openInvoiceSec('sale'); addLine(f, '1001', 1);
+  assert.equal(f.$('cashChangeValue').textContent, '0.00');
+  f.window.setQuickPaid(100); assert.equal(f.$('invPaidAmount').value, '100.00');
+  f.window.setQuickPaid(100); assert.equal(f.$('invPaidAmount').value, '200.00');
+  assert.equal(f.$('cashChangeValue').textContent, '50.00'); assert.equal(f.$('cashChangeBox').dataset.state, 'over');
+  f.window.setQuickPaid('round'); assert.equal(f.$('invPaidAmount').value, '150.00'); assert.equal(f.$('cashChangeValue').textContent, '0.00');
+  f.window.setQuickPaid('exact'); assert.equal(f.$('invPaidAmount').value, '150.00');
+});
+
+test('discount limit per cashier: staff limit shown and over-limit sale needs the admin PIN', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openSec('sec-settings'); f.fill('staffNameInp', 'سالم'); f.fill('staffPinInp', '5555');
+  f.fill('staffRoleInp', 'cashier'); f.fill('staffDiscountLimit', 5); f.window.saveStaff();
+  const staff = JSON.parse(f.window.localStorage.getItem('BOOKSTORE_POS_COMPLETE_DB_V2_STAFF'));
+  assert.equal(staff[0].discountLimit, 5);
+  f.window.lockApp();
+  f.$('loginStaffSelect').value = staff[0].id; f.fill('unlockPinInp', '5555'); f.window.unlockApp();
+  assert.match(f.$('activeUserBadge').textContent, /سالم/);
+  f.window.openInvoiceSec('sale'); addLine(f, '1001', 1);
+  f.fill('invDiscPct', 20); f.window.calcInvoiceTotals();
+  assert.equal(f.$('discountLimitValue').textContent, '5%'); assert.equal(f.$('discountWarn').hidden, false);
+  f.setConfirm(false); f.window.saveInvoice(false); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.saved().invoices.length, 0);
+});
+
+test('activity log floating window records audit entries and exports invoice PDF/WhatsApp', async t => {
+  const f = await ready(t, { db: seedDatabase() }); f.window.openInvoiceSec('sale'); addLine(f, '1001', 2); f.window.saveInvoice(false);
+  f.window.toggleActivityLog(true);
+  assert.equal(f.$('activityLog').hidden, false);
+  assert.match(f.$('activityLogList').textContent, /تعديل|فاتورة/);
+  const text = f.window.invoiceShareText(f.saved().invoices[0]);
+  assert.match(text, /كتاب/); assert.match(f.window.whatsappLink(text, '01012345678'), /^https:\/\/wa\.me\/20/);
+  const html = f.window.invoiceDocHtml(f.saved().invoices[0], 'a4');
+  assert.match(html, /@page\{size:A4/); assert.match(html, /كتاب/); assert.match(html, /<svg/);
+});
+
+test('a running invoice is auto-saved and can be restored after a reload', async t => {
+  const f = await ready(t, { db: seedDatabase() }); f.window.openInvoiceSec('sale'); addLine(f, '1002', 3); f.window.saveDraftNow(true);
+  const draft = f.window.readDraft(); assert.equal(draft.items.length, 1); assert.equal(draft.items[0].qty, 3);
+  f.window.clearInvCart(); assert.equal(f.window.readDraft(), null);
+  f.window.restoreSavedDraft(true); // nothing left to restore
+  addLine(f, '1001', 1); f.window.saveDraftNow(true); f.window.clearInvCart();
+  f.window.localStorage.setItem('BOOKSTORE_POS_COMPLETE_DB_V2_DRAFT', JSON.stringify(draft));
+  assert.equal(f.window.restoreSavedDraft(true), true);
+  assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+});
+
+test('barcode field searches by name with diacritic-insensitive matching and arrow selection', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const matches = f.window.suggestionMatches('قلم'); assert.equal(matches[0].code, '1002');
+  assert.equal(f.window.suggestionMatches('كِتَاب')[0].code, '1001');
+  assert.equal(f.window.suggestionMatches('١٠٠١').length, 0);
+  f.window.openInvoiceSec('sale'); f.fill('invBarcodeInp', 'كتاب'); f.window.showSuggestions();
+  assert.equal(f.$('invSuggest').hidden, false);
+  f.window.moveSuggestion(0);
+  f.window.handleScanKey({ key: 'Enter', preventDefault() {} });
+  assert.equal(f.$('invBarcodeInp').value, ''); assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+  f.fill('invBarcodeInp', 'قلم'); f.window.showSuggestions(); f.window.moveSuggestion(0); f.window.pickSuggestion(0);
+  assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 2);
+});
+
+test('a customer can be created straight from the invoice and is selected automatically', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale'); f.window.toggleQuickParty(true);
+  assert.equal(f.$('invQuickParty').hidden, false);
+  f.fill('invQuickPartyName', 'مدرسة النور'); f.fill('invQuickPartyPhone', '01099998888'); f.window.saveQuickParty();
+  const party = f.saved().parties.find(entry => entry.name === 'مدرسة النور');
+  assert.ok(party); assert.equal(party.type, 'customer'); assert.equal(party.phone, '01099998888');
+  assert.equal(f.$('invPartySelect').value, String(party.id));
+  f.window.toggleQuickParty(true); f.fill('invQuickPartyName', 'مدرسة النور'); f.window.saveQuickParty();
+  assert.equal(f.saved().parties.filter(entry => entry.name === 'مدرسة النور').length, 1);
+});
+
+test('scan feedback settings persist and never throw without WebAudio', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.setScanFeedback('chime'); f.window.setScanVibrate(false);
+  const appearance = JSON.parse(f.window.localStorage.getItem('BOOKSTORE_POS_COMPLETE_DB_V2_APPEARANCE'));
+  assert.equal(appearance.scanFeedback, 'chime'); assert.equal(appearance.scanVibrate, false);
+  f.window.openSec('sec-settings');
+  assert.equal(f.$('scanSoundSelect').value, 'chime'); assert.equal(f.$('vibrateFeedback').checked, false);
+  f.window.playScanFeedback(); f.window.playScanFeedback('silent'); f.window.playScanFeedback('click');
+  assert.equal(f.alerts.length, 0);
+});
+
+test('camera scanner reports missing support gracefully and routes a decoded barcode into the cart', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  assert.equal(typeof f.window.cameraSupported(), 'boolean');
+  f.window.openCameraScanner();
+  assert.equal(f.$('cameraModal').hidden, true);
+  assert.equal(f.$('syncDialog').hidden, false);
+  f.window.closeSyncDialog();
+  f.window.openInvoiceSec('sale');
+  f.window.handleCameraCode('1002');
+  assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+  f.window.handleCameraCode('999999'); // unknown code must not add anything
+  assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 1);
+});
+
+test('A5 preview shows the draft before saving and blocks invalid drafts', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale');
+  f.window.previewInvoiceA5();
+  assert.equal(f.$('invoicePreview').hidden, true);
+  assert.match(f.alerts.at(-1), /لا توجد أصناف|فارغة|أضف/);
+  addLine(f, '1001', 2); f.window.previewInvoiceA5();
+  assert.equal(f.$('invoicePreview').hidden, false);
+  assert.match(f.$('previewPaper').textContent, /كتاب/);
+  assert.match(f.$('previewBadge').textContent, /مسودة/);
+  assert.equal(f.saved().invoices.length, 0);
+  f.window.setPreviewZoom(120);
+  assert.match(f.$('previewPaper').style.transform, /1\.2/);
+  f.window.closeInvoicePreview(); assert.equal(f.$('invoicePreview').hidden, true);
+  f.window.saveInvoice(false);
+  f.window.previewSavedInvoice(1); assert.match(f.$('previewBadge').textContent, /#1/);
+});
+
+test('low stock window builds a purchase order for every shortage', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const low = f.window.lowStockItems();
+  assert.equal(low.length, 0);
+  const db = f.saved(); db.items[0].qty = 0; db.items[1].qty = 0;
+  f.window.localStorage.setItem(DB_KEY, JSON.stringify(db));
+  f.window.location.reload?.();
+  await f.load();
+  assert.equal(f.window.lowStockItems().length, 2);
+  f.window.toggleStockAlerts(true);
+  assert.equal(f.$('stockAlerts').hidden, false);
+  assert.match(f.$('stockAlertsBtn').textContent, /نواقص/);
+  f.window.openPurchaseOrderFromLowStock();
+  assert.equal(f.$('invCartTbody').querySelectorAll('tr').length, 2);
+  assert.equal(f.$('invMode').value, 'purchase');
+});
+
+test('app badge counts held invoices plus the auto draft', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale'); addLine(f, '1001', 1);
+  f.window.holdCurrentInvoice();
+  f.window.openInvoiceSec('sale'); addLine(f, '1002', 1); f.window.saveDraftNow(true);
+  await f.window.syncAppBadge();
+  assert.equal(f.$('draftBadge').hidden, false); assert.equal(f.$('draftBadge').textContent, '2');
+  assert.match(f.$('restoreHeldButton').textContent, /\(1\)/);
+  assert.equal(f.$('restoreHeldButton').classList.contains('has-held'), true);
+  f.window.clearInvCart(); await f.window.syncAppBadge();
+  assert.equal(f.$('draftBadge').textContent, '1');
+});

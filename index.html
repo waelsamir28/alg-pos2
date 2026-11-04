@@ -572,6 +572,8 @@
   }
   .f-row { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
   .f-row > label { font-weight:bold; font-size:11.5px; color:#3b442b; min-width:78px; }
+  .f-row > label[for="staffDiscountLimit"] { min-width:auto; }
+  .f-row > #staffDiscountLimit { max-width:88px; text-align:center; }
   .f-row input, .f-row select, .f-row textarea, .plain-input {
     flex:1 1 90px; min-width:70px; padding:3px 6px; height:26px;
     border:1px solid #a9a48a; border-radius:var(--radius-btn); background:#fffef8; font-weight:bold;
@@ -829,7 +831,7 @@
 
   /* ---- barcode / qty / sell bar ---- */
   .pos-scanbar {
-    display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:end; gap:10px; direction:rtl;
+    display:grid; grid-template-columns:minmax(0,1fr) auto auto auto; align-items:end; gap:10px; direction:rtl;
     background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius-card);
     padding:8px 10px; box-shadow:inset 0 1px 0 #ffffffcc;
   }
@@ -956,6 +958,116 @@
   .sum-cell.paid input { background:linear-gradient(#eef6ff,#d8e9ff); border:2px solid #4f83c0; color:#0f3d70; }
   .sum-cell.remain input { background:linear-gradient(#fff8e2,#ffe9b8); border:2px solid #d0a33a; color:#6b4703; }
   .sum-cell.paid.big { grid-column:span 1; }
+
+  /* ---- quick customer add inside the invoice ---- */
+  .party-inline { display:flex; align-items:center; gap:6px; width:100%; }
+  .party-inline select { flex:1 1 auto; min-width:0; }
+  .party-add-btn {
+    flex:0 0 auto; font-family:inherit; font-size:10.5px; font-weight:800; padding:5px 9px; border-radius:9px;
+    color:#14532d; background:linear-gradient(#f2fdf6,#dcf0e4); border:1px solid #8fc9a8; cursor:pointer;
+    transition:filter .14s, transform .14s;
+  }
+  .party-add-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
+  .party-quick {
+    display:grid; grid-template-columns:1.4fr 1fr .8fr auto auto; gap:6px; align-items:center;
+    margin-top:6px; padding:7px; border-radius:11px; text-align:right;
+    background:linear-gradient(#f7fbff,#eaf2fa); border:1px solid #bfd4e8;
+  }
+  .party-quick[hidden] { display:none !important; }
+  .party-quick input {
+    font-family:inherit; font-size:11px; padding:5px 8px; border-radius:8px;
+    border:1px solid #b8cde0; background:#fff; min-width:0;
+  }
+  .party-quick-save, .party-quick-cancel {
+    font-family:inherit; font-size:10.5px; font-weight:800; padding:5px 10px; border-radius:8px; cursor:pointer;
+  }
+  .party-quick-save { color:#fff; background:linear-gradient(#3f9c68,#23784a); border:1px solid #1a5c37; }
+  .party-quick-cancel { color:#5c3a12; background:linear-gradient(#fffaf0,#f5e9d3); border:1px solid #dcc79a; }
+  @media (max-width:760px) { .party-quick { grid-template-columns:1fr 1fr; } }
+
+  /* ---- barcode name search dropdown ---- */
+  .scan-input-wrap { position:relative; flex:1 1 auto; min-width:0; }
+  .scan-input-wrap #invBarcodeInp { width:100%; }
+  .scan-suggest {
+    position:absolute; z-index:9500; top:calc(100% + 4px); inset-inline:0;
+    max-height:264px; overflow:auto; border-radius:12px; padding:4px;
+    background:linear-gradient(#ffffff,#f2f6fb); border:1px solid #adc4da;
+    box-shadow:0 16px 34px #0b1b3038;
+  }
+  .scan-suggest[hidden] { display:none !important; }
+  .suggest-row {
+    display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:8px;
+    width:100%; text-align:right; font-family:inherit; font-size:11px; padding:6px 8px;
+    border:1px solid transparent; border-radius:9px; background:transparent; color:#1c3247; cursor:pointer;
+  }
+  .suggest-row:hover, .suggest-row.active { background:linear-gradient(#eef7ff,#dcecfb); border-color:#9dc4e6; }
+  .suggest-row .s-code { font-size:10px; font-weight:800; color:#4b6b86; background:#eef3f8; border:1px solid #c9d9e8; border-radius:6px; padding:1px 6px; }
+  .suggest-row .s-name { font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
+  .suggest-row .s-price { font-weight:800; color:#14532d; }
+  .suggest-row .s-stock { font-size:10px; color:#2f6a4a; }
+  .suggest-row .s-stock.low { color:#a5641a; }
+  .suggest-row .s-stock.out { color:#b1251d; }
+  .suggest-row .s-tag { grid-column:1 / -1; font-size:9px; color:#2b5c8a; font-weight:800; }
+
+  /* ---- auto-saved draft strip ---- */
+  .draft-strip {
+    display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap;
+    padding:3px 8px; margin:2px 0 5px;
+  }
+  .draft-hint {
+    display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:#4b3a12;
+    background:linear-gradient(#fffdf1,#fdf3d6); border:1px solid #e0c98f; border-radius:999px; padding:3px 10px;
+  }
+  .draft-hint[hidden], .draft-btn[hidden] { display:none !important; }
+  .draft-btn {
+    display:inline-flex; align-items:center; gap:5px; font-family:inherit; font-size:10px; font-weight:800;
+    padding:3px 10px; border-radius:999px; border:1px solid var(--line-dark); color:#25405c;
+    background:linear-gradient(#f7fbff,#e6eff9); cursor:pointer; transition:filter .14s, transform .14s;
+  }
+  .draft-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
+  .draft-btn.restore { color:#14532d; background:linear-gradient(#f2fdf6,#dcf0e4); border-color:#8fc9a8; }
+  .draft-btn.discard { color:#5c3a12; background:linear-gradient(#fffaf0,#f7ecd8); border-color:#dcc79a; }
+  @media (max-width:760px) { .draft-strip { position:sticky; bottom:0; background:#f6f8fbee; backdrop-filter:blur(3px); } }
+
+  /* ---- discount limit banner ---- */
+  .discount-limit {
+    flex:1 1 100%; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
+    padding:5px 10px; border-radius:999px; font-size:10.5px; font-weight:700;
+    color:#31465c; background:linear-gradient(#f7fbff,#e9f2fb); border:1px solid #cddfef;
+  }
+  .discount-limit b { font-family:'Cairo',Tahoma,sans-serif; }
+  .discount-warn { color:#b3261e; background:#ffe6e3; border:1px solid #f0b4ae; border-radius:999px; padding:2px 10px; }
+  .discount-limit[data-state="over"] { background:linear-gradient(#fff2f1,#ffdfdc); border-color:#e8837c; }
+
+  /* ---- quick cash buttons + change ---- */
+  .cash-quick {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:9px;
+    padding:8px 10px; border-radius:var(--radius-btn);
+    background:linear-gradient(#f7fbff,#eaf2fb); border:1px solid var(--line-soft);
+  }
+  .cash-quick-label { font-size:10.5px; font-weight:800; color:#31465c; white-space:nowrap; }
+  .cash-quick-btns { display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; justify-content:center; }
+  .cash-chip {
+    min-width:52px; min-height:32px; padding:4px 11px; border-radius:999px;
+    border:1px solid #a9c2dc; background:linear-gradient(#ffffff,#e6f0fa); color:#123a6b;
+    font-size:11.5px; font-weight:800; white-space:nowrap;
+    transition:background .14s, border-color .14s, transform .08s, box-shadow .14s, color .14s;
+  }
+  .cash-chip:hover { background:linear-gradient(#effaff,#bfe1ff); border-color:var(--head-3); box-shadow:0 0 0 2px #0f7c9326; transform:translateY(-1px); }
+  .cash-chip:active { background:var(--head-3); border-color:var(--head-3); color:#fff; transform:translateY(1px) scale(.97); }
+  .cash-chip:first-child { background:linear-gradient(#eefcf3,#cdeedb); border-color:#7fc9a1; color:#12603c; }
+  .cash-change {
+    display:flex; align-items:center; gap:8px; padding:5px 14px; border-radius:999px;
+    background:linear-gradient(#fffdf3,#fff1c9); border:1px solid #d0a33a; white-space:nowrap;
+  }
+  .cash-change span { font-size:10px; font-weight:800; color:#6b4703; }
+  .cash-change strong { font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#6b4703; }
+  .cash-change[data-state="over"] { background:linear-gradient(#eefcf3,#cdeedb); border-color:#5f9f3e; }
+  .cash-change[data-state="over"] span, .cash-change[data-state="over"] strong { color:#17540d; }
+  body[data-theme="night"] .cash-quick { background:linear-gradient(#232b3a,#1b2230); border-color:#3f4a63; }
+  body[data-theme="night"] .cash-chip { background:linear-gradient(#2b3450,#232b3f); border-color:#465575; color:#dbe7ff; }
+  body[data-theme="night"] .cash-quick-label { color:#b9c8de; }
+  @media (max-width:760px) { .cash-change { width:100%; justify-content:center; } }
 
   /* ---- invoice actions strip ---- */
   .pos-actions-strip {
@@ -1205,6 +1317,16 @@
   @keyframes loadShine { from { transform:translateX(-100%); } to { transform:translateX(100%); } }
   .start-loader-pct { display:block; margin-top:7px; font-size:10.5px; font-weight:800; color:#5b7080; }
 
+  .start-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 0 14px; }
+  .start-stat {
+    display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 6px;
+    border-radius:16px; background:linear-gradient(#f2f7fd,#e6eff9); border:1px solid #d3e0ee;
+    box-shadow:inset 0 1px 0 #ffffffcc;
+  }
+  .start-stat span { font-size:16px; line-height:1; }
+  .start-stat small { font-size:9.5px; font-weight:700; color:#5b7080; }
+  .start-stat b { font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#123a6b; }
+
   /* login form: rounded fields */
   .start-login { padding:6px 26px 0; }
   .start-login h3 {
@@ -1220,7 +1342,21 @@
   }
   .start-input:hover { border-color:#a9c2dc; background:#fbfdff; }
   .start-input:focus { outline:none; border-color:var(--head-3); box-shadow:0 0 0 4px #0f7c9326; }
-  .start-pin { font-size:20px; letter-spacing:6px; }
+  .pin-wrap { position:relative; }
+  .start-pin { font-size:20px; letter-spacing:6px; padding-inline-end:46px; }
+  .pin-eye {
+    position:absolute; inset-inline-end:8px; top:6px; width:32px; height:32px; display:grid; place-items:center;
+    border:0; border-radius:50%; background:#eef3f9; font-size:14px; line-height:1; color:#31465c;
+    transition:background .14s, transform .08s;
+  }
+  .pin-eye:hover { background:#dce9f7; }
+  .pin-eye:active { transform:scale(.92); }
+  .remember-row {
+    display:flex; align-items:center; gap:8px; justify-content:center; margin:0 0 3px;
+    font-size:10.5px; font-weight:700; color:#31465c; cursor:pointer; line-height:1.5;
+  }
+  .remember-row input { width:16px; height:16px; accent-color:var(--head-3); cursor:pointer; }
+  .remember-hint { display:block; margin:0 0 12px; font-size:9.5px; color:#7b8b9b; }
   .start-btn {
     width:100%; height:48px; display:flex; align-items:center; justify-content:center; gap:8px;
     border:0; border-radius:999px; color:#fff; font-size:14px; font-weight:800; cursor:pointer;
@@ -1270,6 +1406,178 @@
   .notice-popup .toast-body strong { color:#7a5506; }
   .notice-popup .toast-body span { color:#6d5417; }
   .notice-popup .toast-ico { background:#fffdf3; border-color:#e8ce93; }
+
+  /* ---- low stock alerts window ---- */
+  .stock-alerts {
+    position:fixed; z-index:10360; bottom:52px; inset-inline-end:18px;
+    width:min(350px,94vw); max-height:min(56vh,420px); display:flex; flex-direction:column; overflow:hidden;
+    border-radius:18px; color:#3a1c12;
+    background:linear-gradient(#fffdf7,#fdf1e2); border:1px solid #e0b489;
+    box-shadow:0 22px 48px #0b1b3038, inset 0 1px 0 #fff;
+    animation:toastIn .3s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .stock-alerts[hidden] { display:none !important; }
+  .stock-alerts-head { display:flex; align-items:center; gap:9px; padding:9px 11px; background:linear-gradient(#fff8ea,#fbe9d3); border-bottom:1px solid #e6c9a6; }
+  .stock-alerts-ico { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; border-radius:10px; font-size:15px; background:#fff; border:1px solid #e6c9a6; }
+  .stock-alerts-title { display:flex; flex-direction:column; flex:1; min-width:0; text-align:right; }
+  .stock-alerts-title strong { font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800; color:#7a3c10; }
+  .stock-alerts-title small { font-size:10px; color:#8b6440; }
+  .stock-alerts-x { border:0; background:transparent; color:#8b6440; font-size:13px; border-radius:8px; padding:2px 5px; }
+  .stock-alerts-x:hover { background:#f5dfc6; color:#5c2f0a; }
+  .stock-alerts-list { overflow:auto; padding:7px 9px; display:flex; flex-direction:column; gap:6px; }
+  .stock-row {
+    display:grid; grid-template-columns:1fr auto auto; gap:7px; align-items:center; text-align:right;
+    padding:6px 9px; border-radius:11px; background:#fffdf8; border:1px solid #eed6ba; font-size:11px;
+  }
+  .stock-row .s-name { font-weight:800; color:#4a2a13; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stock-row .s-qty { font-size:10px; font-weight:800; border-radius:999px; padding:1px 8px; }
+  .stock-row .s-qty.out { color:#8d1f16; background:#ffe4e0; border:1px solid #f0b4ae; }
+  .stock-row .s-qty.low { color:#7a4f07; background:#fff3d6; border:1px solid #e5c88a; }
+  .stock-row .s-add {
+    font-family:inherit; font-size:10px; font-weight:800; padding:3px 8px; border-radius:8px; cursor:pointer;
+    color:#14532d; background:linear-gradient(#f2fdf6,#dcf0e4); border:1px solid #8fc9a8;
+  }
+  .stock-row .s-add:hover { filter:brightness(1.05); }
+  .stock-alerts-empty { text-align:center; font-size:11px; color:#8b6440; padding:14px 6px; }
+  .stock-alerts-foot { display:flex; gap:7px; padding:7px 9px 9px; border-top:1px solid #f0dcc4; }
+  .stock-alerts-act, .stock-alerts-more {
+    font-family:inherit; font-size:10.5px; font-weight:800; padding:6px 10px; border-radius:10px; cursor:pointer; flex:1;
+  }
+  .stock-alerts-act { color:#fff; background:linear-gradient(#3f9c68,#23784a); border:1px solid #1a5c37; }
+  .stock-alerts-more { color:#5c3a12; background:linear-gradient(#fffaf0,#f5e9d3); border:1px solid #dcc79a; }
+
+  .draft-badge {
+    display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+    font-size:10px; font-weight:800; color:#fff; background:linear-gradient(#d8453c,#a31f18); box-shadow:0 2px 6px #a31f1844;
+  }
+  .draft-badge[hidden] { display:none !important; }
+  .pos-action.restore.has-held { box-shadow:0 0 0 2px #f3c273 inset; }
+
+  /* ---- A5 preview before saving ---- */
+  .pos-action.preview { color:#123c5c; background:linear-gradient(#f4f9ff,#dfebf8); border:1px solid #adc7e0; }
+  .preview-modal {
+    position:fixed; inset:0; z-index:10650; display:flex; align-items:center; justify-content:center;
+    padding:14px; background:#08182a8c; backdrop-filter:blur(2px);
+  }
+  .preview-modal[hidden] { display:none !important; }
+  .preview-card {
+    width:min(720px,100%); max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+    background:linear-gradient(#ffffff,#f1f5fa); border:1px solid #ffffff80; border-radius:20px;
+    box-shadow:0 28px 64px #00000059;
+  }
+  .preview-head { display:flex; align-items:center; gap:9px; padding:10px 13px; background:linear-gradient(#f4f9ff,#e2edf9); border-bottom:1px solid #c8d9ea; }
+  .preview-head h3 { margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:13px; font-weight:800; flex:1; color:#14304a; }
+  .preview-badge { font-size:10px; font-weight:800; color:#7a5506; background:#fff5d6; border:1px solid #e2c071; border-radius:999px; padding:2px 9px; }
+  .preview-x { border:0; background:transparent; color:#5c748c; font-size:14px; border-radius:8px; padding:2px 6px; }
+  .preview-x:hover { background:#d7e6f5; color:#1b3a55; }
+  .preview-body { overflow:auto; padding:12px; background:#dfe6ee; display:flex; justify-content:center; }
+  .preview-paper {
+    width:210mm; max-width:100%; background:#fff; color:#111; padding:6mm; border-radius:4px;
+    box-shadow:0 8px 24px #0b1b3033; transform-origin:top center;
+    font-family:'Cairo',Tahoma,sans-serif;
+  }
+  .preview-paper .p-header { text-align:center; border-bottom:2px solid #1c3d1a; padding-bottom:6px; margin-bottom:8px; }
+  .preview-paper .p-header h2 { margin:0; font-size:17px; color:#1c3d1a; }
+  .preview-paper .p-header p { margin:2px 0; font-size:9.5px; color:#444; }
+  .preview-paper .p-header h3 { margin:4px 0 0; font-size:12px; color:#0f4c81; }
+  .preview-paper .p-meta { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:9.5px; margin:6px 0; padding:5px 7px; border:1px solid #ccc; border-radius:4px; background:#fafafa; }
+  .preview-paper .p-table { width:100%; border-collapse:collapse; margin:6px 0; font-size:9.5px; }
+  .preview-paper .p-table th, .preview-paper .p-table td { border:1px solid #999; padding:3px 4px; text-align:center; }
+  .preview-paper .p-table thead th { background:#e8f0e2; }
+  .preview-paper .p-totals { display:flex; justify-content:space-between; gap:6px; flex-wrap:wrap; font-size:9.5px; padding:5px 7px; margin-top:5px; border:1px dashed #999; border-radius:4px; }
+  .preview-paper .p-sign { display:flex; justify-content:space-between; margin-top:14px; font-size:9.5px; }
+  .preview-paper .p-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:8px; padding-top:6px; border-top:1px solid #ccc; font-size:9px; color:#555; }
+  .preview-paper .p-foot svg { width:62px; height:auto; }
+  .preview-foot { display:flex; align-items:center; gap:9px; padding:9px 13px; border-top:1px solid #dbe7f3; background:#f7fafd; flex-wrap:wrap; }
+  .preview-zoom { font-size:10.5px; font-weight:800; color:#3d5670; }
+  .preview-range { flex:1 1 120px; min-width:90px; accent-color:#2b6ea8; }
+  .preview-btn { font-family:inherit; font-size:11px; font-weight:800; padding:7px 13px; border-radius:10px; cursor:pointer; }
+  .preview-btn.print { color:#fff; background:linear-gradient(#3f9c68,#23784a); border:1px solid #1a5c37; }
+  .preview-btn.close { color:#3d5470; background:linear-gradient(#f3f7fb,#e0e8f1); border:1px solid #b8c8d8; }
+
+  /* ---- camera barcode scanner ---- */
+  .scan-camera-btn {
+    display:inline-flex; align-items:center; gap:5px; font-family:inherit; font-size:11px; font-weight:800;
+    padding:7px 11px; border-radius:10px; cursor:pointer; color:#1b3a55;
+    background:linear-gradient(#f4f9ff,#dfebf8); border:1px solid #b0c9e1; transition:filter .14s, transform .14s;
+  }
+  .scan-camera-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
+  .camera-modal {
+    position:fixed; inset:0; z-index:10700; display:flex; align-items:center; justify-content:center;
+    padding:14px; background:#06101ccc; backdrop-filter:blur(3px);
+  }
+  .camera-modal[hidden] { display:none !important; }
+  .camera-card {
+    width:min(520px,100%); max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+    background:linear-gradient(#141c29,#0b1220); border:1px solid #35507a; border-radius:20px;
+    box-shadow:0 28px 64px #000000aa; color:#e6eefb;
+  }
+  .camera-head { display:flex; align-items:center; gap:9px; padding:10px 13px; border-bottom:1px solid #24344d; }
+  .camera-head h3 { margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:13px; font-weight:800; flex:1; }
+  .camera-x { border:0; background:transparent; color:#9db4d4; font-size:14px; border-radius:8px; padding:2px 6px; }
+  .camera-x:hover { background:#22304a; color:#fff; }
+  .camera-stage { position:relative; background:#000; aspect-ratio:4/3; }
+  .camera-stage video { width:100%; height:100%; object-fit:cover; display:block; }
+  .camera-frame {
+    position:absolute; inset:14% 10%; border-radius:14px; border:2px solid #57d68d88;
+    box-shadow:0 0 0 999px #00000055 inset, 0 0 22px #57d68d55 inset;
+  }
+  .camera-frame::after {
+    content:''; position:absolute; inset-inline:8%; top:50%; height:2px; background:#57d68d;
+    box-shadow:0 0 10px #57d68d; animation:cameraLaser 2.2s ease-in-out infinite;
+  }
+  @keyframes cameraLaser { 0%,100% { transform:translateY(-38px); } 50% { transform:translateY(38px); } }
+  .camera-note { margin:0; padding:9px 13px; font-size:11px; line-height:1.7; color:#a9bdd8; text-align:center; }
+  .camera-foot { display:flex; gap:8px; justify-content:center; padding:0 13px 13px; }
+  .camera-manual, .camera-stop { font-family:inherit; font-size:11px; font-weight:800; padding:7px 14px; border-radius:10px; cursor:pointer; }
+  .camera-manual { color:#0d2033; background:linear-gradient(#dff0ff,#bcdcf7); border:1px solid #7fb2e0; }
+  .camera-stop { color:#ffdedb; background:linear-gradient(#3a1d1b,#25120f); border:1px solid #7c3b33; }
+
+  /* ---- live activity log ---- */
+  .status-log-btn {
+    border:1px solid var(--line-dark); border-radius:999px; padding:2px 10px; font-family:inherit;
+    font-size:10.5px; font-weight:800; color:#25405c; background:linear-gradient(#f7fbff,#e6eff9);
+    transition:filter .15s, transform .15s;
+  }
+  .status-log-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
+  .status-log-btn[aria-pressed="true"] { background:linear-gradient(#dff0ff,#c7e2fb); border-color:#7fb2e0; box-shadow:inset 0 0 0 1px #ffffffcc; }
+  .activity-log {
+    position:fixed; z-index:10400; bottom:52px; inset-inline-start:18px;
+    width:min(360px,94vw); max-height:min(58vh,430px); display:flex; flex-direction:column; overflow:hidden;
+    border-radius:18px; color:#16324b;
+    background:linear-gradient(#ffffff,#eef4fb); border:1px solid #bccee2;
+    box-shadow:0 22px 48px #0b1b3038, inset 0 1px 0 #fff;
+    animation:toastIn .3s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .activity-log[hidden] { display:none !important; }
+  .activity-log-head {
+    display:flex; align-items:center; gap:9px; padding:9px 11px;
+    background:linear-gradient(#f4f9ff,#e2edf9); border-bottom:1px solid #c8d9ea;
+  }
+  .activity-log-ico { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; border-radius:10px; font-size:15px; background:#fff; border:1px solid #c8d9ea; }
+  .activity-log-title { display:flex; flex-direction:column; flex:1; min-width:0; text-align:right; }
+  .activity-log-title strong { font-family:'Cairo',Tahoma,sans-serif; font-size:12.5px; font-weight:800; }
+  .activity-log-title small { font-size:10px; color:#5c748c; }
+  .activity-log-x { border:0; background:transparent; color:#5c748c; font-size:13px; padding:2px 5px; border-radius:8px; }
+  .activity-log-x:hover { background:#d7e6f5; color:#1b3a55; }
+  .activity-log-list { overflow:auto; padding:7px 9px; display:flex; flex-direction:column; gap:6px; }
+  .activity-row {
+    display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:start; text-align:right;
+    padding:6px 9px; border-radius:11px; background:#fbfdff; border:1px solid #dde8f3; font-size:11px;
+  }
+  .activity-row.is-new { animation:activityFlash 1.6s ease-out both; border-color:#8cc0ef; background:#f2f9ff; }
+  @keyframes activityFlash { from { box-shadow:0 0 0 3px #3b82f633; } to { box-shadow:none; } }
+  .activity-row .a-ico { font-size:13px; line-height:1.5; }
+  .activity-row .a-body { display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .activity-row .a-text { font-weight:700; color:#1c3247; word-break:break-word; }
+  .activity-row .a-meta { font-size:9.5px; color:#6a829a; }
+  .activity-empty { text-align:center; font-size:11px; color:#6a829a; padding:14px 6px; }
+  .activity-log-foot { padding:7px 9px 9px; border-top:1px solid #dbe7f3; }
+  .activity-log-more {
+    width:100%; font-family:inherit; font-size:11px; font-weight:800; padding:6px 10px; border-radius:10px;
+    color:#1b4e77; background:linear-gradient(#f4f9ff,#e0ecf9); border:1px solid #b6cde4;
+  }
+  .activity-log-more:hover { filter:brightness(1.04); }
 
   /* ---- small floating dialog pages ---- */
   .page-modal {
@@ -1457,6 +1765,9 @@
   body[data-theme="night"] tbody td { border-color:#3b4233; }
   body[data-theme="night"] .fn-strip, body[data-theme="night"] .pos-fnbar { background:linear-gradient(180deg,#0a1220,#121c30); }
   /* POS surfaces in the night theme */
+  body[data-theme="night"] .scan-camera-btn, body[data-theme="night"] .draft-btn,
+  body[data-theme="night"] .party-add-btn, body[data-theme="night"] .stock-alerts,
+  body[data-theme="night"] .activity-log { filter:brightness(.92) saturate(.9); }
   body[data-theme="night"] .pos-toolbar, body[data-theme="night"] .pos-scanbar,
   body[data-theme="night"] .entry-card, body[data-theme="night"] .pos-titlebar { border-color:#4a5340; }
   body[data-theme="night"] .pos-tab, body[data-theme="night"] .qty-step,
@@ -1565,7 +1876,7 @@
   }
   @media (max-width:760px) {
     .pos-scanbar { grid-template-columns:minmax(0,1fr); }
-    .pos-scanbar .sell-btn { width:100%; }
+    .pos-scanbar .sell-btn, .pos-scanbar .scan-camera-btn { width:100%; }
     .pos-sum { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .pos-actions-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .pos-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -1864,7 +2175,17 @@
           <div class="pos-inline-fields" data-inv-group="party">
             <div class="pos-field">
               <label for="invPartySelect" id="lblInvParty">العميل</label>
-              <select id="invPartySelect"></select>
+              <div class="party-inline">
+                <select id="invPartySelect"></select>
+                <button type="button" class="party-add-btn" id="invQuickPartyBtn" onclick="toggleQuickParty(true)" title="إضافة عميل جديد دون مغادرة الفاتورة">➕ عميل جديد</button>
+              </div>
+              <div class="party-quick" id="invQuickParty" hidden>
+                <input type="text" id="invQuickPartyName" placeholder="اسم العميل" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+                <input type="text" id="invQuickPartyPhone" placeholder="الهاتف (اختياري)" inputmode="tel" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+                <input type="number" id="invQuickPartyBalance" placeholder="رصيد افتتاحي" value="0" step="any" aria-label="الرصيد الافتتاحي">
+                <button type="button" class="party-quick-save" onclick="saveQuickParty()">حفظ واختيار</button>
+                <button type="button" class="party-quick-cancel" onclick="toggleQuickParty(false)">إلغاء</button>
+              </div>
             </div>
             <div class="pos-field">
               <label for="invPayType">طريقة الدفع</label>
@@ -1883,6 +2204,11 @@
             <div class="pos-field">
               <label for="invDiscPct">خصم (%)</label>
               <input type="number" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
+            </div>
+            <div class="discount-limit" id="discountLimitBox">
+              <span aria-hidden="true">🛡️</span>
+              <span>حد الخصم المسموح لك: <b id="discountLimitValue">100%</b></span>
+              <b class="discount-warn" id="discountWarn" hidden>تجاوزت الحد — سيُطلب موافقة المدير</b>
             </div>
           </div>
           <div class="pos-inline-fields" data-inv-group="notes" hidden>
@@ -1911,7 +2237,10 @@
         <div class="pos-scanbar">
           <div class="scan-field">
             <label for="invBarcodeInp">الباركود / الكود</label>
-            <input type="text" id="invBarcodeInp" placeholder="اقرأ الباركود أو اكتب كود/اسم الصنف ثم Enter" list="itemsDatalist" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addInvItemFromInput();}">
+            <div class="scan-input-wrap">
+              <input type="text" id="invBarcodeInp" placeholder="اقرأ الباركود أو اكتب كود/اسم الصنف ثم Enter" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="invSuggest" aria-autocomplete="list" onkeydown="handleScanKey(event)">
+              <div class="scan-suggest" id="invSuggest" role="listbox" aria-label="أصناف مقترحة" hidden></div>
+            </div>
             <datalist id="itemsDatalist"></datalist>
           </div>
           <div class="scan-field scan-qty">
@@ -1922,6 +2251,7 @@
               <button type="button" class="qty-step" onclick="bumpInvoiceQty(1)" title="زيادة الكمية" aria-label="زيادة الكمية">+</button>
             </div>
           </div>
+          <button type="button" class="scan-camera-btn" id="cameraScanBtn" onclick="openCameraScanner()" title="مسح الباركود بكاميرا الهاتف" aria-label="مسح الباركود بالكاميرا"><span aria-hidden="true">📷</span>كاميرا</button>
           <button type="button" class="sell-btn" onclick="addInvItemFromInput()"><span aria-hidden="true">🛒</span>بيع / إضافة</button>
         </div>
 
@@ -1974,12 +2304,35 @@
                 <div class="sum-cell paid big"><label for="invPaidAmount">المدفوع</label><input type="number" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()"></div>
                 <div class="sum-cell remain big"><label for="invRemainAmount">المتبقي (آجل)</label><input type="text" id="invRemainAmount" readonly value="0.00"></div>
               </div>
+              <div class="cash-quick">
+                <span class="cash-quick-label">دفع سريع</span>
+                <div class="cash-quick-btns" id="cashQuickButtons">
+                  <button type="button" class="cash-chip" onclick="setQuickPaid('exact')">المبلغ بالضبط</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(5)">5</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(10)">10</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(20)">20</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(50)">50</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(100)">100</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid(200)">200</button>
+                  <button type="button" class="cash-chip" onclick="setQuickPaid('round')">تدوير لأقرب 5</button>
+                </div>
+                <div class="cash-change" id="cashChangeBox" aria-live="polite">
+                  <span>الباقي للعميل</span><strong id="cashChangeValue">0.00</strong>
+                </div>
+              </div>
+              <div class="draft-strip" id="draftStrip">
+                <span class="draft-hint" id="draftHint" hidden>💾 مسودة محفوظة</span>
+                <button type="button" class="draft-btn restore" id="restoreDraftBtn" hidden onclick="restoreSavedDraft()"><span aria-hidden="true">↩️</span>استعادة المسودة</button>
+                <button type="button" class="draft-btn discard" onclick="discardSavedDraft()"><span aria-hidden="true">🧹</span>حذف المسودة</button>
+                <span class="draft-badge" id="draftBadge" hidden aria-label="عدد الأعمال غير المكتملة"></span>
+              </div>
               <div class="pos-actions-strip">
                 <button type="button" class="pos-action save" onclick="saveInvoice(false)"><span aria-hidden="true">💾</span>حفظ<span class="kbd">F4</span></button>
                 <button type="button" class="pos-action save-print" onclick="saveInvoice(true)"><span aria-hidden="true">🖨️</span>حفظ وطباعة<span class="kbd">Ctrl+↵</span></button>
                 <button type="button" class="pos-action hold" onclick="holdCurrentInvoice()"><span aria-hidden="true">⏸️</span>تعليق<span class="kbd">F6</span></button>
                 <button type="button" class="pos-action restore" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled><span aria-hidden="true">↩️</span>استعادة معلقة (0)</button>
                 <button type="button" class="pos-action thermal" onclick="saveInvoice('thermal')"><span aria-hidden="true">🧾</span>طباعة حرارية</button>
+                <button type="button" class="pos-action preview" onclick="previewInvoiceA5()"><span aria-hidden="true">🔍</span>معاينة A5</button>
                 <button type="button" class="pos-action convert" id="btnConvertQuote" style="display:none" onclick="convertQuoteToSale()"><span aria-hidden="true">🔄</span>تحويل العرض لفاتورة</button>
                 <button type="button" class="pos-action clear" onclick="clearInvCart()"><span aria-hidden="true">🗑️</span>تفريغ</button>
               </div>
@@ -2421,6 +2774,36 @@
             <span class="scope-note" style="margin:0">الثيم المفعّل: <strong id="currentThemeName">كلاسيكي أخضر</strong></span>
           </div>
           <div class="f-row"><label for="receiptWidth">عرض الطابعة الحرارية</label><select id="receiptWidth" onchange="setReceiptWidth(this.value)"><option value="80">80 مم (موصى به)</option><option value="58">58 مم</option></select></div>
+          <div class="f-row">
+            <label for="autoLockSelect">القفل التلقائي</label>
+            <select id="autoLockSelect" onchange="setAutoLockMinutes(this.value)">
+              <option value="0">بدون قفل تلقائي</option>
+              <option value="5">بعد 5 دقائق</option>
+              <option value="10">بعد 10 دقائق</option>
+              <option value="15">بعد 15 دقيقة</option>
+              <option value="30">بعد 30 دقيقة</option>
+              <option value="60">بعد ساعة</option>
+            </select>
+            <label class="remember-row" for="rememberDeviceSettings" style="margin:0;min-width:auto">
+              <input type="checkbox" id="rememberDeviceSettings" onchange="toggleRememberDevice(this.checked); document.getElementById('rememberDevice').checked = this.checked;">
+              تذكّر هذا الجهاز
+            </label>
+          </div>
+          <div class="f-row">
+            <label for="scanSoundSelect">صوت قراءة الباركود</label>
+            <select id="scanSoundSelect" onchange="setScanFeedback(this.value)">
+              <option value="beep">صفير قصير (موصى به)</option>
+              <option value="chime">نغمة ناعمة</option>
+              <option value="click">نقرة خفيفة</option>
+              <option value="silent">صامت</option>
+            </select>
+            <label class="remember-row" for="vibrateFeedback" style="margin:0;min-width:auto">
+              <input type="checkbox" id="vibrateFeedback" checked onchange="setScanVibrate(this.checked)">
+              اهتزاز الهاتف
+            </label>
+            <button type="button" class="act-btn" onclick="playScanFeedback('chime')">🔊 تجربة الصوت</button>
+          </div>
+          <p class="scope-note" id="appBadgeHint">—</p>
           <p class="scope-note">كل ثيم يبدّل الشكل والزجاج والحواف والألوان بالكامل، وليس اللون فقط. اختر ثيماً ثم عدّل ما تشاء من استوديو التخصيص بالأسفل.</p>
         </div>
 
@@ -2529,9 +2912,11 @@
           <div class="f-row">
             <label for="staffRoleInp">الصلاحية</label>
             <select id="staffRoleInp"><option value="cashier">كاشير — مبيعات وعملاء</option><option value="inventory">مخزن — أصناف ومشتريات</option></select>
+            <label for="staffDiscountLimit" style="min-width:auto">حد الخصم %</label>
+            <input type="number" id="staffDiscountLimit" value="10" min="0" max="100" step="1" style="max-width:90px" title="أقصى نسبة خصم مسموحة لهذا الموظف قبل طلب موافقة المدير">
             <button type="button" class="act-btn bg-green" onclick="saveStaff()">إضافة موظف</button>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الصلاحية</th><th>النوع</th><th>إجراء</th></tr></thead><tbody id="staffTbody"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الصلاحية</th><th>حد الخصم</th><th>النوع</th><th>إجراء</th></tr></thead><tbody id="staffTbody"></tbody></table></div>
         </div>
         <div class="panel-box">
           <div class="panel-title">🧾 سجل النشاط (آخر 50 حركة)</div>
@@ -2595,6 +2980,11 @@
     </div>
 
     <div class="start-loader" id="startLoader" role="status" aria-live="polite">
+      <div class="start-stats" id="startStats">
+        <div class="start-stat"><span aria-hidden="true">📦</span><small>الأصناف</small><b id="startStatItems">0</b></div>
+        <div class="start-stat"><span aria-hidden="true">⚠️</span><small>النواقص</small><b id="startStatLow">0</b></div>
+        <div class="start-stat"><span aria-hidden="true">🧾</span><small>فواتير اليوم</small><b id="startStatToday">0</b></div>
+      </div>
       <span class="start-loader-label" id="startLoaderLabel">جارٍ تحضير البرنامج…</span>
       <div class="load-track"><i class="load-fill" id="startLoadFill"></i></div>
       <span class="start-loader-pct" id="startLoadPct">0%</span>
@@ -2606,7 +2996,15 @@
       <label class="start-label" for="loginStaffSelect">المستخدم</label>
       <select id="loginStaffSelect" class="start-input"></select>
       <label class="start-label" for="unlockPinInp">الرقم السري</label>
-      <input type="password" id="unlockPinInp" class="start-input start-pin" inputmode="numeric" autocomplete="current-password" placeholder="••••" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}">
+      <div class="pin-wrap">
+        <input type="password" id="unlockPinInp" class="start-input start-pin" inputmode="numeric" autocomplete="current-password" placeholder="••••" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}">
+        <button type="button" class="pin-eye" onclick="togglePinVisibility(this)" aria-label="إظهار أو إخفاء الرقم السري" title="إظهار / إخفاء الرقم السري">👁️</button>
+      </div>
+      <label class="remember-row" for="rememberDevice">
+        <input type="checkbox" id="rememberDevice" onchange="toggleRememberDevice(this.checked)">
+        <span>تذكّر هذا الجهاز ولا تظهر شاشة البداية في كل مرة</span>
+      </label>
+      <small class="remember-hint" id="rememberDeviceHint">غير موثوق: ستظهر شاشة البداية والدخول في كل تشغيل.</small>
       <button type="button" class="start-btn" onclick="unlockApp()">دخول إلى البرنامج</button>
       <small class="start-foot">البيانات محفوظة على هذا الجهاز — <span id="startFooterUser">مدير</span></small>
     </div>
@@ -2647,11 +3045,84 @@
   </div>
 </div>
 
+<!-- ================= LOW STOCK ALERTS (floating, actionable) ================= -->
+<aside id="stockAlerts" class="stock-alerts" role="status" aria-live="polite" hidden>
+  <div class="stock-alerts-head">
+    <span class="stock-alerts-ico" aria-hidden="true">⚠️</span>
+    <div class="stock-alerts-title"><strong id="stockAlertsTitle">نواقص المخزون</strong><small id="stockAlertsMeta">—</small></div>
+    <button type="button" class="stock-alerts-x" onclick="toggleStockAlerts(false)" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="stock-alerts-list" id="stockAlertsList"></div>
+  <div class="stock-alerts-foot">
+    <button type="button" class="stock-alerts-act" onclick="openPurchaseOrderFromLowStock()"><span aria-hidden="true">🧾</span>طلب شراء سريع للنواقص</button>
+    <button type="button" class="stock-alerts-more" onclick="openStockAlertsPage()">كل النواقص</button>
+  </div>
+</aside>
+
+<!-- ================= A5 INVOICE PREVIEW ================= -->
+<div id="invoicePreview" class="preview-modal" role="dialog" aria-modal="true" aria-labelledby="previewTitle" hidden>
+  <div class="preview-card">
+    <div class="preview-head">
+      <span aria-hidden="true">🔍</span>
+      <h3 id="previewTitle">معاينة الفاتورة — حجم A5</h3>
+      <span class="preview-badge" id="previewBadge">قبل الحفظ</span>
+      <button type="button" class="preview-x" onclick="closeInvoicePreview()" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="preview-body">
+      <div class="preview-paper" id="previewPaper" dir="rtl"></div>
+    </div>
+    <div class="preview-foot">
+      <label class="preview-zoom" for="previewZoom">تكبير</label>
+      <input type="range" id="previewZoom" min="70" max="130" value="100" step="5" oninput="setPreviewZoom(this.value)" class="preview-range">
+      <button type="button" class="preview-btn print" onclick="printPreviewA5()"><span aria-hidden="true">🖨️</span>طباعة المعاينة</button>
+      <button type="button" class="preview-btn close" onclick="closeInvoicePreview()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CAMERA BARCODE SCANNER ================= -->
+<div id="cameraModal" class="camera-modal" role="dialog" aria-modal="true" aria-labelledby="cameraTitle" hidden>
+  <div class="camera-card">
+    <div class="camera-head">
+      <span aria-hidden="true">📷</span>
+      <h3 id="cameraTitle">مسح باركود بالكاميرا</h3>
+      <button type="button" class="camera-x" onclick="closeCameraScanner()" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="camera-stage">
+      <video id="cameraVideo" playsinline muted></video>
+      <div class="camera-frame" aria-hidden="true"></div>
+    </div>
+    <p class="camera-note" id="cameraNote">وجّه الكاميرا نحو الباركود — تتم القراءة تلقائياً وتُضاف المادة للفاتورة.</p>
+    <div class="camera-foot">
+      <button type="button" class="camera-manual" onclick="closeCameraScanner(true)">إدخال الكود يدوياً</button>
+      <button type="button" class="camera-stop" onclick="closeCameraScanner()">إيقاف الكاميرا</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LIVE ACTIVITY LOG (floating) ================= -->
+<aside id="activityLog" class="activity-log" role="log" aria-live="polite" aria-label="سجل النشاط الحيّ" hidden>
+  <div class="activity-log-head">
+    <span class="activity-log-ico" aria-hidden="true">📜</span>
+    <div class="activity-log-title">
+      <strong>سجل النشاط الحيّ</strong>
+      <small id="activityLogMeta">—</small>
+    </div>
+    <button type="button" class="activity-log-x" onclick="toggleActivityLog(false)" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="activity-log-list" id="activityLogList"></div>
+  <div class="activity-log-foot">
+    <button type="button" class="activity-log-more" onclick="openActivityPage()">عرض السجل الكامل</button>
+  </div>
+</aside>
+
 <!-- ================= STATUS BAR ================= -->
 <footer class="app-status">
   <div class="st-item">الموظف: <b id="statusUser">مدير</b></div>
   <div class="st-item">الصلاحية: <b id="statusRole">مدير عام</b></div>
   <div class="st-item">الفرع / المستودع: <b>الرئيسي</b></div>
+  <div class="st-item"><button type="button" class="status-log-btn" id="stockAlertsBtn" onclick="toggleStockAlerts()" aria-pressed="false" title="نواقص المخزون وطلب الشراء السريع">⚠️ نواقص</button></div>
+  <div class="st-item"><button type="button" class="status-log-btn" id="activityLogBtn" onclick="toggleActivityLog()" aria-pressed="false" title="سجل النشاط الحيّ">📜 سجل النشاط</button></div>
   <div class="st-item" id="statusClock">—</div>
   <div class="st-item" id="installHint" hidden><button type="button" class="status-install" onclick="installApp()">⬇️ تثبيت على الجهاز</button></div>
 </footer>
