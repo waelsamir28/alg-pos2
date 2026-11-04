@@ -262,6 +262,70 @@ test('floating screens open large and the screen-print button is gone', async t 
   assert.match(css, /\.workspace \{[^}]*width:100%/);
 });
 
+test('start screen loads with a progress bar, then a rounded login box welcomes the user', async t => {
+  const f = await ready(t);
+  f.window.lockApp();
+  assert.equal(f.$('lockModal').style.display, 'flex');
+  assert.equal(f.$('startLoader').hidden, false);
+  assert.equal(f.$('startLogin').hidden, true);
+  assert.equal(f.$('startStoreName').textContent, f.saved().settings.name);
+  // the loader is a real progress element with a filling bar
+  f.window.startScreenProgress(() => {});
+  f.window.finishStartScreen();
+  assert.equal(f.$('startLoader').hidden, true);
+  assert.equal(f.$('startLogin').hidden, false);
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  assert.equal(f.$('welcomePopup').hidden, false);
+  assert.match(f.$('welcomeTitle').textContent, /أهلاً بك/);
+  f.window.closeWelcomePopup();
+  await new Promise(resolve => setTimeout(resolve, 320));
+  assert.equal(f.$('welcomePopup').hidden, true);
+});
+
+test('sync results and confirmations use small floating dialogs with their own buttons', async t => {
+  const f = await ready(t, { db: seedDatabase(), meta: { revision: 2, dirty: true }, token: 'a'.repeat(40), fetch: async () => ({ ok: true, json: async () => ({ ok: true, revision: 3 }) }) });
+  await f.window.syncToCloud('push');
+  assert.equal(f.$('syncDialog').hidden, false);
+  assert.match(f.$('syncDialogTitle').textContent, /تم الرفع/);
+  assert.equal(f.$('syncDialogFoot').children.length, 1);
+  f.window.closeSyncDialog();
+  assert.equal(f.$('syncDialog').hidden, true);
+  // askDialog resolves with the chosen button and always offers cancel
+  const answer = f.window.askDialog({ title: 'تأكيد الحذف', body: 'هل تحذف؟' });
+  assert.equal(f.$('syncDialogFoot').children.length, 2);
+  assert.match(f.$('syncDialogFoot').children[1].textContent, /إلغاء/);
+  f.$('syncDialogFoot').children[1].click();
+  assert.equal(await answer, false);
+});
+
+test('every screen starts with a full width title bar and the items screen has tabs', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const sections = ['sec-invoice', 'sec-items', 'sec-categories', 'sec-stock', 'sec-labels', 'sec-parties', 'sec-invlog', 'sec-treasury', 'sec-profits', 'sec-settings'];
+  for (const id of sections) {
+    assert.equal(Boolean(f.$(id).querySelector('.page-bar, .pos-titlebar')), true, id);
+  }
+  f.window.openSec('sec-items', 'الأصناف');
+  assert.equal(f.$('headItemsCount').textContent, '2');
+  f.window.switchItemsTab('prices');
+  assert.deepEqual([...f.window.document.querySelectorAll('#sec-items [data-items-tab]')].map(b => b.classList.contains('is-active')), [false, true, false]);
+  assert.equal(f.window.document.querySelector('#sec-items [data-items-group="prices"]').hidden, false);
+  assert.equal(f.$('itemsPanelTitle').textContent, 'الأسعار والربح');
+  f.window.switchItemsTab('actions');
+  assert.equal(f.window.document.querySelector('#sec-items [data-items-group="actions"]').hidden, false);
+  f.window.switchItemsTab('edit');
+  assert.equal(f.window.document.querySelector('#sec-items [data-items-group="edit"]').hidden, false);
+});
+
+test('start screen background can be set and cleared from the design studio', async t => {
+  const f = await ready(t);
+  f.window.setStartBackgroundOpacity(80);
+  const design = JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_DESIGN`));
+  assert.equal(design.startBackgroundOpacity, 80);
+  assert.equal(f.$('startBgOpacity').value, '80');
+  f.window.clearStartBackground();
+  assert.match(f.$('startBgStatus').textContent, /متدرجة/);
+});
+
 test('staff roles allow cashier sales but block inventory and manager-only settings', async t => {
   const f = await ready(t);
   f.window.openSec('sec-settings', 'الإعدادات');

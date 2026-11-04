@@ -53,14 +53,14 @@
 
   /* ============ CENTERED TEXT EVERYWHERE ============ */
   #appShell button, #appShell .nav-link, .window-layer button, .window-layer label,
-  .mini-modal button, .lock-card button, .window-dock button,
+  .mini-modal button, .start-card button, .window-dock button,
   .pos-field label, .sum-cell label, .kpi-box, .chart-day,
   .section-heading, .dashboard-heading h2, .panel-title, .app-status .st-item,
   .theme-choice, .item-tile, .system-alerts h3, .system-alerts li, .label-cell,
   .fn-btn, .kpad-tab, .pos-action, .pos-tab, .t-foot-bar, .action-group h3 {
     text-align:center;
   }
-  #appShell button, .window-layer button, .mini-modal button, .lock-card button { justify-content:center; }
+  #appShell button, .window-layer button, .mini-modal button, .start-card button { justify-content:center; }
   .action-group h3 { justify-content:center; }
   #appShell .dashboard-heading, .window-layer .dashboard-heading,
   .window-layer .section-heading { justify-content:center; text-align:center; }
@@ -380,6 +380,7 @@
   }
   .home-dashboard:not(.collapsed) .board-arrow { transform:rotate(180deg); }
   .board-hint { font-size:10.5px; font-weight:600; color:#cfe6ff; }
+  .board-title { font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; }
   .board-body {
     display:grid; grid-template-rows:1fr; transition:grid-template-rows .24s ease, opacity .2s ease;
   }
@@ -1000,6 +1001,74 @@
   .fn-btn:active { background:var(--head-gold); border-color:#fff; color:#062033; transform:translateY(1px) scale(.97); }
   .fn-btn:active b { color:#062033; }
 
+  /* ============ UNIFIED PAGE LAYOUT (every screen like the invoice) ============ */
+  .page-bar {
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px;
+    min-height:64px; padding:8px 20px; color:#fff; direction:rtl; margin-bottom:10px;
+    background:linear-gradient(105deg,var(--sec-1,var(--head-1)),var(--sec-mid,var(--head-2)) 55%,var(--sec-2,var(--head-3)));
+    border-radius:var(--radius-card); box-shadow:inset 0 1px 0 #ffffff2e, 0 8px 20px #0b1b3026;
+  }
+  .page-bar-title {
+    margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:clamp(16px,2vw,24px); font-weight:800;
+    color:#fff; text-shadow:0 2px 10px #00000055; line-height:1.3;
+  }
+  .page-bar-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .bar-chip {
+    display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
+    font-size:10.5px; font-weight:700; color:#eaf4ff; white-space:nowrap;
+    background:var(--head-chip); border:1px solid var(--head-line);
+  }
+  .bar-chip b { color:#fff; font-weight:800; font-family:'Cairo',Tahoma,sans-serif; }
+
+  .page-tools {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; direction:ltr; margin-bottom:10px;
+    background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius-card);
+    padding:8px 10px; box-shadow:inset 0 1px 0 #ffffffcc;
+  }
+  .page-tools .page-tabs { display:flex; gap:7px; flex-wrap:wrap; direction:rtl; }
+  .page-tools .pos-tab { min-width:132px; min-height:38px; }
+  .page-tools-field { display:flex; align-items:center; gap:8px; flex:1 1 240px; direction:rtl; }
+  .page-tools-field label { font-size:10.5px; font-weight:800; color:var(--muted); white-space:nowrap; }
+  .page-tools-field .plain-input { flex:1; height:34px; border-radius:var(--radius-btn); text-align:center; }
+
+  .page-form { margin-bottom:10px; }
+  .page-form .panel-box { border-radius:var(--radius-card); }
+  .panel-box-wide { grid-column:1 / -1; }
+  .page-actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:8px; }
+  .page-action {
+    display:flex; align-items:center; justify-content:center; gap:7px; min-height:46px; padding:8px 10px;
+    border-radius:var(--radius-btn); border:1px solid var(--line-dark); color:#fff; font-size:11.5px; font-weight:800;
+    box-shadow:inset 0 1px 0 #ffffff3d, 0 3px 10px #0000001f;
+    transition:filter .16s, transform .08s, box-shadow .16s;
+  }
+  .page-action > span[aria-hidden] { font-size:17px; line-height:1; }
+  .page-action:hover { filter:brightness(1.12); transform:translateY(-2px); box-shadow:0 8px 20px #0000002b; }
+  .page-action:active { transform:translateY(1px) scale(.99); filter:brightness(.9); box-shadow:inset 0 3px 9px #00000052; }
+  .page-action.save { background:linear-gradient(150deg,#43a86f,#146b46); border-color:#0f5236; }
+  .page-action.clear { background:linear-gradient(150deg,#c85046,#832420); border-color:#671b18; }
+  .page-action.neutral { background:linear-gradient(150deg,#2f6fb8,#1b4173); border-color:#143258; }
+  .page-action.warn { background:linear-gradient(150deg,#d89435,#8c5210); border-color:#6f420c; }
+  .page-action.accent { background:linear-gradient(150deg,#7d6bc4,#4a3a86); border-color:#392b6b; }
+
+  .page-table { background:var(--panel); border:1px solid var(--line-dark); border-radius:var(--radius-card); overflow:hidden; box-shadow:0 4px 14px #0f172a12; }
+  .page-table .pos-bar { margin:0; border-end-start-radius:0; border-end-end-radius:0; }
+  .page-table .table-wrap { border:0; border-radius:0; max-height:420px; }
+
+  /* sections that still use plain action bars get the same rounded strip look */
+  .sec-view > .action-bar {
+    border-radius:var(--radius-card); border:1px solid var(--line-dark); padding:8px 10px; margin-bottom:10px;
+    background:linear-gradient(#fdfcf5,#eef0f4); box-shadow:inset 0 1px 0 #ffffffcc;
+  }
+  .sec-view > .action-bar .act-btn { min-height:32px; border-radius:var(--radius-btn); }
+  .sec-view > .table-wrap { border-radius:var(--radius-card); border:1px solid var(--line-dark); }
+  .sec-view > .t-foot-bar { border-radius:var(--radius-card); border:1px solid var(--line-dark); margin-top:8px; }
+  .sec-view > .panel-box { border-radius:var(--radius-card); }
+  body[data-theme="night"] .sec-view > .action-bar { background:linear-gradient(#2e3527,#262c20); border-color:#4a5340; }
+  @media (max-width:760px) {
+    .page-bar { grid-template-columns:1fr; justify-items:center; text-align:center; }
+    .page-tools .pos-tab { min-width:110px; }
+  }
+
   /* ============ STATUS BAR ============ */
   .app-status {
     display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
@@ -1075,21 +1144,175 @@
   .kpad-foot .ok-btn { background:linear-gradient(#5bb03c,#2f7d32 60%,#20591f); color:#fff; border-color:#17400f; }
   .kpad-foot .cancel-btn { background:linear-gradient(#d05046,#b1251d 60%,#8c1a14); color:#fff; border-color:#6f1310; }
 
-  #lockModal {
-    display:none; position:fixed; inset:0; background:#11200a99; z-index:9999;
-    align-items:center; justify-content:center; padding:14px;
+  /* ============ START SCREEN (splash + login) ============ */
+  #lockModal.start-screen {
+    display:none; position:fixed; inset:0; z-index:9999; padding:18px;
+    align-items:center; justify-content:center;
+    background:
+      radial-gradient(1100px 520px at 80% -10%, #0f7c9355, transparent 60%),
+      radial-gradient(900px 480px at 10% 110%, #1b3f8f4d, transparent 60%),
+      linear-gradient(140deg,#050d1c,#0a1a3c 45%,#0b2a44);
   }
-  .lock-card {
-    width:330px; max-width:100%; background:var(--panel); border:2px solid var(--line-dark);
-    border-radius:var(--radius-ui); padding:0 0 14px; text-align:center; box-shadow:var(--shadow); overflow:hidden;
+  #lockModal.start-screen::before {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background-image:var(--start-bg-image, none); background-size:cover; background-position:center; background-repeat:no-repeat;
+    opacity:var(--start-bg-opacity,.5); transition:opacity .2s ease;
   }
-  .lock-card .lock-head { background:linear-gradient(#f6f5ea,#e4e1cc); border-bottom:1px solid var(--line-dark); padding:5px; font-weight:bold; font-size:12px; }
-  .lock-card h3 { margin:12px 0 4px; font-size:14px; }
-  .lock-card p { margin:0 10px 10px; font-size:11px; color:var(--muted); line-height:1.6; }
-  .lock-card label { font-size:11px; font-weight:bold; }
-  .lock-card input, .lock-card select { width:calc(100% - 24px); margin:4px 12px 8px; padding:6px; border:1px solid #a9a48a; border-radius:var(--radius-btn); background:#fffef8; }
-  .lock-card input { text-align:center; font-size:16px; }
-  .lock-card button { width:calc(100% - 24px); margin:0 12px; }
+  .start-card {
+    position:relative; width:min(430px,100%); max-height:calc(100vh - 36px); overflow:auto;
+    background:linear-gradient(#ffffff,#f4f7fb); color:#1b2a3d;
+    border:1px solid #ffffff59; border-radius:26px; padding:0 0 20px; text-align:center;
+    box-shadow:0 30px 70px #00000066, inset 0 1px 0 #ffffffcc;
+    animation:startIn .38s ease-out both;
+  }
+  @keyframes startIn { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
+  .start-art {
+    position:relative; padding:26px 22px 20px; color:#fff; overflow:hidden; border-radius:26px 26px 0 0;
+    background:linear-gradient(135deg,var(--head-1),var(--head-2) 55%,var(--head-3));
+  }
+  .start-art::after {
+    content:''; position:absolute; width:220px; height:220px; border-radius:50%;
+    inset-inline-end:-70px; top:-90px; background:#ffffff1f;
+  }
+  .start-mark {
+    display:grid; place-items:center; width:64px; height:64px; margin:0 auto 10px;
+    border-radius:20px; font-size:32px; background:#ffffff26; border:1px solid #ffffff40;
+    box-shadow:inset 0 1px 0 #ffffff59, 0 8px 20px #00000033;
+  }
+  .start-name {
+    margin:0; font-family:'Cairo',Tahoma,sans-serif; font-size:clamp(20px,4vw,26px); font-weight:800;
+    color:#fff; text-shadow:0 2px 12px #00000055; line-height:1.3;
+  }
+  .start-tag { margin:6px 0 0; font-size:11.5px; font-weight:600; color:#cfe6ff; letter-spacing:.3px; }
+
+  /* loading bar */
+  .start-loader { padding:20px 24px 6px; }
+  .start-loader-label { display:block; font-size:11.5px; font-weight:800; color:#31465c; margin-bottom:9px; }
+  .load-track {
+    position:relative; height:12px; border-radius:999px; overflow:hidden;
+    background:#dbe4ee; box-shadow:inset 0 1px 3px #0000001f;
+  }
+  .load-fill {
+    display:block; height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg,var(--head-2),var(--head-3) 60%,#4fd1c5);
+    box-shadow:0 0 12px #0f7c9366; transition:width .28s ease;
+  }
+  .load-fill::after {
+    content:''; position:absolute; inset:0; border-radius:999px;
+    background:linear-gradient(90deg,#ffffff00,#ffffff80,#ffffff00);
+    animation:loadShine 1.15s linear infinite;
+  }
+  @keyframes loadShine { from { transform:translateX(-100%); } to { transform:translateX(100%); } }
+  .start-loader-pct { display:block; margin-top:7px; font-size:10.5px; font-weight:800; color:#5b7080; }
+
+  /* login form: rounded fields */
+  .start-login { padding:6px 26px 0; }
+  .start-login h3 {
+    margin:6px 0 6px; font-family:'Cairo',Tahoma,sans-serif; font-size:15px; font-weight:800; color:#17324f;
+  }
+  .start-hint { margin:0 0 12px; font-size:11px; color:#5b7080; line-height:1.7; }
+  .start-label { display:block; text-align:right; font-size:11px; font-weight:800; color:#31465c; margin:0 4px 4px; }
+  .start-input {
+    width:100%; height:44px; margin:0 0 12px; padding:0 16px; text-align:center;
+    border:2px solid #cdd9e6; border-radius:999px; background:#fff; color:#15263a;
+    font-size:13px; font-weight:700; box-shadow:inset 0 1px 3px #0000000f;
+    transition:border-color .16s, box-shadow .16s, background .16s;
+  }
+  .start-input:hover { border-color:#a9c2dc; background:#fbfdff; }
+  .start-input:focus { outline:none; border-color:var(--head-3); box-shadow:0 0 0 4px #0f7c9326; }
+  .start-pin { font-size:20px; letter-spacing:6px; }
+  .start-btn {
+    width:100%; height:48px; display:flex; align-items:center; justify-content:center; gap:8px;
+    border:0; border-radius:999px; color:#fff; font-size:14px; font-weight:800; cursor:pointer;
+    font-family:'Cairo',Tahoma,sans-serif; letter-spacing:.3px;
+    background:linear-gradient(105deg,var(--head-2),var(--head-3));
+    box-shadow:0 12px 26px #0f7c9347, inset 0 1px 0 #ffffff40;
+    transition:transform .1s, filter .16s, box-shadow .16s;
+  }
+  .start-btn:hover { filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 16px 32px #0f7c9359; }
+  .start-btn:active { transform:translateY(1px) scale(.99); filter:brightness(.92); }
+  .start-foot { display:block; margin-top:13px; font-size:10px; color:#7b8b9b; }
+
+  /* ---- toast popups (welcome, notices) ---- */
+  .toast-popup {
+    position:fixed; z-index:10500; display:flex; align-items:center; gap:12px;
+    top:18px; inset-inline-end:18px; min-width:300px; max-width:min(430px,92vw);
+    padding:14px 16px; border-radius:18px; color:#0f2d22;
+    background:linear-gradient(#f2fdf6,#dcf6e7); border:1px solid #86d3a9;
+    box-shadow:0 18px 44px #0b1b3040, inset 0 1px 0 #ffffff;
+    animation:toastIn .32s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .toast-popup[hidden] { display:none !important; }
+  .toast-popup.out { animation:toastOut .28s ease-in forwards; }
+  @keyframes toastIn { from { opacity:0; transform:translateY(-14px) scale(.94); } to { opacity:1; transform:none; } }
+  @keyframes toastOut { to { opacity:0; transform:translateY(-12px) scale(.96); } }
+  .toast-ico {
+    display:grid; place-items:center; width:46px; height:46px; flex:0 0 46px; border-radius:14px;
+    font-size:24px; background:#ffffff; border:1px solid #b7e6cc; box-shadow:0 4px 12px #1d7a4d1f;
+  }
+  .toast-body { display:flex; flex-direction:column; gap:2px; text-align:right; flex:1; }
+  .toast-body strong { font-family:'Cairo',Tahoma,sans-serif; font-size:14px; font-weight:800; }
+  .toast-body span { font-size:11.5px; font-weight:600; color:#2c5c46; }
+  .toast-x {
+    border:0; background:transparent; font-size:14px; color:#4a7c63; padding:2px 4px; border-radius:8px;
+    transition:background .14s, color .14s;
+  }
+  .toast-x:hover { background:#c8efda; color:#0f3d2a; }
+  .toast-progress {
+    position:absolute; inset-inline:14px; bottom:7px; height:4px; border-radius:999px; overflow:hidden; background:#bfe9d2;
+  }
+  .toast-progress i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#25a06a,#3fd39a); animation:toastBar 3s linear forwards; }
+  @keyframes toastBar { from { width:100%; } to { width:0%; } }
+  .welcome-popup { padding-bottom:18px; }
+  .notice-popup {
+    top:auto; bottom:18px; background:linear-gradient(#fffdf3,#fff5d6); border-color:#e2c071; color:#4a3506;
+  }
+  .notice-popup .toast-body strong { color:#7a5506; }
+  .notice-popup .toast-body span { color:#6d5417; }
+  .notice-popup .toast-ico { background:#fffdf3; border-color:#e8ce93; }
+
+  /* ---- small floating dialog pages ---- */
+  .page-modal {
+    position:fixed; inset:0; z-index:10600; display:flex; align-items:center; justify-content:center;
+    padding:16px; background:#08182a66; backdrop-filter:blur(2px);
+  }
+  .page-modal[hidden] { display:none !important; }
+  .page-modal-card {
+    width:min(486px,100%); max-height:min(84vh,620px); display:flex; flex-direction:column; overflow:hidden;
+    background:linear-gradient(#ffffff,#f3f6fa); border:1px solid #ffffff73; border-radius:22px;
+    box-shadow:0 28px 64px #00000059; animation:startIn .3s ease-out both;
+  }
+  .page-modal-head {
+    display:flex; align-items:center; gap:10px; padding:12px 14px; color:#fff;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3));
+  }
+  .page-modal-head h3 { margin:0; flex:1; font-family:'Cairo',Tahoma,sans-serif; font-size:14px; font-weight:800; text-align:right; }
+  .page-modal-ico {
+    display:grid; place-items:center; width:34px; height:34px; border-radius:11px; font-size:17px;
+    background:#ffffff26; border:1px solid #ffffff40;
+  }
+  .page-modal-x {
+    width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
+    border:1px solid #ffffff40; background:#ffffff1f; color:#fff; font-size:12px;
+    transition:background .14s, transform .08s;
+  }
+  .page-modal-x:hover { background:#ffffff3d; }
+  .page-modal-x:active { transform:scale(.94); }
+  .page-modal-body { padding:14px 16px; overflow:auto; font-size:12px; font-weight:600; line-height:1.85; color:#243b52; text-align:right; }
+  .page-modal-body p { margin:0 0 8px; }
+  .page-modal-foot { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:0 16px 16px; }
+  .page-modal-note { display:block; margin-top:6px; font-size:10.5px; color:#63798f; }
+  .dialog-action {
+    flex:1 1 130px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px;
+    border-radius:999px; border:1px solid var(--line-dark); font-size:12px; font-weight:800;
+    color:var(--btn-ink,#1f2714); background:linear-gradient(#fefdf4,var(--btn) 62%,var(--btn-2));
+    transition:filter .14s, transform .08s, box-shadow .14s;
+  }
+  .dialog-action:hover { filter:brightness(1.08); box-shadow:0 6px 16px #0000001f; transform:translateY(-1px); }
+  .dialog-action:active { transform:translateY(1px) scale(.99); filter:brightness(.92); }
+  .dialog-action.confirm { background:linear-gradient(#43a86f,#146b46); color:#fff; border-color:#0f5236; }
+  .dialog-action.cancel { background:linear-gradient(#c85046,#832420); color:#fff; border-color:#671b18; }
+  .dialog-action.neutral { background:linear-gradient(#2f6fb8,#1b4173); color:#fff; border-color:#143258; }
 
   #appNotice {
     position:fixed; bottom:12px; inset-inline-start:12px; z-index:10000; max-width:640px;
@@ -1782,134 +2005,196 @@
 
     <!-- ==================== 2. ITEMS & STOCK ==================== -->
     <div id="sec-items" class="sec-view active">
-      <div class="form-grid-2">
-        <div class="panel-box">
-          <div class="panel-title">بيانات الصنف — الكتاب / الأداة المدرسية / الهدية</div>
-          <input type="hidden" id="itemEditId">
-          <div class="f-row">
-            <label for="itemWarehouse">المخزن</label>
-            <select id="itemWarehouse"><option value="الرئيسي">الرئيسي</option><option value="مخزن الكتب">مخزن الكتب</option><option value="الفرعي">الفرعي</option></select>
-            <label for="itemCode" style="min-width:auto">كود الصنف</label>
-            <input type="text" id="itemCode" placeholder="باركود / كود">
-            <button type="button" class="act-btn bg-orange" onclick="generateNewCode()">كود جديد</button>
-          </div>
-          <div class="f-row">
-            <label for="itemName">اسم الصنف</label>
-            <input type="text" id="itemName" placeholder="مثال: كتاب المعاصر رياضيات 3ع / قلم جاف روتو">
-          </div>
-          <div class="f-row">
-            <label for="itemCategory">المجموعة</label>
-            <select id="itemCategory"></select>
-            <button type="button" class="act-btn bg-green" onclick="quickAddCategory()" title="إضافة مجموعة">+</button>
-            <label for="itemType" style="min-width:auto">نوع الصنف</label>
-            <select id="itemType">
-              <option value="كتاب خارجي">كتاب خارجي</option>
-              <option value="أدوات مدرسية">أدوات مدرسية</option>
-              <option value="كشاكيل وكراسات">كشاكيل وكراسات</option>
-              <option value="هدايا وألعاب">هدايا وألعاب</option>
-              <option value="أدوات مكتبية">أدوات مكتبية</option>
-              <option value="عام">عام</option>
-            </select>
-          </div>
-          <div class="f-row">
-            <label for="itemUnit">الوحدة</label>
-            <select id="itemUnit"><option value="عدد">عدد / قطعة</option><option value="دستة">دستة</option><option value="علبة">علبة</option><option value="باكو">باكو</option></select>
-            <label for="itemQty" style="min-width:auto">الكمية</label>
-            <input type="number" id="itemQty" value="10" step="any">
-            <label for="itemMinQty" style="min-width:auto">حد الطلب</label>
-            <input type="number" id="itemMinQty" value="3" step="any">
-          </div>
-        </div>
-
-        <div class="panel-box">
-          <div class="panel-title">بيانات السعر والربح</div>
-          <div class="f-row">
-            <label for="itemBuyPrice">سعر الشراء</label>
-            <input type="number" id="itemBuyPrice" value="0" step="any" oninput="calcPriceFromProfit()">
-            <label for="itemProfitPct" style="min-width:auto">نسبة الربح %</label>
-            <input type="number" id="itemProfitPct" value="20" step="any" oninput="calcPriceFromProfit()">
-          </div>
-          <div class="f-row">
-            <label for="itemSellPrice">سعر البيع</label>
-            <input type="number" id="itemSellPrice" value="0" step="any" oninput="calcProfitFromPrice()">
-            <label for="itemWholesale" style="min-width:auto">سعر الجملة</label>
-            <input type="number" id="itemWholesale" value="0" step="any">
-          </div>
-          <div class="f-row">
-            <label for="itemMinSell">أقل سعر بيع</label>
-            <input type="number" id="itemMinSell" value="0" step="any">
-            <label for="itemNotes" style="min-width:auto">ملاحظات</label>
-            <input type="text" id="itemNotes" placeholder="طبعة 2025 / بدون خصم / الرف الأول...">
-          </div>
+      <!-- title bar -->
+      <div class="page-bar">
+        <h2 class="page-bar-title">📦 بيانات الأصناف والمخزون</h2>
+        <div class="page-bar-meta">
+          <span class="bar-chip">الأصناف: <b id="headItemsCount">0</b></span>
+          <span class="bar-chip">قيمة المخزن: <b id="headItemsValue">0.00</b></span>
         </div>
       </div>
 
-      <div class="action-bar">
-        <button type="button" class="act-btn bg-green" onclick="saveItem()">💾 إضافة / حفظ الصنف</button>
-        <button type="button" class="act-btn bg-red" onclick="resetItemForm()">✖ إلغاء وتفريغ</button>
-        <button type="button" class="act-btn bg-blue" onclick="showSingleItemProfit()">📊 ربح صنف</button>
-        <button type="button" class="act-btn bg-teal" onclick="printItemsReportA5()">🖨️ طباعة البيانات (A5)</button>
-        <button type="button" class="act-btn bg-orange" onclick="toggleQuickEditItems()">✏️ التعديل السريع بالجدول</button>
-        <button type="button" class="act-btn bg-purple" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">🏷️ ملصقات الباركود</button>
-        <button type="button" class="act-btn bg-blue" onclick="exportItemsCSV()">📤 تصدير إكسيل (CSV)</button>
-        <input type="text" id="itemSearchInp" class="plain-input" style="flex:1 1 200px" placeholder="🔍 ابحث بالاسم أو الكود أو المجموعة..." oninput="renderItemsTable()">
+      <!-- tools bar -->
+      <div class="page-tools">
+        <div class="page-tabs">
+          <button type="button" class="pos-tab is-active" data-items-tab="edit" onclick="switchItemsTab('edit')"><span aria-hidden="true">✏️</span>بيانات الصنف</button>
+          <button type="button" class="pos-tab" data-items-tab="prices" onclick="switchItemsTab('prices')"><span aria-hidden="true">💰</span>الأسعار والربح</button>
+          <button type="button" class="pos-tab" data-items-tab="actions" onclick="switchItemsTab('actions')"><span aria-hidden="true">⚙️</span>إجراءات وأدوات</button>
+        </div>
+        <div class="page-tools-field">
+          <label for="itemSearchInp">بحث</label>
+          <input type="text" id="itemSearchInp" class="plain-input" placeholder="🔍 بالاسم أو الكود أو المجموعة…" oninput="renderItemsTable()">
+        </div>
+        <span class="pos-panel-title" id="itemsPanelTitle">بيانات الصنف</span>
       </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>كود الصنف</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الكمية</th><th>الوحدة</th>
-              <th>سعر الشراء</th><th>سعر البيع</th><th>سعر الجملة</th><th>أقل سعر</th>
-              <th>الملاحظات</th><th class="no-print">تعديل</th><th class="no-print">حذف</th><th class="no-print">باركود</th>
-            </tr>
-          </thead>
-          <tbody id="itemsTbody"></tbody>
-        </table>
+      <!-- form area -->
+      <div class="page-form">
+        <div class="form-grid-2">
+          <div class="panel-box" data-items-group="edit">
+            <div class="panel-title">بيانات الصنف — الكتاب / الأداة المدرسية / الهدية</div>
+            <input type="hidden" id="itemEditId">
+            <div class="f-row">
+              <label for="itemWarehouse">المخزن</label>
+              <select id="itemWarehouse"><option value="الرئيسي">الرئيسي</option><option value="مخزن الكتب">مخزن الكتب</option><option value="الفرعي">الفرعي</option></select>
+              <label for="itemCode" style="min-width:auto">كود الصنف</label>
+              <input type="text" id="itemCode" placeholder="باركود / كود">
+              <button type="button" class="act-btn bg-orange" onclick="generateNewCode()">كود جديد</button>
+            </div>
+            <div class="f-row">
+              <label for="itemName">اسم الصنف</label>
+              <input type="text" id="itemName" placeholder="مثال: كتاب المعاصر رياضيات 3ع / قلم جاف روتو">
+            </div>
+            <div class="f-row">
+              <label for="itemCategory">المجموعة</label>
+              <select id="itemCategory"></select>
+              <button type="button" class="act-btn bg-green" onclick="quickAddCategory()" title="إضافة مجموعة">+</button>
+              <label for="itemType" style="min-width:auto">نوع الصنف</label>
+              <select id="itemType">
+                <option value="كتاب خارجي">كتاب خارجي</option>
+                <option value="أدوات مدرسية">أدوات مدرسية</option>
+                <option value="كشاكيل وكراسات">كشاكيل وكراسات</option>
+                <option value="هدايا وألعاب">هدايا وألعاب</option>
+                <option value="أدوات مكتبية">أدوات مكتبية</option>
+                <option value="عام">عام</option>
+              </select>
+            </div>
+            <div class="f-row">
+              <label for="itemUnit">الوحدة</label>
+              <select id="itemUnit"><option value="عدد">عدد / قطعة</option><option value="دستة">دستة</option><option value="علبة">علبة</option><option value="باكو">باكو</option></select>
+              <label for="itemQty" style="min-width:auto">الكمية</label>
+              <input type="number" id="itemQty" value="10" step="any">
+              <label for="itemMinQty" style="min-width:auto">حد الطلب</label>
+              <input type="number" id="itemMinQty" value="3" step="any">
+            </div>
+          </div>
+
+          <div class="panel-box" data-items-group="prices">
+            <div class="panel-title">بيانات السعر والربح</div>
+            <div class="f-row">
+              <label for="itemBuyPrice">سعر الشراء</label>
+              <input type="number" id="itemBuyPrice" value="0" step="any" oninput="calcPriceFromProfit()">
+              <label for="itemProfitPct" style="min-width:auto">نسبة الربح %</label>
+              <input type="number" id="itemProfitPct" value="20" step="any" oninput="calcPriceFromProfit()">
+            </div>
+            <div class="f-row">
+              <label for="itemSellPrice">سعر البيع</label>
+              <input type="number" id="itemSellPrice" value="0" step="any" oninput="calcProfitFromPrice()">
+              <label for="itemWholesale" style="min-width:auto">سعر الجملة</label>
+              <input type="number" id="itemWholesale" value="0" step="any">
+            </div>
+            <div class="f-row">
+              <label for="itemMinSell">أقل سعر بيع</label>
+              <input type="number" id="itemMinSell" value="0" step="any">
+              <label for="itemNotes" style="min-width:auto">ملاحظات</label>
+              <input type="text" id="itemNotes" placeholder="طبعة 2025 / بدون خصم / الرف الأول...">
+            </div>
+          </div>
+
+          <div class="panel-box panel-box-wide" data-items-group="actions">
+            <div class="panel-title">إجراءات وأدوات الأصناف</div>
+            <div class="page-actions">
+              <button type="button" class="page-action save" onclick="saveItem()"><span aria-hidden="true">💾</span>إضافة / حفظ الصنف</button>
+              <button type="button" class="page-action clear" onclick="resetItemForm()"><span aria-hidden="true">✖</span>إلغاء وتفريغ</button>
+              <button type="button" class="page-action neutral" onclick="showSingleItemProfit()"><span aria-hidden="true">📊</span>ربح صنف</button>
+              <button type="button" class="page-action neutral" onclick="printItemsReportA5()"><span aria-hidden="true">🖨️</span>طباعة البيانات (A5)</button>
+              <button type="button" class="page-action warn" onclick="toggleQuickEditItems()"><span aria-hidden="true">✏️</span>التعديل السريع بالجدول</button>
+              <button type="button" class="page-action accent" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')"><span aria-hidden="true">🏷️</span>ملصقات الباركود</button>
+              <button type="button" class="page-action neutral" onclick="exportItemsCSV()"><span aria-hidden="true">📤</span>تصدير إكسيل (CSV)</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="t-foot-bar">
-        <span>إجمالي عدد الأصناف: <strong id="totItemsCount">0</strong></span>
-        <span>قيمة الشراء بالمخزن: <strong id="totItemsBuy">0.00</strong></span>
-        <span>قيمة البيع بالمخزن: <strong id="totItemsSell">0.00</strong></span>
+
+      <!-- table -->
+      <div class="page-table">
+        <div class="section-bar pos-bar">
+          <h3>📋 قائمة الأصناف</h3>
+          <span class="bar-mini" id="itemsTableHint">0 صنف</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>كود الصنف</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الكمية</th><th>الوحدة</th>
+                <th>سعر الشراء</th><th>سعر البيع</th><th>سعر الجملة</th><th>أقل سعر</th>
+                <th>الملاحظات</th><th class="no-print">تعديل</th><th class="no-print">حذف</th><th class="no-print">باركود</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTbody"></tbody>
+          </table>
+        </div>
+        <div class="t-foot-bar">
+          <span>إجمالي عدد الأصناف: <strong id="totItemsCount">0</strong></span>
+          <span>قيمة الشراء بالمخزن: <strong id="totItemsBuy">0.00</strong></span>
+          <span>قيمة البيع بالمخزن: <strong id="totItemsSell">0.00</strong></span>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 3. CATEGORIES ==================== -->
     <div id="sec-categories" class="sec-view">
-      <div class="panel-box" style="max-width:620px">
-        <div class="panel-title">إضافة وتعديل مجموعات الأصناف</div>
-        <div class="f-row">
-          <label for="catNameInp">اسم المجموعة</label>
-          <input type="text" id="catNameInp" placeholder="مثال: كتب خارجية ثانوي / أدوات هندسية / هدايا">
-          <button type="button" class="act-btn bg-green" onclick="addCategory()">+ حفظ المجموعة</button>
+      <div class="page-bar">
+        <h2 class="page-bar-title">📁 مجموعات الأصناف</h2>
+        <div class="page-bar-meta"><span class="bar-chip">المجموعات: <b id="headCatsCount">0</b></span></div>
+      </div>
+      <div class="page-form">
+        <div class="panel-box">
+          <div class="panel-title">إضافة وتعديل مجموعات الأصناف</div>
+          <div class="f-row">
+            <label for="catNameInp">اسم المجموعة</label>
+            <input type="text" id="catNameInp" placeholder="مثال: كتب خارجية ثانوي / أدوات هندسية / هدايا">
+            <button type="button" class="act-btn bg-green" onclick="addCategory()">+ حفظ المجموعة</button>
+          </div>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>اسم المجموعة</th><th>عدد الأصناف</th><th class="no-print">حذف</th></tr></thead>
-          <tbody id="catsTbody"></tbody>
-        </table>
+      <div class="page-table">
+        <div class="section-bar pos-bar"><h3>📋 كل المجموعات</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>اسم المجموعة</th><th>عدد الأصناف</th><th class="no-print">حذف</th></tr></thead>
+            <tbody id="catsTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 4. STOCK ==================== -->
     <div id="sec-stock" class="sec-view">
-      <div class="action-bar">
-        <button type="button" class="act-btn bg-blue" onclick="openStockFilter('all')">📦 كل المخزن</button>
-        <button type="button" class="act-btn bg-red" onclick="openStockFilter('zero')">🚨 النواقص (صفر أو أقل)</button>
-        <button type="button" class="act-btn bg-orange" onclick="openStockFilter('low')">⚠️ وصلت لحد الطلب</button>
-        <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الجرد</button>
+      <div class="page-bar">
+        <h2 class="page-bar-title">🏢 جرد المخزن</h2>
+        <div class="page-bar-meta">
+          <span class="bar-chip">الأصناف: <b id="headStockCount">0</b></span>
+          <span class="bar-chip">تكلفة المخزن: <b id="headStockCost">0.00</b></span>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>الكود</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الرصيد</th><th>حد الطلب</th><th>سعر الشراء</th><th>إجمالي التكلفة</th></tr></thead>
-          <tbody id="stockTbody"></tbody>
-        </table>
+      <div class="page-tools">
+        <div class="page-tabs">
+          <button type="button" class="pos-tab" onclick="openStockFilter('all')"><span aria-hidden="true">📦</span>كل المخزن</button>
+          <button type="button" class="pos-tab" onclick="openStockFilter('zero')"><span aria-hidden="true">🚨</span>النواقص</button>
+          <button type="button" class="pos-tab" onclick="openStockFilter('low')"><span aria-hidden="true">⚠️</span>حد الطلب</button>
+        </div>
+        <div class="page-tools-field" style="justify-content:flex-end">
+          <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة الجرد (A5)</button>
+        </div>
+      </div>
+      <div class="page-table">
+        <div class="section-bar pos-bar"><h3>📋 نتيجة الجرد</h3><span class="bar-mini" id="stockTableHint">—</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الكود</th><th>اسم الصنف</th><th>المجموعة</th><th>المخزن</th><th>الرصيد</th><th>حد الطلب</th><th>سعر الشراء</th><th>إجمالي التكلفة</th></tr></thead>
+            <tbody id="stockTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 5. BARCODE LABELS ==================== -->
     <div id="sec-labels" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">🏷️ ملصقات الباركود</h2>
+        <div class="page-bar-meta"><span class="bar-chip">ملصقات جاهزة: <b id="headLabelsCount">0</b></span></div>
+      </div>
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title">🏷️ إعداد ملصقات الباركود</div>
@@ -1947,6 +2232,10 @@
 
     <!-- ==================== 6. PARTIES ==================== -->
     <div id="sec-parties" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title" id="partiesHeadTitle">👥 إدارة العملاء والموردين</h2>
+        <div class="page-bar-meta"><span class="bar-chip">العدد: <b id="headPartiesCount">0</b></span><span class="bar-chip">الأرصدة: <b id="headPartiesBalance">0.00</b></span></div>
+      </div>
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title" id="partyFormTitle">بيانات العميل / المورد</div>
@@ -2000,6 +2289,10 @@
 
     <!-- ==================== 7. INVOICE LOG ==================== -->
     <div id="sec-invlog" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">📑 سجل الفواتير</h2>
+        <div class="page-bar-meta"><span class="bar-chip">النتائج: <b id="headInvLogCount">0</b></span></div>
+      </div>
       <div class="action-bar">
         <label for="logTypeFilter">النوع</label>
         <select id="logTypeFilter" class="plain-input" style="flex:0 0 170px" onchange="renderInvLog()">
@@ -2015,17 +2308,24 @@
         <button type="button" class="act-btn bg-blue" onclick="openInvLog('all')">كل الفواتير</button>
         <button type="button" class="act-btn bg-teal" onclick="printCurrentScreenA5()">🖨️ طباعة السجل</button>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل / المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th class="no-print">إجراءات</th></tr></thead>
-          <tbody id="invLogTbody"></tbody>
-        </table>
+      <div class="page-table">
+        <div class="section-bar pos-bar"><h3>📋 الفواتير المسجلة</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>العميل / المورد</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th class="no-print">إجراءات</th></tr></thead>
+            <tbody id="invLogTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 8. TREASURY ==================== -->
     <div id="sec-treasury" class="sec-view">
-      <div class="panel-box">
+      <div class="page-bar">
+        <h2 class="page-bar-title">💰 الخزنة والحسابات</h2>
+        <div class="page-bar-meta"><span class="bar-chip">رصيد الخزنة: <b id="headTreasuryBalance">0.00</b></span></div>
+      </div>
+      <div class="page-form"><div class="panel-box">
         <div class="panel-title">تسجيل حركة خزينة — وارد / منصرف / مصروفات</div>
         <div class="f-row">
           <label for="trType">نوع الحركة</label>
@@ -2038,20 +2338,27 @@
           <label for="trNote" style="min-width:auto">البيان</label><input type="text" id="trNote" placeholder="تفاصيل العملية...">
           <button type="button" class="act-btn bg-green" onclick="addTreasuryMove()">💾 حفظ الحركة</button>
         </div>
-      </div>
+      </div></div>
       <div class="t-foot-bar" style="border:1px solid var(--line-dark);margin-bottom:8px">
         <span>رصيد الخزنة الحالي: <strong id="kpiCashSide">0.00</strong></span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>وارد (+)</th><th>منصرف / مصروف (−)</th></tr></thead>
-          <tbody id="treasuryTbody"></tbody>
-        </table>
+      <div class="page-table">
+        <div class="section-bar pos-bar"><h3>📋 حركات الخزنة</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>وارد (+)</th><th>منصرف / مصروف (−)</th></tr></thead>
+            <tbody id="treasuryTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 9. PROFITS ==================== -->
     <div id="sec-profits" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">📈 التقارير والأرباح</h2>
+        <div class="page-bar-meta"><span class="bar-chip">صافي الربح: <b id="headNetProfit">0.00</b></span></div>
+      </div>
       <div class="action-bar">
         <label for="profDateFrom">من تاريخ</label><input type="date" id="profDateFrom" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
         <label for="profDateTo">إلى تاريخ</label><input type="date" id="profDateTo" class="plain-input" style="flex:0 0 130px" onchange="renderProfits()">
@@ -2066,16 +2373,34 @@
         <span style="color:var(--danger)">إجمالي المصروفات: <strong id="profExpenses">0.00</strong></span>
         <span style="background:#eaf5df;border-color:#6aa64a">💰 صافي الربح: <strong id="profNet">0.00</strong></span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>كود الصنف</th><th>اسم الصنف</th><th>الكمية المباعة</th><th>إجمالي البيع</th><th>إجمالي التكلفة</th><th>صافي ربح الصنف</th></tr></thead>
-          <tbody id="profitsTbody"></tbody>
-        </table>
+      <div class="page-table">
+        <div class="section-bar pos-bar"><h3>📋 أرباح الأصناف</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>كود الصنف</th><th>اسم الصنف</th><th>الكمية المباعة</th><th>إجمالي البيع</th><th>إجمالي التكلفة</th><th>صافي ربح الصنف</th></tr></thead>
+            <tbody id="profitsTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ==================== 10. SETTINGS ==================== -->
     <div id="sec-settings" class="sec-view">
+      <div class="page-bar">
+        <h2 class="page-bar-title">⚙️ إعدادات النظام</h2>
+        <div class="page-bar-meta"><span class="bar-chip">التخصيص يُحفظ على هذا الجهاز</span></div>
+      </div>
+      <div class="page-tools">
+        <div class="page-tabs">
+          <button type="button" class="pos-tab" onclick="document.getElementById('designStudio').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">🎨</span>المظهر والتخصيص</button>
+          <button type="button" class="pos-tab" onclick="document.getElementById('storePanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">🏢</span>بيانات المنشأة</button>
+          <button type="button" class="pos-tab" onclick="document.getElementById('syncPanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">☁️</span>المزامنة والنسخ</button>
+          <button type="button" class="pos-tab" onclick="document.getElementById('staffManagerPanel').scrollIntoView({behavior:'smooth',block:'start'})"><span aria-hidden="true">👤</span>الموظفون</button>
+        </div>
+        <div class="page-tools-field" style="justify-content:flex-end">
+          <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        </div>
+      </div>
       <div class="form-grid-2">
         <div class="panel-box">
           <div class="panel-title">🎨 مظهر البرنامج — اختر الثيم ثم اضغط عليه ليُفعّل فوراً</div>
@@ -2100,7 +2425,7 @@
         </div>
 
         <!-- ===== DESIGN STUDIO ===== -->
-        <div class="panel-box design-studio">
+        <div class="panel-box design-studio" id="designStudio">
           <div class="panel-title">🛠️ استوديو التخصيص الكامل — الألوان، الخلفيات، الصور، الحواف والخطوط</div>
           <p class="scope-note">كل ما تغيّره هنا يُطبَّق فوراً ويُحفظ على هذا الجهاز. «إعادة الضبط» ترجع كل شيء للوضع الأصلي.</p>
 
@@ -2145,6 +2470,11 @@
                 <small id="backgroundImageStatus">لا توجد صورة</small>
                 <button type="button" class="act-btn" onclick="clearBackgroundImage()">إزالة</button>
               </label>
+              <label class="file-field">خلفية شاشة البداية (الدخول) <span class="file-btn">⬆️ رفع صورة<input type="file" accept="image/png,image/jpeg" onchange="uploadStartBackground(this)"></span>
+                <small id="startBgStatus">لا توجد صورة</small>
+                <button type="button" class="act-btn" onclick="clearStartBackground()">إزالة</button>
+              </label>
+              <label>وضوح صورة شاشة البداية % <input type="range" min="0" max="100" step="5" id="startBgOpacity" oninput="setStartBackgroundOpacity(this.value)"></label>
             </div>
           </div>
 
@@ -2166,7 +2496,7 @@
           </div>
         </div>
 
-        <div class="panel-box">
+        <div class="panel-box" id="storePanel">
           <div class="panel-title">🏢 بيانات المنشأة (تظهر في الشاشة الرئيسية وفاتورة A5)</div>
           <div class="f-row"><label for="setStoreName">اسم المكتبة</label><input type="text" id="setStoreName"></div>
           <div class="f-row"><label for="setStoreAddress">العنوان</label><input type="text" id="setStoreAddress"></div>
@@ -2175,7 +2505,7 @@
           <button type="button" class="act-btn bg-green" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
 
-        <div class="panel-box">
+        <div class="panel-box" id="syncPanel">
           <div class="panel-title">☁️ المزامنة مع Neon والنسخ الاحتياطي</div>
           <p class="scope-note">البيانات تُحفظ محلياً أولاً، ثم تُزامن عبر <code>/api/sync</code> عند ضبط مفتاح الحماية.</p>
           <div class="f-row"><label for="setSyncKey">مفتاح المزامنة</label><input type="password" id="setSyncKey" autocomplete="off" placeholder="نفس قيمة SYNC_TOKEN في Vercel"></div>
@@ -2255,16 +2585,65 @@
   </div>
 </div>
 
-<!-- ================= LOGIN / LOCK ================= -->
-<div id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
-  <div class="lock-card">
-    <div class="lock-head">نظام نقاط البيع — تسجيل الدخول</div>
-    <h3 id="lockTitle">🔒 دخول المستخدم</h3>
-    <p>اختر حساب الموظف وأدخل رقمه السري لفتح النظام أو تبديل المستخدم.</p>
-    <label for="loginStaffSelect">المستخدم:</label>
-    <select id="loginStaffSelect"></select>
-    <input type="password" id="unlockPinInp" autocomplete="current-password" placeholder="الرقم السري" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}">
-    <button type="button" class="act-btn bg-green" style="justify-content:center;padding:7px" onclick="unlockApp()">دخول</button>
+<!-- ================= START SCREEN: SPLASH + LOGIN ================= -->
+<div id="lockModal" class="start-screen" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="start-card" id="startCard">
+    <div class="start-art" id="startArt">
+      <div class="start-mark" aria-hidden="true">📚</div>
+      <h2 class="start-name" id="startStoreName">مكتبة الجمال</h2>
+      <p class="start-tag">نظام نقاط البيع وإدارة المكتبات</p>
+    </div>
+
+    <div class="start-loader" id="startLoader" role="status" aria-live="polite">
+      <span class="start-loader-label" id="startLoaderLabel">جارٍ تحضير البرنامج…</span>
+      <div class="load-track"><i class="load-fill" id="startLoadFill"></i></div>
+      <span class="start-loader-pct" id="startLoadPct">0%</span>
+    </div>
+
+    <div class="start-login" id="startLogin" hidden>
+      <h3 id="lockTitle">🔐 تسجيل الدخول</h3>
+      <p class="start-hint">اختر حساب الموظف وأدخل الرقم السري للمتابعة.</p>
+      <label class="start-label" for="loginStaffSelect">المستخدم</label>
+      <select id="loginStaffSelect" class="start-input"></select>
+      <label class="start-label" for="unlockPinInp">الرقم السري</label>
+      <input type="password" id="unlockPinInp" class="start-input start-pin" inputmode="numeric" autocomplete="current-password" placeholder="••••" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockApp();}">
+      <button type="button" class="start-btn" onclick="unlockApp()">دخول إلى البرنامج</button>
+      <small class="start-foot">البيانات محفوظة على هذا الجهاز — <span id="startFooterUser">مدير</span></small>
+    </div>
+  </div>
+</div>
+
+<!-- ================= WELCOME POPUP (auto closes) ================= -->
+<div id="welcomePopup" class="toast-popup welcome-popup" role="status" aria-live="polite" hidden>
+  <div class="toast-ico" aria-hidden="true">👋</div>
+  <div class="toast-body">
+    <strong id="welcomeTitle">أهلاً بك</strong>
+    <span id="welcomeSub">تم تسجيل الدخول بنجاح</span>
+  </div>
+  <button type="button" class="toast-x" onclick="closeWelcomePopup()" aria-label="إغلاق">✕</button>
+  <div class="toast-progress"><i></i></div>
+</div>
+
+<!-- ================= NOTICE POPUP (small floating) ================= -->
+<div id="noticePopup" class="toast-popup notice-popup" role="status" aria-live="polite" hidden>
+  <div class="toast-ico" aria-hidden="true">💬</div>
+  <div class="toast-body">
+    <strong>تنبيه</strong>
+    <span id="noticePopupText"></span>
+  </div>
+  <button type="button" class="toast-x" onclick="closeNoticePopup()" aria-label="إغلاق">✕</button>
+</div>
+
+<!-- ================= SYNC / CONFIRM DIALOG (small floating) ================= -->
+<div id="syncDialog" class="page-modal" role="dialog" aria-modal="true" aria-labelledby="syncDialogTitle" hidden>
+  <div class="page-modal-card">
+    <div class="page-modal-head">
+      <span class="page-modal-ico" id="syncDialogIco" aria-hidden="true">☁️</span>
+      <h3 id="syncDialogTitle">المزامنة</h3>
+      <button type="button" class="page-modal-x" onclick="closeSyncDialog()" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="page-modal-body" id="syncDialogBody"></div>
+    <div class="page-modal-foot" id="syncDialogFoot"></div>
   </div>
 </div>
 
