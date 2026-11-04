@@ -39,6 +39,8 @@ let syncTimer = null;
 let syncQueue = Promise.resolve();
 let syncBusy = false;
 let lastInvoiceMode = 'sale';
+let currentInvoiceTab = 'details';
+const TAB_LABELS = { details: 'تفاصيل الفاتورة', discount: 'الخصم', party: 'العميل والحساب', notes: 'ملاحظات وطباعة' };
 let beforeLockFocus = null;
 let clockTimer;
 let activeStaffId = 'owner';
@@ -264,6 +266,7 @@ function handleGlobalShortcut(event) {
   if (event.key === 'F4' && inInvoice) { event.preventDefault(); saveInvoice(false); return; }
   if (event.key === 'F5') { event.preventDefault(); restoreHeldInvoice(); return; }
   if (event.key === 'F6' && inInvoice) { event.preventDefault(); holdCurrentInvoice(); return; }
+  if (event.key === 'F7' && inInvoice) { event.preventDefault(); clearInvCart(); $('invBarcodeInp').focus(); return; }
   if (event.key === 'F8' && inInvoice) { event.preventDefault(); focusCartField('qty'); return; }
   if (event.key === 'F9' && inInvoice) { event.preventDefault(); focusCartField('price'); return; }
   if (event.key === 'F10') { event.preventDefault(); if (inInvoice) saveInvoice(true); else openInvLog('sale'); return; }
@@ -288,8 +291,10 @@ function openSec(secId, titleText) {
   if (secId === 'sec-parties' && !ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
   document.querySelectorAll('.sec-view').forEach(el => el.classList.remove('active'));
   $(secId)?.classList.add('active');
-  $('windowLayer').classList.add('open');
+  $('windowLayer').classList.add('open', 'maximized');
   $('windowLayer').classList.remove('minimized'); $('windowDock').hidden = true;
+  $('maximizeWindowButton').setAttribute('aria-label', 'تصغير النافذة');
+  $('maximizeWindowButton').textContent = '❐';
   document.body.style.overflow = 'hidden';
   $('winTitle').textContent = titleText || SEC_TITLES[secId] || 'شاشة البرنامج';
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
@@ -725,6 +730,8 @@ function openInvoiceSec(mode) {
   openSec('sec-invoice', SEC_TITLES['sec-invoice']);
   if (mode !== $('invMode').value) clearInvCart();
   $('invMode').value = mode; updateInvoiceUI();
+  // every floating screen opens large: the whole app width is the working area
+  if (!$('windowLayer').classList.contains('maximized')) maximizeWorkspace();
   window.setTimeout(() => { if ($('windowLayer').classList.contains('open')) $('invBarcodeInp').focus(); }, 0);
 }
 function changeInvoiceMode(mode) {
@@ -734,13 +741,22 @@ function changeInvoiceMode(mode) {
   updateInvoiceUI();
 }
 function switchInvoiceTab(tab) {
-  $$('#invTabs [data-inv-tab]').forEach(button => button.classList.toggle('bg-green', button.dataset.invTab === tab));
+  currentInvoiceTab = TAB_LABELS[tab] ? tab : 'details';
+  $$('#invTabs [data-inv-tab]').forEach(button => {
+    const active = button.dataset.invTab === tab;
+    button.classList.toggle('is-active', active);
+    button.classList.toggle('bg-green', active);
+    button.setAttribute('aria-selected', String(active));
+  });
   $$('[data-inv-group]').forEach(group => { group.hidden = group.dataset.invGroup !== tab; });
+  if ($('invPanelTitle')) $('invPanelTitle').textContent = TAB_LABELS[tab] || '';
 }
 function updateInvoiceUI() {
   const mode = $('invMode').value; lastInvoiceMode = mode;
   const supplier = mode.startsWith('purchase'), isReturn = mode.endsWith('_return'), quote = mode === 'quote';
-  $('invPanelTitle').textContent = MODE_LABELS[mode]; $('lblInvParty').textContent = supplier ? 'المورد' : 'العميل';
+  if ($('posTitleText')) $('posTitleText').textContent = MODE_LABELS[mode];
+  $('invPanelTitle').textContent = TAB_LABELS[currentInvoiceTab] || '';
+  $('lblInvParty').textContent = supplier ? 'المورد' : 'العميل';
   $('btnConvertQuote').style.display = quote ? 'inline-flex' : 'none';
   const previousParty = $('invPartySelect').value;
   const parties = db.parties.filter(p => p.type === (supplier ? 'supplier' : 'customer'));
@@ -770,19 +786,24 @@ function selectPosGroup(group) {
   renderPosTiles();
 }
 function renderPosTiles() {
-  const groups = $('posGroups'); if (!groups) return;
-  const categories = db.categories.slice(0, 8);
-  const chips = [{ key: 'all', label: 'الكل', count: db.items.length },
-    ...categories.map(cat => ({ key: cat, label: cat, count: db.items.filter(i => i.cat === cat).length }))];
+  const groupSelect = $('posGroupSelect');
+  if (!groupSelect) return;
+  const chips = [{ key: 'all', label: 'كل المجموعات', count: db.items.length },
+    ...db.categories.map(cat => ({ key: cat, label: cat, count: db.items.filter(i => i.cat === cat).length }))];
   if (!chips.some(chip => chip.key === posGroup)) posGroup = 'all';
-  groups.innerHTML = chips.map(chip => `<button type="button" class="group-btn ${chip.key === posGroup ? 'active' : ''}" onclick="selectPosGroup(${JSON.stringify(chip.key).replace(/"/g, '&quot;')})">${esc(chip.label)} <small>${chip.count}</small></button>`).join('');
+  groupSelect.innerHTML = chips.map(chip => `<option value="${esc(chip.key)}">${esc(chip.label)} — ${chip.count} صنف</option>`).join('');
+  groupSelect.value = posGroup;
+  if ($('posGroupCount')) {
+    const active = chips.find(chip => chip.key === posGroup);
+    $('posGroupCount').textContent = `${active ? active.count : 0} صنف`;
+  }
   const term = $('posQuickSearch')?.value.trim().toLocaleLowerCase() || '';
   posTiles = db.items
     .filter(item => (posGroup === 'all' || item.cat === posGroup) && (!term || [item.name, item.code].some(value => String(value).toLocaleLowerCase().includes(term))))
     .slice(0, 30);
   $('posQuickItems').innerHTML = posTiles.map((item, index) => `<button type="button" class="item-tile" onclick="addPosTile(${index})" title="${esc(item.name)} — متاح ${esc(item.qty)}">
-      <b>${esc(item.name)}</b><span>${money(item.sell)}</span><i>${esc(item.code)} · ${esc(item.qty)}</i>
-    </button>`).join('') || '<div class="empty-row" style="grid-column:1/-1">لا توجد أصناف في هذه المجموعة.</div>';
+      <b>${esc(item.name)}</b><span>${money(item.sell)}</span><i>${esc(item.code)} · متاح ${esc(item.qty)}</i>
+    </button>`).join('') || `<div class="empty-row" style="grid-column:1/-1">${term ? 'لا توجد أصناف مطابقة للبحث في هذه المجموعة.' : 'لا توجد أصناف في هذه المجموعة بعد — أضف أصنافاً من شاشة الأصناف.'}</div>`;
 }
 function addPosTile(index) {
   const item = posTiles[index];
