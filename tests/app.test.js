@@ -721,3 +721,105 @@ test('label sheet supports per-item selection and custom copy counts', async t =
   assert.equal(cells, 6);
   assert.match(f.$('labelCount').textContent, /6 ملصق/);
 });
+
+
+test('look settings change density, radii, icons and cart columns and persist per device', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const html = f.window.document.documentElement;
+  assert.equal(html.getAttribute('data-density'), 'cozy');
+  f.window.setLookOption('density', 'ultra');
+  assert.equal(html.getAttribute('data-density'), 'ultra');
+  assert.equal(f.$('densitySeg').querySelector('[data-density-opt="ultra"]').getAttribute('aria-pressed'), 'true');
+  f.window.setLookOption('look', 'flat');
+  assert.equal(html.getAttribute('data-look'), 'flat');
+  f.window.setLookOption('look', 'sharp');
+  assert.equal(html.getAttribute('data-look'), 'sharp');
+  f.window.setLookOption('motion', 'off');
+  assert.equal(html.getAttribute('data-motion'), 'off');
+  f.window.setLookOption('numerals', 'tabular');
+  assert.equal(html.getAttribute('data-numerals'), 'tabular');
+  assert.equal(JSON.parse(f.window.localStorage.getItem(`${DB_KEY}_LOOK`)).density, 'ultra');
+  // cart columns + POS tile shapes
+  f.window.toggleCartColumn('disc', false);
+  assert.equal(html.getAttribute('data-col-disc'), 'off');
+  f.window.setLookOption('tileStyle', 'lines');
+  assert.equal(f.$('posQuickItems').dataset.tileStyle, 'lines');
+  f.window.toggleGroupColors(false);
+  assert.equal(html.getAttribute('data-group-colors'), 'off');
+  // a fresh load keeps the saved preferences
+  f.window.applyLook();
+  assert.equal(html.getAttribute('data-density'), 'ultra');
+});
+
+test('SVG icon set replaces emoji and switches back without losing an icon', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.paintIconMode('svg');
+  const painted = f.window.document.querySelectorAll('.look-svg-ico').length;
+  assert.ok(painted > 30, `expected many icons, got ${painted}`);
+  assert.match(f.$('darkModeButton').innerHTML, /look-svg-ico/);
+  f.window.paintIconMode('emoji');
+  assert.equal(f.window.document.querySelectorAll('.look-svg-ico').length, 0);
+  assert.equal(f.$('darkModeButton').textContent.trim(), '🌙');
+  assert.equal(f.window.document.querySelector('[onclick="saveInvoice(false)"] span[aria-hidden="true"]').textContent.trim(), '💾');
+});
+
+test('night modes, palettes and the header logo stay consistent', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.setNightMode('warm');
+  assert.equal(f.window.document.body.dataset.theme, 'night');
+  assert.equal(f.window.document.body.dataset.night, 'warm');
+  f.window.setNightMode('contrast');
+  assert.equal(f.window.document.body.dataset.night, 'contrast');
+  f.window.applyPalette('violet');
+  assert.equal(f.window.lookSettings().palette, 'violet');
+  assert.equal(f.window.document.documentElement.style.getPropertyValue('--head-1').trim(), '#2e1065');
+  assert.equal(f.$('paletteRow').querySelector('[data-palette="violet"]').getAttribute('aria-pressed'), 'true');
+  f.window.setLookOption('headerStyle', 'logo');
+  assert.equal(f.$('appHeader').dataset.header, 'logo');
+  assert.equal(f.$('headLogoImg').getAttribute('src'), '/icon-192.png');
+  f.window.setLookOption('headerAlign', 'center');
+  assert.equal(f.$('appHeader').dataset.align, 'center');
+  f.window.setLookOption('headerStyle', 'name');
+  f.window.toggleReceiptLogo(true);
+  const invoice = { id: 9, mode: 'sale', date: localDate(), time: '10:00', partyName: 'عميل', subtotal: 50, netTotal: 50, paidAmount: 50, remainAmount: 0, prevBalance: 0, newBalance: 0,
+    items: [{ id: 1, code: '1001', name: 'كتاب', qty: 1, price: 50, discPct: 0, netTotal: 50 }], store: { name: 'مكتبة', address: 'عنوان', phone: '0100' } };
+  assert.match(f.window.invoiceDocBody(invoice, 'a5'), /p-logo/);
+  f.window.toggleReceiptLogo(false);
+  assert.doesNotMatch(f.window.invoiceDocBody(invoice, 'a5'), /p-logo/);
+});
+
+test('KPI cards take a state colour and a day-over-day trend', async t => {
+  const past = new Date(); past.setDate(past.getDate() - 1);
+  const seed = seedDatabase();
+  seed.invoices.push({ id: 90, date: localDate(past), time: '10:00', mode: 'sale', partyId: 0, partyName: 'عميل نقدي',
+    prevBalance: 0, netTotal: 30, paidAmount: 30, remainAmount: 0, newBalance: 0,
+    items: [{ id: 1, code: '1001', name: 'كتاب', qty: 1, price: 30, discPct: 0, buyCost: 20, netTotal: 30 }] });
+  const f = await ready(t, { db: seed });
+  f.window.updateDashboardKPIs();
+  assert.equal(f.$('kpiSalesToday').closest('.kpi-box').dataset.state, 'warn');
+  f.window.openInvoiceSec('sale'); addLine(f, '1002', 1);
+  f.fill('invPaidAmount', 10);
+  assert.equal(f.window.saveInvoice(false), undefined);
+  f.window.updateDashboardKPIs();
+  assert.equal(f.$('kpiSalesToday').closest('.kpi-box').dataset.state, 'good');
+  assert.ok(f.$('kpiSalesToday').closest('.kpi-box').querySelector('.kpi-trend'));
+  f.window.openTreasury('all'); f.$('trType').value = 'in'; f.fill('trAmount', 500); f.fill('trNote', 'عهدة');
+  f.window.addTreasuryMove();
+  f.window.updateDashboardKPIs();
+  assert.ok(['good', 'warn', 'bad'].includes(f.$('kpiCash').closest('.kpi-box').dataset.state));
+});
+
+test('the look controls live in the appearance settings panel and the studio is still reachable', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  const look = f.window.document.querySelector('[data-settings-panel="look"]');
+  for (const id of ['densitySeg', 'lookSeg', 'fontWeightSeg', 'numeralsSeg', 'iconsSeg', 'motionSeg', 'paletteRow',
+    'headerStyleSeg', 'headerAlignSeg', 'nightModeSeg', 'autoNightSeg', 'tileStyleSeg', 'cartDensitySeg',
+    'colDiscount', 'colGross', 'colUnit', 'groupColors', 'receiptLogo', 'designStudio', 'invoiceToneGrid', 'docTemplateGrid']) {
+    assert.ok(look.contains(f.$(id)), `#${id} should live inside the look panel`);
+  }
+  f.window.openSec('sec-settings'); f.window.switchSettingsTab('look');
+  assert.equal(f.window.document.querySelector('[data-settings-panel="look"]').hidden, false);
+  f.window.switchSettingsTab('store');
+  assert.equal(f.window.document.querySelector('[data-settings-panel="look"]').hidden, true);
+  assert.equal(f.window.document.querySelector('[data-settings-panel="store"]').hidden, false);
+});

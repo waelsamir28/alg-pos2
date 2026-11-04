@@ -513,7 +513,7 @@ function noteActivity() {
 }
 
 function initializeApp() {
-  applyAppearance(); applyDesign(); applySidebarPreference(); decorateActionButtons();
+  applyAppearance(); applyLook(); applyDesign(); applySidebarPreference(); decorateActionButtons(); paintIconMode();
   loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode();
   updateInvoiceUI(); updateActiveUserBadge(); renderHeldCount(); renderSystemAlerts();
   renderLabels(); loadLabelOptions();
@@ -544,6 +544,7 @@ function initializeApp() {
   for (const event of ['pointerdown', 'keydown', 'wheel', 'focusin']) window.addEventListener(event, noteActivity, { passive: true });
   rememberDeviceStep(isTrustedDevice());
   applyInvoiceTones(); applyDocSettingsUI();
+  applyAutoNight(); applyLook(); updateDashboardKPIs();
   renderActivityLog(); paintDraftHint(); startDraftAutosave(); renderStockAlerts(); syncAppBadge();
   const scan = $('invBarcodeInp');
   if (scan) {
@@ -720,6 +721,7 @@ function toggleDarkMode() {
   if (appearance.theme === 'night') appearance.theme = appearance.previousTheme || 'vista-classic';
   else { appearance.previousTheme = appearance.theme || 'vista-classic'; appearance.theme = 'night'; }
   saveAppearance(appearance); applyAppearance();
+  paintLookControls(lookSettings());
 }
 
 /* ------------------------------------------------------------------ */
@@ -831,13 +833,306 @@ function updateDashboardKPIs() {
   if ($('kpiCash')) $('kpiCash').textContent = money(cash);
   if ($('kpiSalesToday')) $('kpiSalesToday').textContent = money(salesToday);
   if ($('kpiNetProfit')) $('kpiNetProfit').textContent = money(calculateTotalProfits().net);
-  if ($('kpiLowStock')) $('kpiLowStock').textContent = db.items.filter(i => i.qty <= i.minQty).length;
+  const lowCount = db.items.filter(i => i.qty <= i.minQty).length;
+  if ($('kpiLowStock')) $('kpiLowStock').textContent = lowCount;
+  paintKpiStates({ cash, salesToday, lowCount });
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(cash);
 }
 
 /* ------------------------------------------------------------------ */
 /* Design studio: full control over colours, images, shapes            */
 /* ------------------------------------------------------------------ */
+function paintKpiStates({ cash = 0, salesToday = 0, lowCount = 0 } = {}) {
+  const setState = (id, state, trend) => {
+    const box = $(id)?.closest('.kpi-box');
+    if (!box) return;
+    if (state) box.dataset.state = state; else delete box.dataset.state;
+    const strong = box.querySelector('strong');
+    if (!strong) return;
+    let badge = box.querySelector('.kpi-trend');
+    if (trend === null || trend === undefined || !Number.isFinite(trend)) { badge?.remove(); return; }
+    if (!badge) { badge = document.createElement('span'); badge.className = 'kpi-trend'; strong.after(badge); }
+    badge.dataset.dir = trend >= 0 ? 'up' : 'down';
+    badge.textContent = `${trend >= 0 ? '▲' : '▼'} ${Math.abs(trend).toFixed(0)}%`;
+  };
+  const yesterdayDate = new Date(); yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = localDate(yesterdayDate);
+  const salesBefore = db.invoices.reduce((sum, inv) => sum + (inv.date === yesterday ? (inv.mode === 'sale' ? inv.netTotal : inv.mode === 'sale_return' ? -inv.netTotal : 0) : 0), 0);
+  const trend = salesBefore > 0 ? ((salesToday - salesBefore) / salesBefore) * 100 : null;
+  setState('kpiCash', cash < 0 ? 'bad' : cash === 0 ? 'warn' : 'good', null);
+  setState('kpiSalesToday', salesToday > 0 ? 'good' : 'warn', trend);
+  const profit = calculateTotalProfits().net;
+  setState('kpiNetProfit', profit > 0 ? 'good' : profit < 0 ? 'bad' : 'warn', null);
+  setState('kpiLowStock', lowCount === 0 ? 'good' : lowCount > 5 ? 'bad' : 'warn', null);
+}
+
+/* ===================== LOOK LAYER: density, palettes, icons, header, night, POS shape ===================== */
+const LOOK_KEY = `${DB_KEY}_LOOK`;
+const LOOK_DEFAULTS = Object.freeze({
+  density: 'cozy', look: 'glass', fontWeight: 'normal', numerals: 'normal', icons: 'emoji', motion: 'on',
+  palette: 'bookstore', headerStyle: 'name', headerAlign: 'start', storeLogo: '', receiptLogo: false,
+  nightMode: 'cool', autoNight: 'off', tileStyle: 'tiles', cartDensity: 'normal',
+  colDisc: true, colGross: true, colTime: false, groupColors: true
+});
+const LOOK_OPTIONS = Object.freeze({
+  density: ['cozy', 'compact', 'ultra'], look: ['glass', 'flat', 'sharp'], fontWeight: ['normal', 'bold'],
+  numerals: ['normal', 'tabular'], icons: ['emoji', 'svg'], motion: ['on', 'off'],
+  headerStyle: ['name', 'logo', 'banner'], headerAlign: ['start', 'center', 'end'],
+  tileStyle: ['tiles', 'lines', 'grid'], cartDensity: ['normal', 'tall']
+});
+const LOOK_ATTR = Object.freeze({ density: 'density', look: 'look', fontWeight: 'fontWeight', numerals: 'numerals',
+  icons: 'icons', motion: 'motion', tileStyle: 'posStyle', cartDensity: 'cartDensity' });
+const PALETTES = Object.freeze({
+  bookstore: { headerA: '#0f5132', headerB: '#2f9e63', sideA: '#0b3b25', sideB: '#17694a', radius: 12, shadow: 2, appBg: '#dfe8dd', buttonBg: '#f4f9f2', buttonText: '#173323', borderColor: '#a8c4ad' },
+  academic: { headerA: '#0b2d5c', headerB: '#2a7fd4', sideA: '#081f42', sideB: '#1a5490', radius: 10, shadow: 2, appBg: '#dde6f2', buttonBg: '#f2f6fd', buttonText: '#16294a', borderColor: '#a6bad8' },
+  terracotta: { headerA: '#6d2f18', headerB: '#d97742', sideA: '#4f2011', sideB: '#98502a', radius: 16, shadow: 2, appBg: '#f1e4da', buttonBg: '#fff7f1', buttonText: '#4a2417', borderColor: '#d8b49c' },
+  graphite: { headerA: '#1b2431', headerB: '#5b6b7d', sideA: '#121a24', sideB: '#37424f', radius: 6, shadow: 1, appBg: '#dfe2e8', buttonBg: '#f3f5f8', buttonText: '#1f2733', borderColor: '#b3bac6' },
+  violet: { headerA: '#2e1065', headerB: '#7c4dff', sideA: '#210b4d', sideB: '#5a2fd0', radius: 16, shadow: 2, appBg: '#e3ddf4', buttonBg: '#f7f4ff', buttonText: '#2a1d4a', borderColor: '#b8a9dd' },
+  charcoal: { headerA: '#0b0f14', headerB: '#39424e', sideA: '#070a0e', sideB: '#232b34', radius: 4, shadow: 1, appBg: '#d4d8dd', buttonBg: '#f2f4f6', buttonText: '#1b222a', borderColor: '#9aa4af' }
+});
+const ICON_PATHS = Object.freeze({
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M10 21v-6h4v6"/>',
+  cart: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h2.6l2.6 11h10.6l2.2-8H6"/>',
+  receipt: '<path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M8.5 8h7"/><path d="M8.5 12h7"/>',
+  box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5"/><path d="M12 12v9"/>',
+  tag: '<path d="M20 12.5 12.5 20 3 10.5V3h7.5z"/><circle cx="7.5" cy="7.5" r="1.4"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.4 6-5.4s6 2.1 6 5.4"/><path d="M16 5.2a3 3 0 0 1 0 5.6"/><path d="M18 20c0-2.2-.7-3.9-2-5"/>',
+  truck: '<path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 10h4l3 3v2.5h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+  wallet: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H19v14H5.5A2.5 2.5 0 0 1 3 16.5z"/><path d="M16 12h3.5"/>',
+  lock: '<rect x="4.5" y="10" width="15" height="10.5" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>',
+  chart: '<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-4"/><path d="M12.5 16V8"/><path d="M17 16v-6"/>',
+  folder: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2.5h8.9A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/>',
+  alert: '<path d="M12 3.5 21 19H3z"/><path d="M12 9.5v4"/><path d="M12 16.4h.01"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M4.4 7.5l2.3 1.3M17.3 15.2l2.3 1.3M4.4 16.5l2.3-1.3M17.3 8.8l2.3-1.3"/>',
+  printer: '<path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8" rx="2"/><path d="M7 13h10v7.5H7z"/>',
+  save: '<path d="M4.5 4.5h11l4 4v11h-15z"/><path d="M8 4.5v5h7v-5"/><path d="M8 19.5v-5h8v5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  pause: '<rect x="6.5" y="4.5" width="3.5" height="15" rx="1"/><rect x="14" y="4.5" width="3.5" height="15" rx="1"/>',
+  undo: '<path d="M9 6.5 4 11l5 4.5"/><path d="M4 11h9.5a5.5 5.5 0 0 1 0 11H10"/>',
+  swap: '<path d="M4 8h13l-3.2-3.2"/><path d="M20 16H7l3.2 3.2"/>',
+  trash: '<path d="M4.5 6.5h15"/><path d="M9 6.5V4h6v2.5"/><path d="M6.5 6.5 7.5 20h9l1-13.5"/>',
+  moon: '<path d="M20 13.5A8 8 0 0 1 10.5 4 8.2 8.2 0 1 0 20 13.5z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>',
+  download: '<path d="M12 3.5v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 19.5h15"/>',
+  user: '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5c0-3.7 3.2-6.1 7.2-6.1s7.2 2.4 7.2 6.1"/>',
+  menu: '<path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/>',
+  money: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+  bell: '<path d="M12 3.5a5.5 5.5 0 0 1 5.5 5.5c0 4 1.5 5.5 1.5 5.5H5s1.5-1.5 1.5-5.5A5.5 5.5 0 0 1 12 3.5z"/><path d="M10 18a2 2 0 0 0 4 0"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  doc: '<path d="M6 3.5h8l4 4V20.5H6z"/><path d="M14 3.5V8h4"/>'
+});
+const EMOJI_ICON_MAP = Object.freeze({
+  '🛒': 'cart', '🧾': 'receipt', '📥': 'truck', '📦': 'box', '🏷️': 'tag', '👥': 'users', '🚚': 'truck',
+  '💰': 'wallet', '🔐': 'lock', '📈': 'chart', '📁': 'folder', '⚠️': 'alert', '⚙️': 'settings', '🖨️': 'printer',
+  '💾': 'save', '🔍': 'search', '⏸️': 'pause', '↩️': 'undo', '🔄': 'swap', '🗑️': 'trash', '🌙': 'moon', '☀️': 'sun',
+  '⬇️': 'download', '👤': 'user', '☰': 'menu', '📄': 'doc', '🔔': 'bell', '➕': 'plus', '⌂': 'home', '◈': 'grid'
+});
+function lookSettings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOOK_KEY) || '{}');
+    return { ...LOOK_DEFAULTS, ...(stored && typeof stored === 'object' ? stored : {}) };
+  } catch { return { ...LOOK_DEFAULTS }; }
+}
+function saveLook(patch) {
+  const next = { ...lookSettings(), ...patch };
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify(next)); } catch { /* storage disabled */ }
+  applyLook(next);
+  return next;
+}
+function lookIcon(name, extraClass = '') {
+  const path = ICON_PATHS[name];
+  if (!path) return '';
+  return `<svg class="look-svg-ico ${extraClass}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${path}</svg>`;
+}
+function applyLook(settings = lookSettings()) {
+  const look = { ...LOOK_DEFAULTS, ...settings };
+  const html = document.documentElement;
+  for (const [key, attr] of Object.entries(LOOK_ATTR)) html.setAttribute(`data-${attr.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)}`, String(look[key]));
+  html.setAttribute('data-font-weight', look.fontWeight === 'bold' ? 'bold' : 'normal');
+  html.setAttribute('data-numerals', look.numerals === 'tabular' ? 'tabular' : 'normal');
+  html.setAttribute('data-look', look.look);
+  html.setAttribute('data-motion', look.motion);
+  html.setAttribute('data-night', look.nightMode);
+  html.setAttribute('data-icons', look.icons);
+  html.setAttribute('data-group-colors', look.groupColors === false ? 'off' : 'on');
+  html.setAttribute('data-col-disc', look.colDisc === false ? 'off' : 'on');
+  html.setAttribute('data-col-gross', look.colGross === false ? 'off' : 'on');
+  html.setAttribute('data-col-time', look.colTime === true ? 'off' : 'on');
+  // header chrome
+  const header = $('appHeader');
+  if (header) {
+    header.dataset.header = look.headerStyle;
+    header.dataset.align = look.headerAlign;
+    const logo = $('headLogoImg');
+    if (logo) logo.src = look.storeLogo || '/icon-192.png';
+  }
+  const quick = $('posQuickItems');
+  if (quick) quick.dataset.tileStyle = look.tileStyle;
+  const wrap = $('posCartTableWrap');
+  if (wrap) wrap.dataset.tall = look.cartDensity === 'tall' ? '1' : '0';
+  document.body.dataset.night = look.nightMode;
+  paintLookControls(look);
+  paintIconMode(look.icons);
+  return look;
+}
+function paintLookControls(look) {
+  const pairs = [['densitySeg', 'data-density-opt', 'density'], ['lookSeg', 'data-look-opt', 'look'], ['fontWeightSeg', 'data-fontweight-opt', 'fontWeight'],
+    ['numeralsSeg', 'data-numerals-opt', 'numerals'], ['iconsSeg', 'data-icons-opt', 'icons'], ['motionSeg', 'data-motion-opt', 'motion'],
+    ['headerStyleSeg', 'data-headerstyle-opt', 'headerStyle'], ['headerAlignSeg', 'data-headeralign-opt', 'headerAlign'],
+    ['tileStyleSeg', 'data-tilestyle-opt', 'tileStyle'], ['cartDensitySeg', 'data-cartdensity-opt', 'cartDensity'],
+    ['nightModeSeg', 'data-night-opt', 'nightMode'], ['autoNightSeg', 'data-autonight-opt', 'autoNight']];
+  for (const [segId, attr, key] of pairs) {
+    const seg = $(segId);
+    if (!seg) continue;
+    seg.querySelectorAll(`[${attr}]`).forEach(button => {
+      const active = button.getAttribute(attr) === String(look[key]);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('[data-palette]').forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.palette === look.palette)));
+  for (const [id, key] of [['colDiscount', 'colDisc'], ['colGross', 'colGross'], ['colUnit', 'colTime'], ['groupColors', 'groupColors']]) {
+    const input = $(id);
+    if (input) input.checked = Boolean(look[key]);
+  }
+  const receiptLogo = $('receiptLogo');
+  if (receiptLogo) receiptLogo.checked = Boolean(look.receiptLogo);
+  const status = $('storeLogoStatus');
+  if (status) status.textContent = look.storeLogo ? 'شعار مرفوع ✔' : 'الشعار الافتراضي';
+  const nightOn = document.body.dataset.theme === 'night';
+  const hint = $('lookHint');
+  if (hint) hint.textContent = nightOn
+    ? `الثيم الليلي مفعّل — ${look.nightMode === 'warm' ? 'نمط دافئ' : look.nightMode === 'contrast' ? 'تباين عالٍ' : 'كحلي بارد'}، والكثافة الحالية: ${look.density === 'ultra' ? 'فائق الضغط' : look.density === 'compact' ? 'مضغوط' : 'مريح'}.`
+    : `الكثافة تتحكم في ارتفاع الصفوف والحشو وأحجام الأزرار — «فائق الضغط» مناسب للشاشات الصغيرة.`;
+}
+function setLookOption(key, value) {
+  const allowed = LOOK_OPTIONS[key];
+  if (!allowed || !allowed.includes(value)) return;
+  saveLook({ [key]: value });
+  if (key === 'cartDensity' || key === 'tileStyle') renderPosTiles();
+  const labels = { density: 'كثافة العرض', look: 'شكل الحواف', fontWeight: 'وزن الخط', numerals: 'محاذاة الأرقام', icons: 'الأيقونات', motion: 'الحركة', headerStyle: 'نمط الترويسة', headerAlign: 'موضع الشعار', tileStyle: 'شكل الأصناف', cartDensity: 'ارتفاع السلة' };
+  notify(`تم تحديث ${labels[key] || 'المظهر'}.`);
+}
+function setNightMode(mode) {
+  if (!['cool', 'warm', 'contrast'].includes(mode)) return;
+  saveLook({ nightMode: mode });
+  const appearance = getAppearance();
+  if (appearance.theme !== 'night') {
+    appearance.previousTheme = appearance.theme || 'vista-classic';
+    appearance.theme = 'night';
+    saveAppearance(appearance); applyAppearance();
+  }
+  notify(`تم تفعيل الوضع الليلي — ${mode === 'warm' ? 'دافئ' : mode === 'contrast' ? 'تباين عالٍ' : 'كحلي بارد'}.`);
+}
+function setAutoNight(mode) {
+  saveLook({ autoNight: mode === 'on' ? 'on' : 'off' });
+  applyAutoNight();
+  notify(mode === 'on' ? 'سيتم تفعيل الوضع الليلي تلقائياً بعد الساعة 7 مساءً.' : 'تم إيقاف التبديل التلقائي للوضع الليلي.');
+}
+function applyAutoNight() {
+  const look = lookSettings();
+  if (look.autoNight !== 'on') return;
+  const hour = new Date().getHours();
+  const appearance = getAppearance();
+  if (hour >= 19 || hour < 6) {
+    if (appearance.theme !== 'night') {
+      appearance.previousTheme = appearance.theme || 'vista-classic';
+      appearance.theme = 'night';
+      saveAppearance(appearance); applyAppearance();
+    }
+  } else if (appearance.theme === 'night' && appearance.previousTheme) {
+    appearance.theme = appearance.previousTheme;
+    saveAppearance(appearance); applyAppearance();
+  }
+}
+function applyPalette(key) {
+  const palette = PALETTES[key];
+  if (!palette) return;
+  const design = { ...getDesign(), ...palette };
+  saveDesign(design);
+  const appearance = getAppearance();
+  appearance.theme = 'custom';
+  delete appearance.accent;
+  saveAppearance(appearance);
+  document.body.dataset.theme = 'custom';
+  saveLook({ palette: key });
+  applyDesign();
+  applyAppearance();
+  notify('تم تطبيق لوحة الألوان على الهيدر والقائمة والأزرار.');
+}
+function toggleGroupColors(checked) {
+  saveLook({ groupColors: Boolean(checked) });
+}
+function uploadStoreLogo(input) {
+  readImageFile(input, dataUrl => {
+    saveLook({ storeLogo: dataUrl });
+    if (lookSettings().headerStyle === 'name') saveLook({ headerStyle: 'logo' });
+    notify('تم حفظ شعار المكتبة، وسيظهر في الترويسة والفاتورة إن فعّلت ذلك.');
+  });
+}
+function clearStoreLogo() {
+  saveLook({ storeLogo: '' });
+  notify('تمت العودة إلى الشعار الافتراضي.');
+}
+function toggleReceiptLogo(checked) {
+  saveLook({ receiptLogo: Boolean(checked) });
+}
+function toggleCartColumn(column, checked) {
+  const map = { disc: 'colDisc', gross: 'colGross', time: 'colTime' };
+  const key = map[column];
+  if (!key) return;
+  saveLook({ [key]: Boolean(checked) });
+}
+function storeLogoSrc() {
+  const look = lookSettings();
+  if (!look.receiptLogo) return '';
+  return look.storeLogo || '/icon-192.png';
+}
+/* ---- icon painting (SVG set replaces emoji everywhere, no external assets) ---- */
+function iconKeyFor(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return '';
+  if (EMOJI_ICON_MAP[raw]) return EMOJI_ICON_MAP[raw];
+  const first = raw.match(/^\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u)?.[0];
+  return first ? (EMOJI_ICON_MAP[first] || '') : '';
+}
+function paintIconMode(mode = lookSettings().icons) {
+  const svg = mode === 'svg';
+  const swap = (element, key) => {
+    if (!element) return;
+    if (!svg) { if (element.dataset.emoji) { element.textContent = element.dataset.emoji; delete element.dataset.svg; } return; }
+    const emoji = element.dataset.emoji || element.textContent.trim();
+    if (!emoji) return;
+    const name = key || iconKeyFor(emoji);
+    if (!name) return;
+    element.dataset.emoji = emoji; element.dataset.svg = name;
+    element.innerHTML = lookIcon(name);
+  };
+  document.querySelectorAll('.c-btn .button-icon, .button-icon').forEach(element => swap(element));
+  document.querySelectorAll('.nav-link .nav-icon').forEach(element => swap(element));
+  document.querySelectorAll('.head-icon-btn').forEach(button => {
+    const handler = button.getAttribute('onclick') || '';
+    const key = handler.includes('toggleDarkMode') ? 'moon' : handler.includes('installApp') ? 'download' : handler.includes('lockApp') ? 'user' : '';
+    if (!key) return;
+    if (!button.dataset.emoji) button.dataset.emoji = button.textContent.trim();
+    if (svg) { button.dataset.svg = key; button.innerHTML = lookIcon(key); }
+    else if (button.dataset.svg) { button.textContent = button.dataset.emoji; delete button.dataset.svg; }
+  });
+  document.querySelectorAll('.y-btn .y-ico').forEach(element => swap(element));
+  document.querySelectorAll('.pos-action span[aria-hidden="true"]').forEach(span => {
+    if (svg) {
+      const name = iconKeyFor(span.dataset.emoji || span.textContent);
+      if (!name) return;
+      if (!span.dataset.emoji) span.dataset.emoji = span.textContent.trim();
+      span.dataset.svg = name;
+      span.innerHTML = lookIcon(name);
+    } else if (span.dataset.svg) {
+      span.textContent = span.dataset.emoji || '';
+      delete span.dataset.svg;
+    }
+  });
+}
+
 const DESIGN_KEY = `${DB_KEY}_DESIGN`;
 const DESIGN_DEFAULTS = Object.freeze({
   radius: 12, borderWidth: 1, shadow: 2,
@@ -2173,8 +2468,9 @@ function invoiceDocBody(inv, paper = 'a5') {
   const store = inv.store || db.settings;
   const rows = invoiceLines(inv).map((c, index) => `<tr><td>${index + 1}</td><td>${esc(c.code || '')}</td><td style="text-align:right">${esc(c.name)}</td><td>${esc(c.qty)}</td><td>${money(c.price)}</td><td>${esc(c.discPct)}%</td><td>${money(c.netTotal)}</td></tr>`).join('');
   const theme = invoiceDocTheme(inv);
+  const logoSrc = storeLogoSrc();
   return `<div class="doc">
-    <div class="p-header"><span class="doc-tag">${esc(theme.tag)}</span><h2>${esc(store.name)}</h2><p>${esc(store.address)} | هاتف: ${esc(store.phone)}</p><h3>${esc(MODE_LABELS[inv.mode])} رقم #${inv.id}</h3></div>
+    <div class="p-header">${logoSrc ? `<img class="p-logo" src="${logoSrc}" alt="شعار">` : ''}<span class="doc-tag">${esc(theme.tag)}</span><h2>${esc(store.name)}</h2><p>${esc(store.address)} | هاتف: ${esc(store.phone)}</p><h3>${esc(MODE_LABELS[inv.mode])} رقم #${inv.id}</h3></div>
     <div class="p-meta"><span>التاريخ: ${esc(inv.date)} (${esc(inv.time)})</span><span>العميل: ${esc(inv.partyName)}</span><span>الهاتف: ${esc(store.phone)}</span></div>
     <table class="p-table"><thead><tr><th>م</th><th>الكود</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>خصم</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="p-totals"><span>عدد المواد: ${invoiceLines(inv).length}</span><span>إجمالي البنود: ${money(inv.subtotal ?? invoiceLines(inv).reduce((sum, c) => sum + lineGross(c), 0))}</span><span>الخصم الإضافي: ${money(inv.discountTotal ?? 0)}</span></div>
@@ -3044,6 +3340,8 @@ Object.assign(window, {
   switchInvoiceTab, switchItemsTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
   renderPosTiles, renderLabels, printLabels,
   toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,
+  applyLook, lookSettings, saveLook, setLookOption, setNightMode, setAutoNight, applyAutoNight, applyPalette, updateDashboardKPIs,
+  uploadStoreLogo, clearStoreLogo, toggleReceiptLogo, toggleCartColumn, toggleGroupColors, paintIconMode, lookIcon, paintKpiStates,
   installApp, setupInstallPrompt, applyDesign, resetDesign, setDesignField, applyThemePreset, uploadHeaderImage, uploadBackgroundImage, clearHeaderImage, clearBackgroundImage,
   uploadStartBackground, clearStartBackground, setStartBackgroundOpacity,
   showWelcomePopup, closeWelcomePopup, showNoticePopup, closeNoticePopup, askDialog,

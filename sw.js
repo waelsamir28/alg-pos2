@@ -1,5 +1,5 @@
 // Offline shell for the POS so the installed app opens without a connection.
-const CACHE = 'pos-shell-v6';
+const CACHE = 'pos-shell-v7';
 const SHELL = ['/', '/index.html', '/app.js', '/lib/finance.js', '/lib/data.js', '/lib/barcode.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/fonts/cairo-arabic-400-normal.woff2', '/fonts/cairo-arabic-700-normal.woff2', '/fonts/cairo-latin-400-normal.woff2', '/fonts/cairo-latin-700-normal.woff2'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
