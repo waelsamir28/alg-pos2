@@ -11,7 +11,16 @@ const files = new Map([
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/lib/finance.js', ['lib/finance.js', 'text/javascript; charset=utf-8']],
   ['/lib/data.js', ['lib/data.js', 'text/javascript; charset=utf-8']],
-  ['/lib/barcode.js', ['lib/barcode.js', 'text/javascript; charset=utf-8']]
+  ['/lib/barcode.js', ['lib/barcode.js', 'text/javascript; charset=utf-8']],
+  ['/manifest.webmanifest', ['manifest.webmanifest', 'application/manifest+json; charset=utf-8']],
+  ['/sw.js', ['sw.js', 'text/javascript; charset=utf-8']],
+  ['/icon-192.png', ['icon-192.png', 'image/png']],
+  ['/icon-512.png', ['icon-512.png', 'image/png']],
+  ['/icon-maskable-512.png', ['icon-maskable-512.png', 'image/png']],
+  ['/fonts/cairo-arabic-400-normal.woff2', ['fonts/cairo-arabic-400-normal.woff2', 'font/woff2']],
+  ['/fonts/cairo-arabic-700-normal.woff2', ['fonts/cairo-arabic-700-normal.woff2', 'font/woff2']],
+  ['/fonts/cairo-latin-400-normal.woff2', ['fonts/cairo-latin-400-normal.woff2', 'font/woff2']],
+  ['/fonts/cairo-latin-700-normal.woff2', ['fonts/cairo-latin-700-normal.woff2', 'font/woff2']]
 ]);
 const server = createServer(async (req, res) => {
   res.status = code => { res.statusCode = code; return res; };

@@ -187,7 +187,14 @@ test('conflict response does not overwrite local or advance revision', async t =
 
 test('dashboard, responsive navigation, window controls and themes work', async t => {
   const f = await ready(t);
-  assert.equal(f.$('salesChart').querySelectorAll('.chart-day').length, 7);
+  // The daily board starts collapsed, opens and closes by its arrow, and shows four square KPI boxes.
+  assert.equal(f.$('homeDashboard').classList.contains('collapsed'), true);
+  assert.equal(f.$('boardBody').querySelectorAll('.kpi-box').length, 4);
+  assert.equal(Boolean(f.$('salesChart')), false);
+  f.window.toggleDashboard(); assert.equal(f.$('homeDashboard').classList.contains('collapsed'), false);
+  assert.equal(f.$('boardToggle').getAttribute('aria-expanded'), 'true');
+  f.window.toggleDashboard(); assert.equal(f.$('homeDashboard').classList.contains('collapsed'), true);
+  assert.equal(f.$('systemAlertsList').children.length > 0, true);
   f.window.toggleSidebar(); assert.equal(f.$('appShell').classList.contains('sidebar-collapsed'), true);
   f.window.toggleSidebar(); assert.equal(f.$('appShell').classList.contains('sidebar-collapsed'), false);
   f.window.openSec('sec-items', 'الأصناف');

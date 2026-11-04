@@ -11,9 +11,9 @@ const STAFF_KEY = `${DB_KEY}_STAFF`;
 const AUDIT_KEY = `${DB_KEY}_AUDIT`;
 const HELD_CARTS_KEY = `${DB_KEY}_HELD_CARTS`;
 const ACTIVE_STAFF_KEY = `${DB_KEY}_ACTIVE_STAFF`;
-const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'night'];
+const THEMES = ['vista-classic', 'vista-blue', 'vista-emerald', 'vista-rose', 'win11-indigo', 'win11-mint', 'win11-sunset', 'night', 'custom'];
 const ACCENT_DEFAULTS = { 'vista-classic': '#3b7323', 'vista-blue': '#1f74a8', 'vista-emerald': '#1f8a5c', 'vista-rose': '#b04a76', 'win11-indigo': '#5b5bd6', 'win11-mint': '#12857a', 'win11-sunset': '#c8603f', night: '#8fb4ff' };
-const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', night: 'الوضع الليلي' };
+const THEME_LABELS = { 'vista-classic': 'كلاسيكي أخضر', 'vista-blue': 'Vista أزرق', 'vista-emerald': 'Vista أخضر طبيعي', 'vista-rose': 'Vista وردي', 'win11-indigo': 'Windows 11 نيلي', 'win11-mint': 'Windows 11 نعناعي', 'win11-sunset': 'Windows 11 غروب', night: 'الوضع الليلي', custom: 'تخصيص كامل' };
 
 const $ = id => document.getElementById(id);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -131,11 +131,15 @@ function notify(message) {
 function sessionToken() {
   try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(REMEMBERED_TOKEN_KEY) || ''; } catch { return ''; }
 }
+const SYNC_SHORT = { local: 'محفوظ محلياً', synced: 'المزامنة مفعّلة', error: 'تعارض/مراجعة المزامنة' };
 function setSyncStatus(message) {
   const badge = $('syncStatusBadge');
   if (badge) {
-    badge.innerHTML = `<i class="status-dot"></i>${esc(message)}`;
-    badge.dataset.state = /متزامن مع/.test(message) ? 'synced' : /غير متاحة|تعارض|يحتاج إصلاح|لم تكتمل/.test(message) ? 'error' : 'local';
+    const state = /متزامن مع|جاري المزامنة/.test(message) ? 'synced' : /غير متاحة|تعارض|يحتاج إصلاح|لم تكتمل/.test(message) ? 'error' : 'local';
+    const busy = /جاري المزامنة/.test(message);
+    badge.dataset.state = state;
+    badge.innerHTML = `<i class="status-dot"></i><span class="sync-text">${esc(busy ? 'جاري المزامنة…' : (SYNC_SHORT[state] || message))}</span>`;
+    badge.title = message;
   }
   const navStatus = document.querySelector('.side-nav-foot .nav-label');
   if (navStatus) navStatus.textContent = badge?.dataset.state === 'synced' ? 'متصل ومتزامن مع Neon' : badge?.dataset.state === 'error' ? 'يحتاج مراجعة' : 'محفوظ على هذا الجهاز';
@@ -223,10 +227,13 @@ function updateClock() {
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
 function initializeApp() {
-  applyAppearance(); applySidebarPreference(); decorateActionButtons();
+  applyAppearance(); applyDesign(); applySidebarPreference(); decorateActionButtons();
   loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode();
   updateInvoiceUI(); updateActiveUserBadge(); renderHeldCount(); renderSystemAlerts();
   renderLabels(); loadLabelOptions();
+  restoreGroups();
+  setDashboardOpen(Boolean(getAppearance().boardOpen), { persist: false });
+  setupInstallPrompt();
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
@@ -324,7 +331,11 @@ function applyAppearance() {
   const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'vista-classic';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
-  if ($('darkModeButton')) $('darkModeButton').textContent = theme === 'night' ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي';
+  if ($('darkModeButton')) {
+    $('darkModeButton').textContent = theme === 'night' ? '☀️' : '🌙';
+    $('darkModeButton').title = theme === 'night' ? 'الوضع النهاري' : 'الوضع الليلي';
+    $('darkModeButton').setAttribute('aria-label', $('darkModeButton').title);
+  }
   const root = document.body.style;
   if (appearance.accent && /^#[0-9a-f]{6}$/i.test(appearance.accent)) {
     // Keep the custom accent readable: derive bar/hover shades from the chosen colour.
@@ -336,7 +347,7 @@ function applyAppearance() {
     if ($('customAccent')) $('customAccent').value = appearance.accent;
   } else {
     for (const name of ['--accent', '--g-bar', '--g-dark', '--g-line', '--press-glow']) root.removeProperty(name);
-    if ($('customAccent')) $('customAccent').value = ACCENT_DEFAULTS[theme];
+    if ($('customAccent')) $('customAccent').value = ACCENT_DEFAULTS[theme] || '#2563eb';
   }
   document.querySelectorAll('[data-theme-choice]').forEach(button => {
     const active = button.dataset.themeChoice === theme;
@@ -352,6 +363,7 @@ function selectTheme(theme) {
   delete appearance.accent; // A theme switch must visibly change the interface, not keep a stale custom colour.
   saveAppearance(appearance);
   applyAppearance();
+  applyDesign();
   const label = THEME_LABELS[theme] || theme;
   notify(`تم تفعيل الثيم: ${label}. يمكنك تغيير اللون الأساسي من الأسفل.`);
 }
@@ -437,34 +449,79 @@ function calculateTotalProfits(dFrom, dTo, itemFilter) {
   const gross = roundMoney(sales - cost);
   return { sales, cost, gross, expenses, net: roundMoney(gross - expenses), itemRows: [...itemMap.values()] };
 }
-function renderSalesChart() {
-  const chart = $('salesChart'); if (!chart) return;
-  const days = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); return date; });
-  const totals = days.map(date => {
-    const key = localDate(date);
-    return roundMoney(db.invoices.reduce((sum, invoice) => sum + (invoice.date === key ? (invoice.mode === 'sale' ? invoice.netTotal : invoice.mode === 'sale_return' ? -invoice.netTotal : 0) : 0), 0));
-  });
-  const scale = Math.max(1, ...totals.map(Math.abs));
-  chart.innerHTML = days.map((date, index) => {
-    const amount = totals[index], height = amount > 0 ? Math.max(7, Math.round((amount / scale) * 100)) : 3;
-    const label = new Intl.DateTimeFormat('ar-EG', { weekday: 'short' }).format(date);
-    return `<div class="chart-day" title="${esc(localDate(date))}: ${money(amount)} ج.م"><span class="chart-value">${money(amount)}</span><div class="chart-track"><i class="chart-bar" style="height:${height}%" aria-hidden="true"></i></div><span class="chart-label">${esc(label)}</span></div>`;
-  }).join('');
-}
 function renderSystemAlerts() {
   const list = $('systemAlertsList'); if (!list) return;
   const low = db.items.filter(item => item.qty <= item.minQty).length;
-  const customers = db.parties.filter(party => party.type === 'customer' && party.balance > 0).length;
-  const suppliers = db.parties.filter(party => party.type === 'supplier' && party.balance > 0).length;
+  const out = db.items.filter(item => item.qty <= 0).length;
+  const customers = db.parties.filter(party => party.type === 'customer' && Math.abs(party.balance) > 0.009);
+  const suppliers = db.parties.filter(party => party.type === 'supplier' && Math.abs(party.balance) > 0.009);
   const status = $('syncStatusBadge')?.dataset.state;
   const alerts = [];
-  if (low) alerts.push(`<li class="alert-danger"><button type="button" onclick="openStockFilter('low')">⚠️ ${low} صنف عند حد الطلب أو أقل</button></li>`);
-  if (customers) alerts.push(`<li class="alert-danger"><button type="button" onclick="openPartyReport('customer','balances')">👥 أرصدة مستحقة على ${customers} عميل</button></li>`);
-  if (suppliers) alerts.push(`<li><button type="button" onclick="openPartyReport('supplier','balances')">🚚 أرصدة ${suppliers} مورد</button></li>`);
-  if (status === 'error') alerts.push('<li class="alert-danger"><button type="button" onclick="openSec(\'sec-settings\',\'⚙️ إعدادات المزامنة\')">☁️ فشل/تعارض مزامنة — راجع الإعدادات</button></li>');
-  if (!alerts.length) alerts.push('<li class="alert-good">لا توجد تنبيهات عاجلة حالياً ✅</li>');
+  if (!out && !low) alerts.push(`<li class="alert-good"><button type="button" onclick="openStockFilter('all')">✅ المخزون في وضع سليم — لا توجد نواقص</button></li>`);
+  if (out) alerts.push(`<li class="alert-danger"><button type="button" onclick="openStockFilter('zero')">🚨 ${out} صنف نافد من المخزن تماماً — اضغط للعرض</button></li>`);
+  if (low - out > 0) alerts.push(`<li class="alert-warn"><button type="button" onclick="openStockFilter('low')">⚠️ ${low - out} صنف وصل لحد الطلب</button></li>`);
+  if (customers.length) {
+    const total = roundMoney(customers.reduce((sum, p) => sum + Math.max(0, p.balance), 0));
+    alerts.push(`<li class="alert-danger"><button type="button" onclick="openPartyReport('customer','balances')">👥 مستحقات على ${customers.length} عميل بإجمالي ${money(total)} ج.م</button></li>`);
+  }
+  if (suppliers.length) {
+    const total = roundMoney(suppliers.reduce((sum, p) => sum + Math.max(0, p.balance), 0));
+    alerts.push(`<li class="alert-info"><button type="button" onclick="openPartyReport('supplier','balances')">🚚 أرصدة ${suppliers.length} مورد بإجمالي ${money(total)} ج.م</button></li>`);
+  }
+  if (status === 'error') alerts.push(`<li class="alert-danger"><button type="button" onclick="openSec('sec-settings','⚙️ إعدادات المزامنة')">☁️ المزامنة لم تكتمل — راجع الإعدادات</button></li>`);
   list.innerHTML = alerts.join('');
+  if ($('alertsCount')) $('alertsCount').textContent = alerts.length ? `(${alerts.length})` : '';
 }
+
+/* Dashboard and quick-access collapsibles */
+function setDashboardOpen(open, { persist = true } = {}) {
+  const board = $('homeDashboard'); if (!board) return;
+  board.classList.toggle('collapsed', !open);
+  const toggle = $('boardToggle');
+  if (toggle) toggle.setAttribute('aria-expanded', String(open));
+  if ($('boardHint')) $('boardHint').textContent = open ? 'اضغط لإغلاق الأرقام' : 'اضغط لعرض الأرقام';
+  if (persist) { const appearance = getAppearance(); appearance.boardOpen = Boolean(open); saveAppearance(appearance); }
+}
+function toggleDashboard(force) {
+  const board = $('homeDashboard'); if (!board) return;
+  setDashboardOpen(force === undefined ? board.classList.contains('collapsed') : Boolean(force));
+}
+const OPEN_GROUPS_KEY = 'openActionGroups';
+function openGroups() {
+  try { const value = JSON.parse(localStorage.getItem(OPEN_GROUPS_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch { return []; }
+}
+function saveOpenGroups(keys) {
+  try { localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify(keys)); } catch { /* visual preference only */ }
+}
+function setActionGroup(key, open, { persist = true } = {}) {
+  const group = document.querySelector(`.action-group[data-group="${key}"]`); if (!group) return;
+  group.classList.toggle('open', Boolean(open));
+  const head = group.querySelector('.group-head');
+  if (head) head.setAttribute('aria-expanded', String(Boolean(open)));
+  if (persist) {
+    const keys = new Set(openGroups());
+    if (open) keys.add(key); else keys.delete(key);
+    saveOpenGroups([...keys]);
+  }
+}
+function toggleActionGroup(key) {
+  const group = document.querySelector(`.action-group[data-group="${key}"]`); if (!group) return;
+  setActionGroup(key, !group.classList.contains('open'));
+}
+function expandAllGroups() {
+  const keys = [];
+  document.querySelectorAll('.action-group[data-group]').forEach(group => { keys.push(group.dataset.group); setActionGroup(group.dataset.group, true, { persist: false }); });
+  saveOpenGroups(keys);
+}
+function collapseAllGroups() {
+  document.querySelectorAll('.action-group[data-group]').forEach(group => setActionGroup(group.dataset.group, false, { persist: false }));
+  saveOpenGroups([]);
+}
+function restoreGroups() {
+  const stored = openGroups();
+  document.querySelectorAll('.action-group[data-group]').forEach(group => setActionGroup(group.dataset.group, stored.includes(group.dataset.group), { persist: false }));
+}
+
 function updateDashboardKPIs() {
   const today = localDate();
   const cash = treasuryBalance();
@@ -474,7 +531,186 @@ function updateDashboardKPIs() {
   if ($('kpiNetProfit')) $('kpiNetProfit').textContent = money(calculateTotalProfits().net);
   if ($('kpiLowStock')) $('kpiLowStock').textContent = db.items.filter(i => i.qty <= i.minQty).length;
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(cash);
-  renderSalesChart();
+}
+
+/* ------------------------------------------------------------------ */
+/* Design studio: full control over colours, images, shapes            */
+/* ------------------------------------------------------------------ */
+const DESIGN_KEY = `${DB_KEY}_DESIGN`;
+const DESIGN_DEFAULTS = Object.freeze({
+  radius: 12, borderWidth: 1, shadow: 2,
+  appBg: '', headerA: '', headerB: '', sectionA: '', sectionB: '',
+  sideA: '', sideB: '', buttonBg: '', buttonText: '', borderColor: '',
+  headerImage: '', backgroundImage: '', headerHeight: 118, fontScale: 100
+});
+const DESIGN_PRESETS = Object.freeze({
+  'blue-cyan': { headerA:'#0a1a3c', headerB:'#0f7c93', sectionA:'#0a1a3c', sectionB:'#0f7c93', sideA:'#0a1a3c', sideB:'#123a6b', radius:14, shadow:2, borderWidth:1, appBg:'#dcd9c6', buttonBg:'#f4f5f9', buttonText:'#22314a', borderColor:'#b8c4d4' },
+  'midnight': { headerA:'#050a18', headerB:'#1b2a4a', sectionA:'#050a18', sectionB:'#22335c', sideA:'#04070f', sideB:'#141f36', radius:10, shadow:3, borderWidth:1, appBg:'#c9cfdd', buttonBg:'#eef1f8', buttonText:'#1b2436', borderColor:'#9aa7bd' },
+  'emerald': { headerA:'#06402b', headerB:'#17a673', sectionA:'#06402b', sectionB:'#118f62', sideA:'#04301f', sideB:'#0b5c3c', radius:16, shadow:2, borderWidth:1, appBg:'#dbe8df', buttonBg:'#f2faf5', buttonText:'#123a2a', borderColor:'#a9cbb7' },
+  'royal': { headerA:'#1b0b3b', headerB:'#5b2ec4', sectionA:'#1b0b3b', sectionB:'#6d3ad6', sideA:'#150830', sideB:'#3b1d84', radius:18, shadow:3, borderWidth:1, appBg:'#ded9ec', buttonBg:'#f6f3ff', buttonText:'#2a1d4a', borderColor:'#b8a9dd' },
+  'sunset': { headerA:'#4a1710', headerB:'#e0762c', sectionA:'#4a1710', sectionB:'#c95c22', sideA:'#3a110c', sideB:'#8a3312', radius:14, shadow:2, borderWidth:1, appBg:'#f0e2d8', buttonBg:'#fff7f1', buttonText:'#4a2417', borderColor:'#d8b49c' },
+  'graphite': { headerA:'#111827', headerB:'#364152', sectionA:'#111827', sectionB:'#3b4658', sideA:'#0b121c', sideB:'#232c3b', radius:8, shadow:1, borderWidth:1, appBg:'#dfe2e8', buttonBg:'#f3f4f7', buttonText:'#1f2733', borderColor:'#b3bac6' },
+  'rose': { headerA:'#3d0f24', headerB:'#b04a76', sectionA:'#3d0f24', sectionB:'#a33f68', sideA:'#2b0a19', sideB:'#77214a', radius:20, shadow:2, borderWidth:1, appBg:'#eedde5', buttonBg:'#fff6fa', buttonText:'#3d1727', borderColor:'#d3a9bd' },
+  'steel': { headerA:'#0d1b26', headerB:'#3f6b86', sectionA:'#0d1b26', sectionB:'#486f87', sideA:'#08131c', sideB:'#28495e', radius:6, shadow:1, borderWidth:1, appBg:'#d7dee3', buttonBg:'#f1f4f7', buttonText:'#1d2b36', borderColor:'#a7b6c1' }
+});
+const DESIGN_FIELDS = ['radius', 'borderWidth', 'shadow', 'appBg', 'headerA', 'headerB', 'sectionA', 'sectionB', 'sideA', 'sideB', 'buttonBg', 'buttonText', 'borderColor', 'headerHeight', 'fontScale'];
+function getDesign() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(DESIGN_KEY) || '{}');
+    return { ...DESIGN_DEFAULTS, ...(stored && typeof stored === 'object' ? stored : {}) };
+  } catch { return { ...DESIGN_DEFAULTS }; }
+}
+function saveDesign(design) {
+  try { localStorage.setItem(DESIGN_KEY, JSON.stringify(design)); }
+  catch { notify('تعذر حفظ التخصيص في المتصفح. قلّل حجم الصور المرفوعة ثم أعد المحاولة.'); }
+}
+function applyDesign() {
+  const design = getDesign();
+  // Write on <html> and <body> so per-theme stylesheet variables cannot override the saved design.
+  const root = document.documentElement.style;
+  const bodyStyle = document.body.style;
+  const setVar = (name, value) => { root.setProperty(name, value); bodyStyle.setProperty(name, value); };
+  const dark = document.body.dataset.theme === 'night';
+  setVar('--radius-ui', `${Number(design.radius) || 0}px`);
+  setVar('--radius-card', `${(Number(design.radius) || 0) + 2}px`);
+  setVar('--radius-btn', `${Math.max(0, (Number(design.radius) || 0) - 2)}px`);
+  setVar('--line-dark', design.borderColor || (dark ? '#5a6349' : '#8b8669'));
+  setVar('--line', design.borderColor || (dark ? '#434a39' : '#b5b096'));
+  setVar('--line-soft', design.borderColor || (dark ? '#3c4233' : '#d9d5bb'));
+  setVar('--line-w', `${Math.max(0, Number(design.borderWidth) || 0)}px`);
+  document.documentElement.dataset.border = String(Number(design.borderWidth) || 0);
+  setVar('--header-h', `${Math.min(220, Math.max(80, Number(design.headerHeight) || 118))}px`);
+  if (design.appBg) setVar('--shell-bg', design.appBg);
+  const headerImage = Boolean(design.headerImage);
+  if (design.headerA && design.headerB) {
+    setVar('--head-1', design.headerA);
+    setVar('--head-2', design.headerA);
+    setVar('--head-3', design.headerB);
+    setVar('--side-1', design.sideA || design.headerA);
+    setVar('--side-2', design.sideA || design.headerA);
+    setVar('--side-3', design.sideB || design.headerB);
+  }
+  if (design.sectionA && design.sectionB) {
+    setVar('--sec-1', design.sectionA);
+    setVar('--sec-2', design.sectionB);
+  }
+  if (design.sideA && design.sideB) {
+    setVar('--side-1', design.sideA);
+    setVar('--side-3', design.sideB);
+    if (!design.side2) setVar('--side-2', design.sideA);
+  }
+  if (design.buttonBg) {
+    setVar('--btn', design.buttonBg);
+    setVar('--btn-2', design.buttonBg);
+    setVar('--btn-light', `color-mix(in srgb, ${design.buttonBg} 92%, #ffffff)`);
+  }
+  if (design.buttonText) { setVar('--btn-ink', design.buttonText); setVar('--btn-ink-2', design.buttonText); }
+  if (design.fontScale) setVar('--fs', `${(12.5 * Number(design.fontScale)) / 100}px`);
+  const header = $('appHeader');
+  if (header) {
+    header.classList.toggle('has-image', headerImage);
+    header.style.setProperty('--header-image', headerImage ? `url("${design.headerImage}")` : 'none');
+    header.style.boxShadow = design.shadow === 0 ? 'none' : undefined;
+  }
+  document.body.style.setProperty('--app-bg-image', design.backgroundImage ? `url("${design.backgroundImage}")` : 'none');
+  document.body.classList.toggle('has-bg-image', Boolean(design.backgroundImage));
+  document.documentElement.dataset.shadow = String(design.shadow ?? 2);
+  document.documentElement.dataset.sharp = Number(design.radius) === 0 ? '1' : '0';
+  if ($('designRadius')) $('designRadius').value = design.radius;
+  if ($('designBorder')) $('designBorder').value = design.borderWidth;
+  if ($('designHeaderHeight')) $('designHeaderHeight').value = design.headerHeight;
+  if ($('designFontScale')) $('designFontScale').value = design.fontScale;
+  for (const [id, key] of [['designAppBg','appBg'],['designHeaderA','headerA'],['designHeaderB','headerB'],['designSectionA','sectionA'],['designSectionB','sectionB'],['designSideA','sideA'],['designSideB','sideB'],['designButtonBg','buttonBg'],['designButtonText','buttonText'],['designBorderColor','borderColor']]) {
+    const el = $(id);
+    if (el) el.value = /^#[0-9a-f]{6}$/i.test(design[key] || '') ? design[key] : '#ffffff';
+  }
+  if ($('designShadow')) $('designShadow').value = String(design.shadow ?? 2);
+  if ($('headerImageStatus')) $('headerImageStatus').textContent = headerImage ? 'صورة مرفوعة ✔' : 'لا توجد صورة';
+  if ($('backgroundImageStatus')) $('backgroundImageStatus').textContent = design.backgroundImage ? 'صورة مرفوعة ✔' : 'لا توجد صورة';
+}
+function setDesignField(field, value) {
+  if (!DESIGN_FIELDS.includes(field)) return;
+  const design = getDesign();
+  if (['radius', 'borderWidth', 'shadow', 'headerHeight', 'fontScale'].includes(field)) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    const bounds = { radius: [0, 32], borderWidth: [0, 4], shadow: [0, 3], headerHeight: [80, 220], fontScale: [85, 125] }[field];
+    design[field] = Math.max(bounds[0], Math.min(bounds[1], numeric));
+  } else if (String(value).startsWith('data:image/')) design[field] = String(value);
+  else if (/^#[0-9a-f]{6}$/i.test(String(value)) || value === '') design[field] = String(value);
+  saveDesign(design); applyDesign();
+}
+function resetDesign() {
+  saveDesign({ ...DESIGN_DEFAULTS });
+  applyDropdownDefaults();
+  applyDesign();
+  notify('تمت إعادة التخصيص بالكامل إلى القيم الافتراضية.');
+}
+function applyDropdownDefaults() {
+  const design = getDesign();
+  if ($('designRadius')) $('designRadius').value = design.radius;
+  if ($('designBorder')) $('designBorder').value = design.borderWidth;
+  if ($('designShadow')) $('designShadow').value = String(design.shadow);
+  if ($('designHeaderHeight')) $('designHeaderHeight').value = design.headerHeight;
+  if ($('designFontScale')) $('designFontScale').value = design.fontScale;
+}
+function applyThemePreset(key) {
+  const preset = DESIGN_PRESETS[key];
+  if (!preset) return;
+  const design = { ...getDesign(), ...preset };
+  saveDesign(design);
+  const appearance = getAppearance();
+  appearance.theme = 'custom';
+  delete appearance.accent;
+  saveAppearance(appearance);
+  document.body.dataset.theme = 'custom';
+  applyDesign();
+  applyAppearance();
+  notify(`تم تطبيق القالب الجاهز. يمكنك تعديل أي لون بعده.`);
+}
+function readImageFile(input, onDone) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { alert('اختر ملف صورة (PNG أو JPG).'); input.value = ''; return; }
+  if (file.size > 1.5 * 1024 * 1024) { alert('حجم الصورة أكبر من 1.5 ميجابايت. صغّرها ثم أعد المحاولة.'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = () => { onDone(String(reader.result)); input.value = ''; };
+  reader.onerror = () => { alert('تعذر قراءة الصورة.'); input.value = ''; };
+  reader.readAsDataURL(file);
+}
+function uploadHeaderImage(input) {
+  readImageFile(input, data => { const design = getDesign(); design.headerImage = data; saveDesign(design); applyDesign(); notify('تم رفع صورة الهيدر.'); });
+}
+function uploadBackgroundImage(input) {
+  readImageFile(input, data => { const design = getDesign(); design.backgroundImage = data; saveDesign(design); applyDesign(); notify('تم رفع صورة خلفية التطبيق.'); });
+}
+function clearHeaderImage() { const design = getDesign(); delete design.headerImage; saveDesign(design); applyDesign(); }
+function clearBackgroundImage() { const design = getDesign(); delete design.backgroundImage; saveDesign(design); applyDesign(); }
+
+/* ------------------------------------------------------------------ */
+/* Install as an app (PWA)                                             */
+/* ------------------------------------------------------------------ */
+let deferredInstallPrompt = null;
+function setupInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault(); deferredInstallPrompt = event;
+    if ($('installHint')) $('installHint').hidden = false;
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if ($('installHint')) $('installHint').hidden = true;
+    notify('تم تثبيت البرنامج على الجهاز. يمكنك فتحه من سطح المكتب بدون متصفح.');
+  });
+}
+async function installApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice.catch(() => ({}));
+    deferredInstallPrompt = null;
+    if (choice?.outcome === 'accepted') notify('جاري تثبيت البرنامج على الجهاز…');
+    return;
+  }
+  notify('لتثبيت البرنامج: من متصفح Chrome أو Edge اضغط على أيقونة التثبيت (⬇️/⊕) في شريط العنوان، أو القائمة ⋮ ← «تثبيت التطبيق». على iPhone: مشاركة ← «إضافة إلى الشاشة الرئيسية».');
 }
 
 /* ------------------------------------------------------------------ */
@@ -1214,8 +1450,9 @@ function renderProfits() {
 /* ---------------- settings, sync, backup ---------------- */
 function applySettingsUI() {
   $('lblStoreName').textContent = db.settings.name;
-  $('lblStoreAddress').textContent = '📍 ' + db.settings.address;
-  $('lblStorePhone').textContent = '☎️ ' + db.settings.phone;
+  $('lblStorePhone').textContent = db.settings.phone || '';
+  $('lblStoreAddress').textContent = db.settings.address || '';
+  $('lblStoreAddress').hidden = !db.settings.address;
   document.title = `${db.settings.name} | نقاط البيع`;
 }
 function loadSettingsForm() {
@@ -1390,7 +1627,9 @@ Object.assign(window, {
   printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
   exportFullBackup, importFullBackup, exportItemsCSV, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
   switchInvoiceTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
-  renderPosTiles, renderLabels, printLabels
+  renderPosTiles, renderLabels, printLabels,
+  toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,
+  installApp, setupInstallPrompt, applyDesign, resetDesign, setDesignField, applyThemePreset, uploadHeaderImage, uploadBackgroundImage, clearHeaderImage, clearBackgroundImage
 });
 export { initializeApp };
 if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', initializeApp, { once: true });
