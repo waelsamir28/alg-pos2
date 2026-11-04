@@ -200,6 +200,9 @@ test('dashboard, responsive navigation, window controls and themes work', async 
   f.window.openSec('sec-items', 'الأصناف');
   assert.equal(f.$('windowLayer').classList.contains('open'), true);
   assert.equal(f.$('sec-items').classList.contains('active'), true);
+  // screens now open large by default: the maximize button toggles back to normal
+  assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
+  f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), false);
   f.window.maximizeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('maximized'), true);
   f.window.minimizeWorkspace(); assert.equal(f.$('windowDock').hidden, false);
   f.window.restoreWorkspace(); assert.equal(f.$('windowDock').hidden, true);
@@ -209,6 +212,54 @@ test('dashboard, responsive navigation, window controls and themes work', async 
   f.window.toggleDarkMode(); assert.equal(f.window.document.body.dataset.theme, 'night');
   f.window.toggleDarkMode(); assert.equal(f.window.document.body.dataset.theme, 'vista-emerald');
   f.window.closeWorkspace(); assert.equal(f.$('windowLayer').classList.contains('open'), false);
+});
+
+test('POS screen uses the new bars: title, tabs on the left, group dropdown and function keys', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openInvoiceSec('sale');
+  // title bar shows the operation name, and the mode switch lives inside it
+  assert.equal(f.$('posTitleText').textContent, 'فاتورة مبيعات');
+  assert.equal(f.$('posTitleText').closest('.pos-titlebar').querySelector('#invMode').tagName, 'SELECT');
+  f.window.openInvoiceSec('purchase');
+  assert.equal(f.$('posTitleText').textContent, 'فاتورة مشتريات');
+  // groups are a dropdown now: choosing a group shows its item buttons
+  assert.equal(f.$('posGroupSelect').tagName, 'SELECT');
+  f.window.selectPosGroup('كتب خارجية');
+  assert.equal(f.$('posGroupSelect').value, 'كتب خارجية');
+  assert.equal(f.$('posQuickItems').children.length, 1);
+  assert.equal(f.$('posGroupCount').textContent, '1 صنف');
+  // invoice tabs keep exactly one active tab and swap the contextual fields
+  f.window.switchInvoiceTab('discount');
+  assert.deepEqual([...f.window.document.querySelectorAll('#invTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, true, false, false]);
+  assert.equal(f.window.document.querySelector('[data-inv-group="discount"]').hidden, false);
+  assert.equal(f.$('invPanelTitle').textContent, 'الخصم');
+  f.window.switchInvoiceTab('details');
+  assert.equal(f.window.document.querySelector('[data-inv-group="details"]').hidden, false);
+  // save / hold / restore / print / clear are ordered in one strip
+  const actions = [...f.window.document.querySelectorAll('.pos-actions-strip .pos-action')].map(button => button.textContent.trim());
+  assert.match(actions[0], /^💾حفظ/);
+  assert.match(actions[1], /حفظ وطباعة/);
+  assert.match(actions[2], /تعليق/);
+  assert.match(actions[3], /استعادة معلقة/);
+  assert.match(actions[4], /طباعة حرارية/);
+  assert.match(actions.at(-1), /تفريغ/);
+  // ten equal function keys sit in a bar at the bottom
+  assert.equal(f.window.document.querySelectorAll('.pos-fnbar .fn-btn').length, 10);
+  // the big money boxes stay in the summary: net, paid and remaining share one tall row
+  const bigRow = f.window.document.querySelector('.pos-sum-major');
+  assert.equal(bigRow.querySelectorAll('.sum-cell.big').length, 3);
+  assert.equal(bigRow.querySelector('#invNetTotal').tagName, 'INPUT');
+});
+
+test('floating screens open large and the screen-print button is gone', async t => {
+  const f = await ready(t);
+  f.window.openSec('sec-items', 'الأصناف');
+  assert.equal(f.window.document.querySelectorAll('.win-header [onclick="printCurrentScreenA5()"]').length, 0);
+  const workspace = f.window.document.querySelector('.workspace');
+  assert.equal(workspace.tagName, 'DIV');
+  // the shell must fill the viewport minus its padding, not a fixed 1420px column
+  const css = f.window.document.querySelector('style').textContent;
+  assert.match(css, /\.workspace \{[^}]*width:100%/);
 });
 
 test('staff roles allow cashier sales but block inventory and manager-only settings', async t => {
