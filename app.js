@@ -56,6 +56,7 @@ function staffList() {
   const employees = safeReadArray(STAFF_KEY).filter(user => user && user.id && user.role !== 'admin');
   return [{ id: 'owner', name: db.settings.name || 'المدير', role: 'admin', pin: db.settings.pin || '1234' }, ...employees];
 }
+function loginName(user) { return user.role === 'admin' ? 'المدير' : user.name; }
 function activeStaff() { return staffList().find(user => user.id === activeStaffId) || staffList()[0]; }
 function isAdmin() { return activeStaff().role === 'admin'; }
 function can(permission) {
@@ -127,8 +128,25 @@ function renderHeldCount() {
 }
 function notify(message) {
   const box = $('appNotice');
-  box.innerHTML = `<button type="button" aria-label="إغلاق التنبيه" onclick="this.parentElement.hidden=true">×</button>${esc(message)}`;
-  box.hidden = false;
+  if (box) {
+    box.innerHTML = `<button type="button" aria-label="إغلاق التنبيه" onclick="this.parentElement.hidden=true">×</button>${esc(message)}`;
+    box.hidden = false;
+  }
+  showNoticePopup(message);
+}
+let noticePopupTimer = 0;
+function showNoticePopup(message) {
+  const popup = $('noticePopup'); if (!popup) return;
+  $('noticePopupText').textContent = String(message);
+  popup.hidden = false; popup.classList.remove('out');
+  window.clearTimeout(noticePopupTimer);
+  noticePopupTimer = window.setTimeout(closeNoticePopup, 4200);
+}
+function closeNoticePopup() {
+  const popup = $('noticePopup'); if (!popup || popup.hidden) return;
+  window.clearTimeout(noticePopupTimer);
+  popup.classList.add('out');
+  window.setTimeout(() => { popup.hidden = true; popup.classList.remove('out'); }, 240);
 }
 function sessionToken() {
   try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(REMEMBERED_TOKEN_KEY) || ''; } catch { return ''; }
@@ -228,6 +246,96 @@ function updateClock() {
   if ($('liveTime')) $('liveTime').textContent = time;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
+/* ------------------------------------------------------------------ */
+/* Floating page dialogs: confirm/prompt replacements + toast popups   */
+/* ------------------------------------------------------------------ */
+const nativeConfirm = typeof window.confirm === 'function' ? window.confirm.bind(window) : () => true;
+let dialogResolver = null;
+function askDialog({ title = 'تأكيد', icon = '❓', body = '', note = '', confirmText = 'متابعة', cancelText = 'إلغاء', tone = 'confirm', onlyOk = false } = {}) {
+  const modal = $('syncDialog');
+  if (!modal) return Promise.resolve(nativeConfirm(body));
+  if (dialogResolver) { dialogResolver(false); dialogResolver = null; }
+  $('syncDialogTitle').textContent = title;
+  $('syncDialogIco').textContent = icon;
+  $('syncDialogBody').innerHTML = `${body}<span class="page-modal-note">${esc(note || '')}</span>`;
+  const foot = $('syncDialogFoot');
+  foot.innerHTML = '';
+  const close = answer => {
+    modal.hidden = true;
+    const resolve = dialogResolver; dialogResolver = null;
+    if (resolve) resolve(answer);
+  };
+  const okButton = document.createElement('button');
+  okButton.type = 'button'; okButton.className = `dialog-action ${tone}`; okButton.textContent = confirmText;
+  okButton.onclick = () => close(true);
+  foot.append(okButton);
+  if (!onlyOk) {
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button'; cancelButton.className = 'dialog-action'; cancelButton.textContent = cancelText;
+    cancelButton.onclick = () => close(false);
+    foot.append(cancelButton);
+  }
+  modal.hidden = false;
+  window.setTimeout(() => okButton.focus(), 30);
+  return new Promise(resolve => { dialogResolver = resolve; });
+}
+function closeSyncDialog() { if (dialogResolver) { dialogResolver(false); dialogResolver = null; } if ($('syncDialog')) $('syncDialog').hidden = true; }
+function showSyncDialog({ title = 'المزامنة', icon = '☁️', body = '', note = '', ok = 'حسناً', tone = 'neutral' } = {}) {
+  return askDialog({ title, icon, body, note, confirmText: ok, tone, onlyOk: true });
+}
+function appConfirm(message, options = {}) {
+  // A promise-based confirmation so callers can await the small floating dialog.
+  if (!document.body || !document.body.dataset.appReady) return Promise.resolve(nativeConfirm(message));
+  const text = String(message);
+  const tone = /^(حذف|استبدال|استعادة|تفريغ)/.test(text) ? 'cancel' : 'confirm';
+  return askDialog({ title: options.title || 'تأكيد العملية', icon: options.icon || '❔', body: esc(text),
+    confirmText: options.confirmText || 'متابعة', cancelText: 'إلغاء', tone: options.tone || tone });
+}
+window.confirm = message => nativeConfirm(message);
+
+/* ---- welcome popup: appears after a successful login and closes itself ---- */
+let welcomeTimer = 0;
+function showWelcomePopup(name) {
+  const popup = $('welcomePopup'); if (!popup) return;
+  $('welcomeTitle').textContent = `أهلاً بك يا ${name}`;
+  const hour = new Date().getHours();
+  const partOfDay = hour < 12 ? 'صباح الخير' : hour < 17 ? 'طاب نهارك' : 'مساء الخير';
+  $('welcomeSub').textContent = `${partOfDay} — تم تسجيل الدخول بنجاح، بالتوفيق في يومك`;
+  popup.hidden = false; popup.classList.remove('out');
+  window.clearTimeout(welcomeTimer);
+  welcomeTimer = window.setTimeout(closeWelcomePopup, 3000);
+}
+function closeWelcomePopup() {
+  const popup = $('welcomePopup'); if (!popup || popup.hidden) return;
+  window.clearTimeout(welcomeTimer);
+  popup.classList.add('out');
+  window.setTimeout(() => { popup.hidden = true; popup.classList.remove('out'); }, 260);
+}
+
+/* ---- start screen: animated loading bar, then the rounded login box ---- */
+let startScreenTimer = 0;
+function startScreenProgress(done) {
+  const fill = $('startLoadFill'), pct = $('startLoadPct'), label = $('startLoaderLabel');
+  const steps = ['جارٍ تحضير البرنامج…', 'تحميل البيانات المحلية…', 'فحص الأصناف والخزنة…', 'تجهيز شاشة البداية…'];
+  let value = 0, step = 0;
+  window.clearInterval(startScreenTimer);
+  startScreenTimer = window.setInterval(() => {
+    value = Math.min(100, value + (value < 60 ? 17 : value < 85 ? 9 : 4));
+    if (fill) fill.style.width = `${value}%`;
+    if (pct) pct.textContent = `${value}%`;
+    const nextStep = Math.min(steps.length - 1, Math.floor(value / 26));
+    if (nextStep !== step && label) { step = nextStep; label.textContent = steps[step]; }
+    if (value >= 100) { window.clearInterval(startScreenTimer); window.setTimeout(done, 180); }
+  }, 130);
+}
+function finishStartScreen() {
+  window.clearInterval(startScreenTimer);
+  if ($('startLoader')) $('startLoader').hidden = true;
+  if ($('startLogin')) $('startLogin').hidden = false;
+  if ($('startFooterUser')) $('startFooterUser').textContent = staffList().map(user => user.name).join(' / ') || 'مدير';
+  $('unlockPinInp')?.focus();
+}
+
 function initializeApp() {
   applyAppearance(); applyDesign(); applySidebarPreference(); decorateActionButtons();
   loadDB(); updateClock(); populateCategoriesSelect(); renderItemsTable(); generateNewCode();
@@ -546,7 +654,8 @@ const DESIGN_DEFAULTS = Object.freeze({
   radius: 12, borderWidth: 1, shadow: 2,
   appBg: '', headerA: '', headerB: '', sectionA: '', sectionB: '',
   sideA: '', sideB: '', buttonBg: '', buttonText: '', borderColor: '',
-  headerImage: '', backgroundImage: '', headerHeight: 118, fontScale: 100
+  headerImage: '', backgroundImage: '', headerHeight: 118, fontScale: 100,
+  startBackground: '', startBackgroundOpacity: 50
 });
 const DESIGN_PRESETS = Object.freeze({
   'blue-cyan': { headerA:'#0a1a3c', headerB:'#0f7c93', sectionA:'#0a1a3c', sectionB:'#0f7c93', sideA:'#0a1a3c', sideB:'#123a6b', radius:14, shadow:2, borderWidth:1, appBg:'#dcd9c6', buttonBg:'#f4f5f9', buttonText:'#22314a', borderColor:'#b8c4d4' },
@@ -632,6 +741,7 @@ function applyDesign() {
   if ($('designShadow')) $('designShadow').value = String(design.shadow ?? 2);
   if ($('headerImageStatus')) $('headerImageStatus').textContent = headerImage ? 'صورة مرفوعة ✔' : 'لا توجد صورة';
   if ($('backgroundImageStatus')) $('backgroundImageStatus').textContent = design.backgroundImage ? 'صورة مرفوعة ✔' : 'لا توجد صورة';
+  applyStartBackground();
 }
 function setDesignField(field, value) {
   if (!DESIGN_FIELDS.includes(field)) return;
@@ -688,6 +798,30 @@ function uploadHeaderImage(input) {
 }
 function uploadBackgroundImage(input) {
   readImageFile(input, data => { const design = getDesign(); design.backgroundImage = data; saveDesign(design); applyDesign(); notify('تم رفع صورة خلفية التطبيق.'); });
+}
+function applyStartBackground() {
+  const design = getDesign();
+  const opacity = Math.min(100, Math.max(0, Number(design.startBackgroundOpacity) || 0)) / 100;
+  const screen = $('lockModal');
+  if (screen) screen.style.setProperty('--start-bg-image', design.startBackground ? `url("${design.startBackground}")` : 'none');
+  if (screen) screen.style.setProperty('--start-bg-opacity', String(opacity));
+  if ($('startBgStatus')) $('startBgStatus').textContent = design.startBackground ? 'صورة مرفوعة ✔' : 'لا توجد صورة — الخلفية متدرجة';
+  if ($('startBgOpacity')) $('startBgOpacity').value = design.startBackgroundOpacity ?? 50;
+}
+function uploadStartBackground(input) {
+  readImageFile(input, data => {
+    const design = getDesign(); design.startBackground = data; saveDesign(design); applyStartBackground();
+    notify('تم رفع خلفية شاشة البداية.');
+  });
+}
+function clearStartBackground() {
+  const design = getDesign(); delete design.startBackground; saveDesign(design); applyStartBackground();
+  notify('أُعيدت خلفية شاشة البداية إلى التدرج الافتراضي.');
+}
+function setStartBackgroundOpacity(value) {
+  const design = getDesign();
+  design.startBackgroundOpacity = Math.min(100, Math.max(0, Number(value) || 0));
+  saveDesign(design); applyStartBackground();
 }
 function clearHeaderImage() { const design = getDesign(); delete design.headerImage; saveDesign(design); applyDesign(); }
 function clearBackgroundImage() { const design = getDesign(); delete design.backgroundImage; saveDesign(design); applyDesign(); }
@@ -785,6 +919,18 @@ function selectPosGroup(group) {
   posGroup = group;
   renderPosTiles();
 }
+const ITEMS_TAB_LABELS = { edit: 'بيانات الصنف', prices: 'الأسعار والربح', actions: 'إجراءات وأدوات' };
+function switchItemsTab(tab) {
+  const key = ITEMS_TAB_LABELS[tab] ? tab : 'edit';
+  $$('#sec-items [data-items-tab]').forEach(button => {
+    const active = button.dataset.itemsTab === key;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  $$('#sec-items [data-items-group]').forEach(group => { group.hidden = group.dataset.itemsGroup !== key; });
+  if ($('itemsPanelTitle')) $('itemsPanelTitle').textContent = ITEMS_TAB_LABELS[key];
+}
+
 function renderPosTiles() {
   const groupSelect = $('posGroupSelect');
   if (!groupSelect) return;
@@ -1214,6 +1360,9 @@ function renderItemsTable() {
   }).join('') || '<tr><td colspan="14" class="empty-row">لا توجد أصناف مطابقة. أضف صنفاً من النموذج بالأعلى.</td></tr>';
   document.querySelectorAll('#sec-items thead th').forEach((th, index) => th.classList.toggle('no-print', index >= 11));
   $('totItemsCount').textContent = list.length; $('totItemsBuy').textContent = money(totBuy); $('totItemsSell').textContent = money(totSell);
+  if ($('headItemsCount')) $('headItemsCount').textContent = String(list.length);
+  if ($('headItemsValue')) $('headItemsValue').textContent = money(totSell);
+  if ($('itemsTableHint')) $('itemsTableHint').textContent = q ? `${list.length} نتيجة بحث` : `${list.length} صنف`;
 }
 function inlineUpdateItem(id, field, value) {
   if (!ensurePermission('inventory') || !['name', 'qty', 'buy', 'sell', 'wholesale'].includes(field)) return;
@@ -1263,6 +1412,7 @@ function renderLabels() {
   const list = db.items.filter(item => cat === 'all' || item.cat === cat);
   labelCache = list;
   preview.style.gridTemplateColumns = `repeat(${cols},minmax(0,1fr))`;
+  if ($('headLabelsCount')) $('headLabelsCount').textContent = String(list.length);
   const cells = [];
   for (const item of list) {
     for (let copy = 0; copy < copies; copy++) {
@@ -1287,6 +1437,7 @@ function renderCategoriesTable() {
   const body = $('catsTbody'); if (!body) return;
   body.innerHTML = db.categories.map((c, index) => `<tr><td>${index + 1}</td><td>${esc(c)}</td><td>${db.items.filter(i => i.cat === c).length}</td><td class="no-print"><button type="button" class="act-btn bg-red" onclick="deleteCategory(${index})">حذف</button></td></tr>`).join('') || '<tr><td colspan="4">لا توجد مجموعات.</td></tr>';
   const th = document.querySelector('#sec-categories th:last-child'); if (th) th.classList.add('no-print');
+  if ($('headCatsCount')) $('headCatsCount').textContent = String(db.categories.length);
 }
 function addCategory() {
   if (!ensurePermission('inventory')) return;
@@ -1350,6 +1501,9 @@ function renderPartiesTable() {
   $('partiesTbody').innerHTML = list.map((p, index) => `<tr><td>${index + 1}</td><td class="cell-name">${esc(p.name)}</td><td>${esc(p.phone || '-')}</td><td>${esc(p.notes || '-')}</td><td style="font-weight:bold">${money(p.balance)}</td>
     <td class="no-print"><button type="button" class="act-btn bg-blue" onclick="showStatementFor(${p.id})">كشف حساب</button></td><td class="no-print"><button type="button" class="act-btn bg-orange" onclick="editParty(${p.id})">تعديل</button></td><td class="no-print"><button type="button" class="act-btn bg-red" onclick="deleteParty(${p.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="8">لا توجد حسابات مسجلة.</td></tr>';
   $('partiesTbody').closest('table').querySelectorAll('thead th').forEach((th, i) => th.classList.toggle('no-print', i >= 5));
+  if ($('headPartiesCount')) $('headPartiesCount').textContent = String(list.length);
+  if ($('headPartiesBalance')) $('headPartiesBalance').textContent = money(list.reduce((sum, p) => sum + p.balance, 0));
+  if ($('partiesHeadTitle')) $('partiesHeadTitle').textContent = $('partyType').value === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس';
   if ($('partyStatementBox').style.display !== 'none') renderPartyStatement();
 }
 function deleteParty(id) {
@@ -1422,6 +1576,7 @@ function renderInvLog() {
   $('invLogTbody').innerHTML = list.map(i => `<tr><td>#${i.id}</td><td>${esc(i.date)}</td><td>${esc(MODE_LABELS[i.mode])}</td><td>${esc(i.partyName)}</td><td>${money(i.netTotal)}</td><td>${money(i.paidAmount)}</td><td>${money(i.remainAmount)}</td>
     <td class="no-print"><button type="button" class="act-btn bg-teal" onclick="printInvoiceById(${i.id})">طباعة A5</button> <button type="button" class="act-btn bg-blue" onclick="printInvoiceThermalById(${i.id})">حرارية</button>${i.mode === 'quote' && !i.convertedToId ? ` <button type="button" class="act-btn bg-green" onclick="loadQuoteForSale(${i.id})">تحويل للبيع</button>` : ''}${i.convertedToId ? ` <small>محوّلة إلى #${i.convertedToId}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-row">لا توجد فواتير في هذه الفترة.</td></tr>';
   const th = document.querySelector('#sec-invlog th:last-child'); if (th) th.classList.add('no-print');
+  if ($('headInvLogCount')) $('headInvLogCount').textContent = String(list.length);
 }
 
 /* ---------------- treasury & profits ---------------- */
@@ -1444,6 +1599,7 @@ function addTreasuryMove() {
 function renderTreasury() {
   $('treasuryTbody').innerHTML = db.treasury.slice().reverse().map(t => `<tr><td>${esc(t.date)}</td><td>${t.type === 'in' ? 'وارد خزنة' : t.type === 'expense' ? 'مصروفات' : 'منصرف خزنة'}</td><td class="cell-name">${esc(t.note)}</td><td style="color:#20591f;font-weight:bold">${t.type === 'in' ? money(t.amount) : '-'}</td><td style="color:var(--danger);font-weight:bold">${t.type !== 'in' ? money(t.amount) : '-'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-row">لا توجد حركات خزنة.</td></tr>';
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(treasuryBalance());
+  if ($('headTreasuryBalance')) $('headTreasuryBalance').textContent = money(treasuryBalance());
 }
 function openProfitSec(mode = 'general') {
   if (!ensurePermission('admin')) return;
@@ -1461,6 +1617,7 @@ function renderProfits() {
   try {
     const filter = $('profItemFilter').value, result = calculateTotalProfits($('profDateFrom').value, $('profDateTo').value, filter);
     for (const [id, value] of Object.entries({ profTotSales: result.sales, profTotCost: result.cost, profGross: result.gross, profExpenses: result.expenses, profNet: result.net })) $(id).textContent = money(value);
+    if ($('headNetProfit')) $('headNetProfit').textContent = money(result.net);
     $('profitScopeNote').textContent = filter !== 'all' ? 'ربح الصنف بعد الخصومات والمرتجعات. المصروفات العامة لا تُخصم من صنف منفرد؛ تظهر في تقرير كل الأصناف.' : 'الأرباح بعد خصومات الفواتير ومرتجع المبيعات وتكلفة البيع التاريخية، وخصم المصروفات العامة للفترة.';
     $('profitsTbody').innerHTML = result.itemRows.map(r => `<tr><td>${esc(r.code)}</td><td class="cell-name">${esc(r.name)}</td><td>${esc(roundQuantity(r.qty))}</td><td>${money(r.rev)}</td><td>${money(r.cst)}</td><td style="font-weight:bold;color:${r.rev - r.cst >= 0 ? '#20591f' : 'var(--danger)'}">${money(r.rev - r.cst)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-row">لا توجد مبيعات مطابقة للفترة المحددة.</td></tr>';
   } catch (error) {
@@ -1517,7 +1674,13 @@ function syncToCloud(direction) {
 }
 async function performSync(direction) {
   const token = sessionToken(), automatic = direction === 'auto_push';
-  if (!token) { if (!automatic) { openSec('sec-settings', '⚙️ إعدادات المزامنة'); alert('أدخل مفتاح المزامنة في الإعدادات أولاً. بياناتك المحلية لم تتغير.'); } return false; }
+  if (!token) {
+    if (!automatic) {
+      openSec('sec-settings', '⚙️ إعدادات المزامنة');
+      showSyncDialog({ title: 'مفتاح المزامنة مطلوب', icon: '🔑', body: 'أدخل مفتاح المزامنة في الإعدادات أولاً.', note: 'بياناتك المحلية لم تتغير.', ok: 'فتح الإعدادات', tone: 'neutral' });
+    }
+    return false;
+  }
   if (storageBlocked) { if (!automatic) alert('أصلح التخزين المحلي قبل المزامنة.'); return false; }
   if (automatic && (!syncMeta.dirty || syncMeta.revision === null || syncBusy)) return false;
   const previousStatus = $('syncStatusBadge').textContent;
@@ -1525,7 +1688,7 @@ async function performSync(direction) {
   const startVersion = localVersion;
   try {
     if (direction === 'pull') {
-      if (!automatic && !confirm('السحب سيستبدل البيانات المحلية والفاتورة غير المحفوظة. صدّر نسخة احتياطية إذا أردت الاحتفاظ بها. هل تريد المتابعة؟')) { setSyncStatus(previousStatus); return false; }
+      if (!automatic && !(await appConfirm('السحب سيستبدل البيانات المحلية والفاتورة غير المحفوظة. صدّر نسخة احتياطية إذا أردت الاحتفاظ بها. هل تريد المتابعة؟', { title: 'سحب البيانات من السحابة', icon: '⬇️', confirmText: 'سحب واستبدال' }))) { setSyncStatus(previousStatus); return false; }
       const remote = await apiRequest('GET', null, token);
       if (!Number.isSafeInteger(remote.revision) || remote.revision < 0) throw new Error('إصدار خادم المزامنة قديم. انشر api/sync.js المحدث مع الواجهة أولاً.');
       if (localVersion !== startVersion) { setSyncStatus(previousStatus); alert('تغيرت البيانات المحلية أثناء السحب؛ لم نستبدلها. أعد المحاولة بعد انتهاء الحفظ.'); return false; }
@@ -1533,14 +1696,15 @@ async function performSync(direction) {
       const next = normalizeDatabase(remote.payload);
       writeLocalState(next, { revision: remote.revision, dirty: false });
       db = next; localVersion += 1; syncMeta = { revision: remote.revision, dirty: false }; refreshAfterReplace();
-      setSyncStatus('متزامن مع Neon ✅'); if (!automatic) alert('تم سحب البيانات والتحقق منها بنجاح.');
+      setSyncStatus('متزامن مع Neon ✅');
+      if (!automatic) showSyncDialog({ title: 'تم السحب بنجاح', icon: '✅', body: 'تم سحب البيانات من السحابة والتحقق منها، واستُبدلت البيانات المحلية.', ok: 'تم' });
     } else {
       let baseRevision = syncMeta.revision;
       if (baseRevision === null) {
         const remote = await apiRequest('GET', null, token);
         if (!Number.isSafeInteger(remote.revision) || remote.revision < 0) throw new Error('إصدار خادم المزامنة قديم. انشر api/sync.js المحدث مع الواجهة قبل الرفع.');
         if (!remote.empty) {
-          if (automatic || !confirm('توجد بيانات سحابية لم تُربط بهذه النسخة المحلية. الأفضل سحبها أولاً. يمكنك بدلاً من ذلك استبدالها بعد تأمين نسخة احتياطية. هل تريد استبدال النسخة السحابية؟')) {
+          if (automatic || !(await appConfirm('توجد بيانات سحابية لم تُربط بهذه النسخة المحلية. الأفضل سحبها أولاً. يمكنك بدلاً من ذلك استبدالها بعد تأمين نسخة احتياطية. هل تريد استبدال النسخة السحابية؟', { title: 'تعارض النسخ السحابية', icon: '⚠️', confirmText: 'استبدال النسخة السحابية' }))) {
             setSyncStatus('تعارض نسخ — السحب أو التصدير أولاً'); if (!automatic) alert('لم تُستبدل أي بيانات. صدّر النسخة المحلية ثم اسحب النسخة السحابية للمقارنة.'); return false;
           }
         }
@@ -1552,13 +1716,18 @@ async function performSync(direction) {
       const dirty = localVersion !== startVersion;
       writeMeta({ revision: result.revision, dirty });
       setSyncStatus(dirty ? 'توجد تعديلات محلية أحدث للمزامنة' : 'متزامن مع Neon ✅');
-      if (dirty) scheduleAutoSync(); else if (!automatic) alert('تم رفع بيانات المكتبة إلى Neon بنجاح.');
+      if (dirty) scheduleAutoSync();
+      else if (!automatic) showSyncDialog({ title: 'تم الرفع بنجاح', icon: '✅', body: `تم رفع بيانات المكتبة إلى السحابة.<span class="page-modal-note">إصدار المزامنة الحالي: ${esc(String(result.revision))}</span>`, ok: 'تم' });
     }
     return true;
   } catch (error) {
     const message = error.name === 'AbortError' ? 'انتهت مهلة الاتصال. البيانات المحلية محفوظة.' : error.status === 409 ? 'يوجد تعديل أحدث على جهاز آخر. صدّر نسخة محلية ثم اسحب النسخة السحابية قبل إعادة الرفع.' : error.message;
     setSyncStatus(error.status === 409 ? 'تعارض نسخ — لم تُستبدل البيانات' : 'محفوظ محلياً — المزامنة غير متاحة');
-    if (!automatic) alert(message); else notify(`المزامنة لم تكتمل: ${message}`);
+    if (!automatic) {
+      showSyncDialog({ title: 'المزامنة لم تكتمل', icon: '⚠️', body: esc(message), note: 'بياناتك المحلية لم تتغير.', ok: 'حسناً', tone: 'cancel' });
+      alert(message);
+    }
+    else notify(`المزامنة لم تكتمل: ${message}`);
     return false;
   } finally { syncBusy = false; }
 }
@@ -1620,10 +1789,16 @@ function printCurrentScreenA5() {
 
 /* ---------------- login ---------------- */
 function lockApp() {
-  closeWorkspace(); closeKeypad();
+  closeWorkspace(); closeKeypad(); closeWelcomePopup();
   beforeLockFocus = document.activeElement;
-  $('loginStaffSelect').innerHTML = staffList().map(user => `<option value="${esc(user.id)}">${esc(user.name)} — ${roleLabel(user.role)}</option>`).join('');
-  $('loginStaffSelect').value = activeStaffId; $('lockModal').style.display = 'flex'; $('unlockPinInp').value = ''; $('unlockPinInp').focus();
+  $('loginStaffSelect').innerHTML = staffList().map(user => `<option value="${esc(user.id)}">${esc(loginName(user))} — ${roleLabel(user.role)}</option>`).join('');
+  $('loginStaffSelect').value = activeStaffId;
+  if ($('startStoreName')) $('startStoreName').textContent = db?.settings?.name || 'مكتبة الجمال';
+  if ($('startLogin')) $('startLogin').hidden = true;
+  if ($('startLoader')) { $('startLoader').hidden = false; if ($('startLoadFill')) $('startLoadFill').style.width = '0%'; if ($('startLoadPct')) $('startLoadPct').textContent = '0%'; }
+  $('unlockPinInp').value = '';
+  $('lockModal').style.display = 'flex';
+  startScreenProgress(finishStartScreen);
   document.querySelectorAll('body > :not(#lockModal):not(#printAreaA5):not(script)').forEach(el => { el.inert = true; });
 }
 function unlockApp() {
@@ -1633,7 +1808,9 @@ function unlockApp() {
   try { sessionStorage.setItem(ACTIVE_STAFF_KEY, activeStaffId); } catch { notify('تعذر حفظ جلسة المستخدم؛ سيطلب النظام تسجيل الدخول مرة أخرى عند تحديث الصفحة.'); }
   $('lockModal').style.display = 'none'; $('unlockPinInp').value = '';
   document.querySelectorAll('[inert]').forEach(el => { el.inert = false; });
-  updateActiveUserBadge(); recordAudit(`تسجيل دخول (${roleLabel(user.role)})`); beforeLockFocus?.focus();
+  updateActiveUserBadge(); recordAudit(`تسجيل دخول (${roleLabel(user.role)})`);
+  showWelcomePopup(loginName(user));
+  beforeLockFocus?.focus();
 }
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
@@ -1647,10 +1824,12 @@ Object.assign(window, {
   openPartySec, openPartyReport, resetPartyForm, saveParty, editParty, deleteParty, savePartyVoucher, showStatementFor, renderPartyStatement,
   printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
   exportFullBackup, importFullBackup, exportItemsCSV, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
-  switchInvoiceTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
+  switchInvoiceTab, switchItemsTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
   renderPosTiles, renderLabels, printLabels,
   toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,
-  installApp, setupInstallPrompt, applyDesign, resetDesign, setDesignField, applyThemePreset, uploadHeaderImage, uploadBackgroundImage, clearHeaderImage, clearBackgroundImage
+  installApp, setupInstallPrompt, applyDesign, resetDesign, setDesignField, applyThemePreset, uploadHeaderImage, uploadBackgroundImage, clearHeaderImage, clearBackgroundImage,
+  uploadStartBackground, clearStartBackground, setStartBackgroundOpacity,
+  showWelcomePopup, closeWelcomePopup, showNoticePopup, closeNoticePopup, askDialog, showSyncDialog, closeSyncDialog, startScreenProgress, finishStartScreen
 });
 export { initializeApp };
 if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', initializeApp, { once: true });
