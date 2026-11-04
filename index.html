@@ -1682,6 +1682,7 @@
     border:1px solid var(--doc-accent,#1c3d1a); border-radius:999px; padding:1px 8px; margin-bottom:4px;
   }
   .preview-paper .p-header { text-align:center; border-bottom:2px solid var(--doc-accent,#1c3d1a); padding-bottom:6px; margin-bottom:8px; }
+  .preview-paper .p-header .p-logo { width:52px; height:52px; object-fit:contain; border-radius:8px; display:block; margin:0 auto 4px; }
   .preview-paper .p-header h2 { margin:0; font-size:17px; color:var(--doc-accent,#1c3d1a); }
   .preview-paper .p-header p { margin:2px 0; font-size:9.5px; color:#444; }
   .preview-paper .p-header h3 { margin:4px 0 0; font-size:12px; color:#0f4c81; }
@@ -2096,17 +2097,197 @@
     .quick-items { grid-template-columns:repeat(2,minmax(0,1fr)); }
   }
 </style>
+<style id="lookLayerStyle">
+  /* ================= LOOK LAYER (density / radius / numerals / motion / icons / header / POS) ================= */
+  html[data-density="cozy"] { --row-h:30px; --pad-row:6px; --pad-btn:9px 12px; --gap-ui:10px; }
+  html[data-density="compact"] { --row-h:26px; --pad-row:4px; --pad-btn:7px 9px; --gap-ui:7px; }
+  html[data-density="ultra"] { --row-h:22px; --pad-row:2px; --pad-btn:5px 7px; --gap-ui:5px; }
+  html[data-density="cozy"] table th, html[data-density="cozy"] table td { height:var(--row-h); padding:var(--pad-row) 6px; }
+  html[data-density="compact"] table th, html[data-density="compact"] table td { height:var(--row-h); padding:var(--pad-row) 5px; font-size:11.5px; }
+  html[data-density="ultra"] table th, html[data-density="ultra"] table td { height:var(--row-h); padding:var(--pad-row) 4px; font-size:10.5px; }
+  html[data-density="compact"] .f-row input, html[data-density="compact"] .f-row select,
+  html[data-density="ultra"] .f-row input, html[data-density="ultra"] .f-row select { min-height:26px; padding-block:2px; }
+  html[data-density="ultra"] .f-row input, html[data-density="ultra"] .f-row select { min-height:23px; }
+  html[data-density="compact"] .act-btn, html[data-density="ultra"] .act-btn { min-height:26px; padding:3px 8px; font-size:11px; }
+  html[data-density="ultra"] .act-btn { min-height:23px; font-size:10.5px; }
+  html[data-density="compact"] .c-btn { min-height:46px; padding:6px; font-size:10.5px; }
+  html[data-density="ultra"] .c-btn { min-height:38px; padding:4px; font-size:9.5px; gap:2px; }
+  html[data-density="ultra"] .c-btn .button-icon { font-size:12px; }
+  html[data-density="compact"] .kpi-box { padding:8px 10px; }
+  html[data-density="ultra"] .kpi-box { padding:6px 8px; }
+  html[data-density="ultra"] .kpi-box strong { font-size:17px; }
+  html[data-density="compact"] .panel-box, html[data-density="ultra"] .panel-box { padding:8px; }
+  html[data-density="ultra"] .panel-box { padding:6px; }
+  html[data-density="compact"] .item-tile { min-height:50px; font-size:9.5px; }
+  html[data-density="ultra"] .item-tile { min-height:40px; padding:4px; font-size:9px; }
+  html[data-density="ultra"] .item-tile i { display:none; }
+
+  /* ===== typography: weight + tabular numerals ===== */
+  html[data-font-weight="bold"] body { font-weight:600; }
+  html[data-font-weight="bold"] table th, html[data-font-weight="bold"] .act-btn,
+  html[data-font-weight="bold"] .c-btn, html[data-font-weight="bold"] label { font-weight:800; }
+  html[data-numerals="tabular"] { --font-num: 'Cairo', Tahoma, sans-serif; }
+  html[data-numerals="tabular"] table td, html[data-numerals="tabular"] input,
+  html[data-numerals="tabular"] .sum-cell input, html[data-numerals="tabular"] .kpi-box strong,
+  html[data-numerals="tabular"] .scope-note, html[data-numerals="tabular"] .label-cell span {
+    font-variant-numeric: tabular-nums lining-nums; font-feature-settings:'tnum' 1, 'lnum' 1;
+  }
+
+  /* ===== radius / shadow / motion profiles ===== */
+  html[data-look="flat"] { --radius-ui:8px; --radius-card:10px; --radius-btn:8px; --look-shadow:0 1px 2px #0f172a0f; }
+  html[data-look="flat"] .panel-box, html[data-look="flat"] .kpi-box, html[data-look="flat"] .action-group,
+  html[data-look="flat"] .alerts-panel, html[data-look="flat"] .side-nav, html[data-look="flat"] .windows-card {
+    box-shadow:none !important; border:1px solid var(--line-dark);
+  }
+  html[data-look="flat"] .kpi-box::after, html[data-look="flat"] .kpi-box::before { display:none; }
+  html[data-look="sharp"] { --radius-ui:4px; --radius-card:4px; --radius-btn:4px; }
+  html[data-look="sharp"] .panel-box, html[data-look="sharp"] .kpi-box, html[data-look="sharp"] .action-group,
+  html[data-look="sharp"] .alerts-panel, html[data-look="sharp"] .c-btn, html[data-look="sharp"] .act-btn,
+  html[data-look="sharp"] .item-tile, html[data-look="sharp"] .theme-choice, html[data-look="sharp"] .template-chip,
+  html[data-look="sharp"] .pos-action, html[data-look="sharp"] .pos-tab, html[data-look="sharp"] .top-bar {
+    border-radius:4px !important;
+  }
+  html[data-look="sharp"] .action-group.open .group-body { border-end-start-radius:4px; border-end-end-radius:4px; }
+  html[data-look="sharp"] .top-bar { border-end-start-radius:6px; border-end-end-radius:6px; }
+
+  /* performance mode: kill continuous animation and heavy effects */
+  html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after {
+    animation:none !important; transition:none !important; scroll-behavior:auto !important;
+  }
+  html[data-motion="off"] .kpi-box::after, html[data-motion="off"] .top-bar::after { display:none; }
+  html[data-motion="off"] .top-bar, html[data-motion="off"] .side-nav { backdrop-filter:none !important; filter:none !important; }
+  html[data-motion="off"] .kpi-box:hover, html[data-motion="off"] .item-tile:hover { transform:none !important; filter:none !important; }
+
+  /* ===== startup section colours ===== */
+  .action-group[data-group="quick"] { --group-tint:#1a7f5a; }
+  .action-group[data-group="stock"] { --group-tint:#15507d; }
+  .action-group[data-group="invoices"] { --group-tint:#6b4bb0; }
+  .action-group[data-group="parties"] { --group-tint:#a35a12; }
+  .action-group[data-group="cash"] { --group-tint:#0f7c93; }
+  html:not([data-group-colors="off"]) .action-group { background:color-mix(in srgb,var(--group-tint,#1a7f5a) 7%,#ffffff); border:1px solid color-mix(in srgb,var(--group-tint,#1a7f5a) 26%,#ffffff); }
+  html:not([data-group-colors="off"]) .action-group .group-head {
+    color:#fff; border-color:transparent;
+    background:linear-gradient(105deg,color-mix(in srgb,var(--group-tint,#1a7f5a) 88%,#000000),var(--group-tint,#1a7f5a));
+  }
+  html:not([data-group-colors="off"]) .action-group .group-head:hover { filter:brightness(1.08); box-shadow:0 0 0 2px color-mix(in srgb,var(--group-tint,#1a7f5a) 40%,#ffffff); }
+  html:not([data-group-colors="off"]) .action-group.open .group-body { background:linear-gradient(#ffffff,color-mix(in srgb,var(--group-tint,#1a7f5a) 8%,#ffffff)); }
+  html:not([data-group-colors="off"]) .action-group.open .group-head { background:linear-gradient(105deg,var(--group-tint,#1a7f5a),color-mix(in srgb,var(--group-tint,#1a7f5a) 70%,#ffffff)); }
+  html:not([data-group-colors="off"]) .action-group .c-btn { border-color:color-mix(in srgb,var(--group-tint,#1a7f5a) 30%,#ffffff); }
+  html:not([data-group-colors="off"]) .action-group .c-btn:hover { background:color-mix(in srgb,var(--group-tint,#1a7f5a) 16%,#ffffff); border-color:var(--group-tint,#1a7f5a); }
+
+  /* ===== KPI state colours ===== */
+  .kpi-box[data-state="good"] { background-image:linear-gradient(140deg,#127a4e,#2ec27e) !important; }
+  .kpi-box[data-state="warn"] { background-image:linear-gradient(140deg,#a35a12,#eab23f) !important; }
+  .kpi-box[data-state="bad"] { background-image:linear-gradient(140deg,#9d1c1c,#e0503f) !important; }
+  .kpi-box .kpi-trend { display:inline-flex; align-items:center; gap:3px; margin-top:2px; font-size:10px; font-weight:800;
+    background:#ffffff2e; border-radius:999px; padding:1px 7px; color:#fff; }
+  .kpi-box .kpi-trend[data-dir="down"] { background:#00000033; }
+
+  /* ===== SVG icons instead of emoji ===== */
+  .look-svg-ico { display:inline-block; width:1.15em; height:1.15em; flex:none; vertical-align:-.18em;
+    fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  html[data-icons="svg"] .button-icon[data-svg] { display:inline-flex; align-items:center; justify-content:center; color:inherit; }
+  html[data-icons="svg"] .button-icon[data-svg] .look-svg-ico { width:20px; height:20px; }
+  html[data-icons="svg"] .head-icon-btn [data-svg] .look-svg-ico { width:19px; height:19px; }
+  html[data-icons="svg"] .c-btn .button-icon[data-svg] .look-svg-ico { width:19px; height:19px; }
+  html[data-icons="svg"] .nav-link [data-svg] .look-svg-ico { width:16px; height:16px; }
+  html[data-icons="svg"] .c-btn .button-label, html[data-icons="svg"] .nav-link .nav-label { margin-inline-start:2px; }
+
+  /* ===== header layouts ===== */
+  .top-bar .head-logo { display:none; width:56px; height:56px; border-radius:14px; overflow:hidden; flex:none;
+    background:#ffffff26; box-shadow:inset 0 0 0 1px #ffffff3d; }
+  .top-bar .head-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .top-bar[data-header="logo"] .head-logo { display:block; }
+  .top-bar[data-header="logo"] .head-id { flex-direction:row; align-items:center; gap:12px; }
+  .top-bar[data-header="logo"] .head-id .head-text { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .top-bar[data-header="banner"] .head-logo { display:block; width:76px; height:76px; border-radius:18px; }
+  .top-bar[data-header="banner"] { min-height:calc(var(--header-h) + 14px); }
+  .top-bar[data-header="banner"] .head-id { flex-direction:row; align-items:center; gap:14px; }
+  .top-bar[data-header="banner"] .head-id .head-text { display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
+  .top-bar[data-header="banner"] .store-title { font-size:clamp(22px,2.6vw,34px); }
+  .top-bar[data-header="name"] .head-logo { display:none; }
+  .top-bar[data-align="center"] .head-id { justify-self:center; align-items:center; text-align:center; }
+  .top-bar[data-align="center"] .head-id .head-text { align-items:center; }
+  .top-bar[data-align="center"] .head-side { align-items:center; }
+
+  /* ===== POS tile styles ===== */
+  .quick-items[data-tile-style="lines"] { grid-template-columns:1fr; gap:4px; max-height:290px; }
+  .quick-items[data-tile-style="lines"] .item-tile {
+    flex-direction:row; align-items:center; justify-content:space-between; min-height:34px;
+    padding:5px 10px; text-align:right; gap:8px; font-size:11px;
+  }
+  .quick-items[data-tile-style="lines"] .item-tile b { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .quick-items[data-tile-style="lines"] .item-tile span { flex:none; }
+  .quick-items[data-tile-style="lines"] .item-tile i { display:none; }
+  .quick-items[data-tile-style="grid"] { grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:5px; }
+  .quick-items[data-tile-style="grid"] .item-tile { min-height:52px; padding:5px 4px; font-size:10px; }
+  .quick-items[data-tile-style="grid"] .item-tile i { display:none; }
+  html[data-pos-style="lines"] .item-tile { border-radius:8px; }
+
+  /* cart column visibility */
+  html[data-col-disc="off"] #invCartTable th:nth-child(7), html[data-col-disc="off"] #invCartTable td:nth-child(7),
+  html[data-col-time="off"] #invCartTable th:nth-child(4), html[data-col-time="off"] #invCartTable td:nth-child(4),
+  html[data-col-gross="off"] #invCartTable th:nth-child(8), html[data-col-gross="off"] #invCartTable td:nth-child(8) { display:none; }
+  html[data-cart-density="tall"] .pos-table { max-height:420px; }
+
+  /* ===== high-contrast night ===== */
+  body[data-theme="night"][data-night="warm"] {
+    --paper:#221d17; --paper-2:#1b1710; --panel:#2a231b; --panel-2:#241d16;
+    --ink:#f2e6d0; --muted:#c4ae8f; --line:#54452f; --line-dark:#6b5738; --line-soft:#463723;
+    --thead:#3a2f21; --row-alt:#2f2620; --row-hover:#3a2f24; --row-sel:#514216;
+    --btn:#3a2f22; --btn-2:#31271c; --btn-hover:#463a2a; --shell-bg:#191410;
+    --head-1:#1a1207; --head-2:#2c1f10; --head-3:#3f2c16; --head-gold:#ffd08a;
+    --accent:#ffcf7a; --g-bar:#8a6a35; --press-glow:#ffcf7a44;
+  }
+  body[data-theme="night"][data-night="contrast"] {
+    --paper:#000000; --paper-2:#000000; --panel:#0a0a0a; --panel-2:#000000;
+    --ink:#ffffff; --muted:#e2e2e2; --line:#7a7a7a; --line-dark:#b4b4b4; --line-soft:#5a5a5a;
+    --thead:#1c1c1c; --row-alt:#111111; --row-hover:#1d1d1d; --row-sel:#3a3a00;
+    --btn:#151515; --btn-2:#0c0c0c; --btn-hover:#232323; --shell-bg:#000000;
+    --head-1:#000000; --head-2:#101010; --head-3:#1d1d1d; --head-gold:#ffe066;
+    --accent:#ffe066; --g-bar:#333333; --press-glow:#ffe06655;
+  }
+  body[data-theme="night"][data-night="contrast"] .panel-box,
+  body[data-theme="night"][data-night="contrast"] .action-group { border:1px solid #b4b4b4 !important; }
+  body[data-theme="night"][data-night="contrast"] table th { background:#000 !important; color:#fff !important; border-color:#b4b4b4 !important; }
+  body[data-theme="night"][data-night="contrast"] table td { border-color:#7a7a7a !important; }
+  body[data-theme="night"][data-night="contrast"] input, body[data-theme="night"][data-night="contrast"] select {
+    background:#000 !important; color:#fff !important; border-color:#b4b4b4 !important;
+  }
+  body[data-theme="night"][data-night="warm"] .panel-box { background:#2a231b; }
+
+  /* ===== settings look controls ===== */
+  .look-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; padding:2px 0; }
+  .look-grid label { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; }
+  .look-seg { display:flex; flex-wrap:wrap; gap:4px; }
+  .look-seg button {
+    padding:4px 9px; border-radius:9px; border:1px solid var(--line-dark); background:var(--btn);
+    font-size:11px; font-weight:800; color:var(--ink);
+  }
+  .look-seg button[aria-pressed="true"] { background:linear-gradient(var(--head-2),var(--head-3)); color:#fff; border-color:transparent; }
+  .swatch-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .swatch-chip { display:flex; flex-direction:column; align-items:center; gap:4px; min-width:78px; padding:7px 6px;
+    border:1px solid var(--line-dark); border-radius:10px; background:var(--btn); font-size:10.5px; font-weight:800; }
+  .swatch-chip i { width:100%; height:18px; border-radius:5px; display:block; box-shadow:inset 0 0 0 1px #0000001a; }
+  .swatch-chip[aria-pressed="true"] { outline:2px solid var(--accent); }
+  .header-preview { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; color:#fff;
+    background:linear-gradient(115deg,var(--head-1),var(--head-2),var(--head-3)); font-weight:800; font-size:13px; }
+  .header-preview img { width:40px; height:40px; border-radius:10px; object-fit:cover; }
+</style>
 <style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
 </head>
 <body data-theme="vista-classic">
 
 <!-- ================= APP HEADER ================= -->
-<header class="top-bar" id="appHeader">
+<header class="top-bar" id="appHeader" data-header="name" data-align="start">
   <div class="head-id">
-    <h1 class="store-title" id="lblStoreName">مكتبة الجمال</h1>
-    <div class="store-phone" id="lblStorePhone">01000000000</div>
-    <div class="store-addr" id="lblStoreAddress" hidden></div>
+    <span class="head-logo" id="headLogo"><img id="headLogoImg" alt="شعار المكتبة" src="/icon-192.png"></span>
+    <div class="head-text">
+      <h1 class="store-title" id="lblStoreName">مكتبة الجمال</h1>
+      <div class="store-phone" id="lblStorePhone">01000000000</div>
+      <div class="store-addr" id="lblStoreAddress" hidden></div>
+    </div>
   </div>
   <div class="head-side">
     <div class="head-icons">
@@ -2496,8 +2677,8 @@
               <span class="pos-panel-title" id="invPanelTitle">تفاصيل الفاتورة</span>
             </div>
 
-              <div class="table-wrap pos-table">
-                <table>
+              <div class="table-wrap pos-table" id="posCartTableWrap">
+                <table id="invCartTable">
                   <thead>
                     <tr><th style="width:30px">#</th><th>كود الصنف</th><th style="min-width:150px">المادة / الوصف</th><th>الوحدة</th><th>السعر</th><th>الكمية</th><th>خصم %</th><th>المجموع</th><th>الصافي</th><th style="width:34px">حذف</th></tr>
                   </thead>
@@ -3079,10 +3260,143 @@
             </div>
           </div>
 
+          <div class="design-group">
+            <h4><span aria-hidden="true">🎛️</span> كثافة العرض وشكل الواجهة</h4>
+            <div class="look-grid">
+              <label>كثافة العرض
+                <span class="look-seg" id="densitySeg" role="group" aria-label="كثافة العرض">
+                  <button type="button" data-density-opt="cozy" onclick="setLookOption('density','cozy')" aria-pressed="true">مريح</button>
+                  <button type="button" data-density-opt="compact" onclick="setLookOption('density','compact')" aria-pressed="false">مضغوط</button>
+                  <button type="button" data-density-opt="ultra" onclick="setLookOption('density','ultra')" aria-pressed="false">فائق الضغط</button>
+                </span>
+              </label>
+              <label>شكل الحواف والظل
+                <span class="look-seg" id="lookSeg" role="group" aria-label="شكل الحواف">
+                  <button type="button" data-look-opt="glass" onclick="setLookOption('look','glass')" aria-pressed="true">زجاجي ناعم</button>
+                  <button type="button" data-look-opt="flat" onclick="setLookOption('look','flat')" aria-pressed="false">مسطّح حديث</button>
+                  <button type="button" data-look-opt="sharp" onclick="setLookOption('look','sharp')" aria-pressed="false">حاد</button>
+                </span>
+              </label>
+              <label>وزن الخط
+                <span class="look-seg" id="fontWeightSeg" role="group" aria-label="وزن الخط">
+                  <button type="button" data-fontweight-opt="normal" onclick="setLookOption('fontWeight','normal')" aria-pressed="true">عادي</button>
+                  <button type="button" data-fontweight-opt="bold" onclick="setLookOption('fontWeight','bold')" aria-pressed="false">عريض</button>
+                </span>
+              </label>
+              <label>محاذاة الأرقام
+                <span class="look-seg" id="numeralsSeg" role="group" aria-label="محاذاة الأرقام">
+                  <button type="button" data-numerals-opt="normal" onclick="setLookOption('numerals','normal')" aria-pressed="true">عادي</button>
+                  <button type="button" data-numerals-opt="tabular" onclick="setLookOption('numerals','tabular')" aria-pressed="false">أعمدة مصطفة</button>
+                </span>
+              </label>
+              <label>الأيقونات
+                <span class="look-seg" id="iconsSeg" role="group" aria-label="نوع الأيقونات">
+                  <button type="button" data-icons-opt="emoji" onclick="setLookOption('icons','emoji')" aria-pressed="true">إيموجي</button>
+                  <button type="button" data-icons-opt="svg" onclick="setLookOption('icons','svg')" aria-pressed="false">SVG موحّدة</button>
+                </span>
+              </label>
+              <label>الأداء والحركة
+                <span class="look-seg" id="motionSeg" role="group" aria-label="الحركة">
+                  <button type="button" data-motion-opt="on" onclick="setLookOption('motion','on')" aria-pressed="true">حركة كاملة</button>
+                  <button type="button" data-motion-opt="off" onclick="setLookOption('motion','off')" aria-pressed="false">أداء محسّن</button>
+                </span>
+              </label>
+            </div>
+            <p class="scope-note" id="lookHint">الكثافة تتحكم في ارتفاع الصفوف والحشو وأحجام الأزرار — «فائق الضغط» مناسب للشاشات الصغيرة.</p>
+          </div>
+
+          <div class="design-group">
+            <h4><span aria-hidden="true">🎨</span> لوحات ألوان جاهزة للمنشأة</h4>
+            <div class="swatch-row" id="paletteRow">
+              <button type="button" class="swatch-chip" data-palette="bookstore" onclick="applyPalette('bookstore')" aria-pressed="true"><i style="background:linear-gradient(90deg,#0f5132,#2f9e63)"></i>مكتبات خضراء</button>
+              <button type="button" class="swatch-chip" data-palette="academic" onclick="applyPalette('academic')" aria-pressed="false"><i style="background:linear-gradient(90deg,#0b2d5c,#2a7fd4)"></i>أزرق أكاديمي</button>
+              <button type="button" class="swatch-chip" data-palette="terracotta" onclick="applyPalette('terracotta')" aria-pressed="false"><i style="background:linear-gradient(90deg,#6d2f18,#d97742)"></i>تراكوتا دافئ</button>
+              <button type="button" class="swatch-chip" data-palette="graphite" onclick="applyPalette('graphite')" aria-pressed="false"><i style="background:linear-gradient(90deg,#1b2431,#5b6b7d)"></i>رمادي أعمال</button>
+              <button type="button" class="swatch-chip" data-palette="violet" onclick="applyPalette('violet')" aria-pressed="false"><i style="background:linear-gradient(90deg,#2e1065,#7c4dff)"></i>بنفسجي</button>
+              <button type="button" class="swatch-chip" data-palette="charcoal" onclick="applyPalette('charcoal')" aria-pressed="false"><i style="background:linear-gradient(90deg,#0b0f14,#39424e)"></i>فحمي داكن</button>
+            </div>
+            <p class="scope-note">اللوحة تلوّن الهيدر والقائمة الجانبية والأزرار والتحديد معاً — ويمكنك تعديل أي لون بعدها من الاستوديو.</p>
+          </div>
+
+          <div class="design-group">
+            <h4><span aria-hidden="true">🖼️</span> ترويسة الشاشة والفواتير</h4>
+            <div class="look-grid">
+              <label>نمط الترويسة
+                <span class="look-seg" id="headerStyleSeg" role="group" aria-label="نمط الترويسة">
+                  <button type="button" data-headerstyle-opt="name" onclick="setLookOption('headerStyle','name')" aria-pressed="true">الاسم فقط</button>
+                  <button type="button" data-headerstyle-opt="logo" onclick="setLookOption('headerStyle','logo')" aria-pressed="false">اسم + شعار</button>
+                  <button type="button" data-headerstyle-opt="banner" onclick="setLookOption('headerStyle','banner')" aria-pressed="false">شعار كبير متدرج</button>
+                </span>
+              </label>
+              <label>موضع الشعار والنص
+                <span class="look-seg" id="headerAlignSeg" role="group" aria-label="موضع الشعار">
+                  <button type="button" data-headeralign-opt="start" onclick="setLookOption('headerAlign','start')" aria-pressed="true">يمين</button>
+                  <button type="button" data-headeralign-opt="center" onclick="setLookOption('headerAlign','center')" aria-pressed="false">وسط</button>
+                  <button type="button" data-headeralign-opt="end" onclick="setLookOption('headerAlign','end')" aria-pressed="false">شمال</button>
+                </span>
+              </label>
+            </div>
+            <div class="f-row" style="margin-top:8px">
+              <label for="storeLogoInput" style="min-width:auto">شعار المكتبة</label>
+              <label class="file-btn">⬆️ رفع شعار<input type="file" id="storeLogoInput" accept="image/png,image/jpeg" onchange="uploadStoreLogo(this)"></label>
+              <button type="button" class="act-btn" onclick="clearStoreLogo()">↺ الشعار الافتراضي</button>
+              <small id="storeLogoStatus">الشعار الافتراضي</small>
+            </div>
+            <div class="f-row">
+              <label for="receiptLogo">إظهار الشعار على الفاتورة</label>
+              <input type="checkbox" id="receiptLogo" onchange="toggleReceiptLogo(this.checked)">
+              <small>يظهر أعلى فاتورة A5 والصفحة المطبوعة.</small>
+            </div>
+          </div>
+
+          <div class="design-group">
+            <h4><span aria-hidden="true">🌙</span> الوضع الليلي</h4>
+            <div class="look-grid">
+              <label>نمط الليل
+                <span class="look-seg" id="nightModeSeg" role="group" aria-label="نمط الليل">
+                  <button type="button" data-night-opt="cool" onclick="setNightMode('cool')" aria-pressed="true">كحلي بارد</button>
+                  <button type="button" data-night-opt="warm" onclick="setNightMode('warm')" aria-pressed="false">دافئ (نصوص كريمية)</button>
+                  <button type="button" data-night-opt="contrast" onclick="setNightMode('contrast')" aria-pressed="false">تباين عالٍ</button>
+                </span>
+              </label>
+              <label>تبديل تلقائي
+                <span class="look-seg" id="autoNightSeg" role="group" aria-label="التبديل التلقائي">
+                  <button type="button" data-autonight-opt="off" onclick="setAutoNight('off')" aria-pressed="true">متوقف</button>
+                  <button type="button" data-autonight-opt="on" onclick="setAutoNight('on')" aria-pressed="false">ليلاً بعد 7 م</button>
+                </span>
+              </label>
+            </div>
+            <p class="scope-note">التبديل التلقائي يعيد الوضع النهاري عند إعادة التحميل في الصباح، ويحترم اختيارك اليدوي.</p>
+          </div>
+
+          <div class="design-group">
+            <h4><span aria-hidden="true">🛒</span> شكل شاشة البيع</h4>
+            <div class="look-grid">
+              <label>شكل بطاقات الأصناف
+                <span class="look-seg" id="tileStyleSeg" role="group" aria-label="شكل بطاقات الأصناف">
+                  <button type="button" data-tilestyle-opt="tiles" onclick="setLookOption('tileStyle','tiles')" aria-pressed="true">بلاطات كبيرة</button>
+                  <button type="button" data-tilestyle-opt="lines" onclick="setLookOption('tileStyle','lines')" aria-pressed="false">سطور مضغوطة</button>
+                  <button type="button" data-tilestyle-opt="grid" onclick="setLookOption('tileStyle','grid')" aria-pressed="false">شبكة مصغّرة</button>
+                </span>
+              </label>
+              <label>ارتفاع جدول السلة
+                <span class="look-seg" id="cartDensitySeg" role="group" aria-label="ارتفاع جدول السلة">
+                  <button type="button" data-cartdensity-opt="normal" onclick="setLookOption('cartDensity','normal')" aria-pressed="true">عادي</button>
+                  <button type="button" data-cartdensity-opt="tall" onclick="setLookOption('cartDensity','tall')" aria-pressed="false">أطول</button>
+                </span>
+              </label>
+            </div>
+            <div class="look-grid" style="margin-top:6px">
+              <label class="remember-row" style="flex-direction:row;align-items:center;gap:6px;min-width:auto"><input type="checkbox" id="colDiscount" checked onchange="toggleCartColumn('disc', this.checked)"> عمود الخصم</label>
+              <label class="remember-row" style="flex-direction:row;align-items:center;gap:6px;min-width:auto"><input type="checkbox" id="colGross" checked onchange="toggleCartColumn('gross', this.checked)"> عمود المجموع قبل الخصم</label>
+              <label class="remember-row" style="flex-direction:row;align-items:center;gap:6px;min-width:auto"><input type="checkbox" id="colUnit" onchange="toggleCartColumn('time', this.checked)"> عمود الوحدة</label>
+              <label class="remember-row" style="flex-direction:row;align-items:center;gap:6px;min-width:auto"><input type="checkbox" id="groupColors" checked onchange="toggleGroupColors(this.checked)"> ألوان أقسام الشاشة الرئيسية</label>
+            </div>
+            <p class="scope-note">يُحفظ شكل شاشة البيع على هذا الجهاز فقط.</p>
+          </div>
+
           <p class="scope-note" id="appBadgeHint">—</p>
           <p class="scope-note">كل ثيم يبدّل الشكل والزجاج والحواف والألوان بالكامل، وليس اللون فقط. اختر ثيماً ثم عدّل ما تشاء من استوديو التخصيص بالأسفل.</p>
-        </div>
-
         </div>
       </div>
 
@@ -3158,6 +3472,7 @@
             <button type="button" class="act-btn bg-green" onclick="installApp()">⬇️ تثبيت البرنامج على الجهاز</button>
           </div>
         </div>
+      </div>
       </div>
       </div>
 
