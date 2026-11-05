@@ -230,7 +230,7 @@ test('POS screen uses the new bars: title, tabs on the left, group dropdown and 
   assert.equal(f.$('posGroupCount').textContent, '1 صنف');
   // invoice tabs keep exactly one active tab and swap the contextual fields
   f.window.switchInvoiceTab('discount');
-  assert.deepEqual([...f.window.document.querySelectorAll('#invTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, true, false, false]);
+  assert.deepEqual([...f.window.document.querySelectorAll('#invTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, false, true, false]);
   assert.equal(f.window.document.querySelector('[data-inv-group="discount"]').hidden, false);
   assert.equal(f.$('invPanelTitle').textContent, 'الخصم');
   f.window.switchInvoiceTab('details');
@@ -239,16 +239,18 @@ test('POS screen uses the new bars: title, tabs on the left, group dropdown and 
   const actions = [...f.window.document.querySelectorAll('.pos-actions-strip .pos-action')].map(button => button.textContent.trim());
   assert.match(actions[0], /^💾حفظ/);
   assert.match(actions[1], /حفظ وطباعة/);
-  assert.match(actions[2], /تعليق/);
-  assert.match(actions[3], /استعادة معلقة/);
-  assert.match(actions[4], /طباعة حرارية/);
+  assert.match(actions[2], /معاينة قبل الحفظ/);
+  assert.match(actions[3], /طباعة حرارية/);
+  assert.match(actions[4], /تعليق/);
+  assert.match(actions[5], /استعادة معلقة/);
   assert.match(actions.at(-1), /تفريغ/);
   // ten equal function keys sit in a bar at the bottom
   assert.equal(f.window.document.querySelectorAll('.pos-fnbar .fn-btn').length, 10);
-  // the big money boxes stay in the summary: net, paid and remaining share one tall row
-  const bigRow = f.window.document.querySelector('.pos-sum-major');
-  assert.equal(bigRow.querySelectorAll('.sum-cell.big').length, 3);
-  assert.equal(bigRow.querySelector('#invNetTotal').tagName, 'INPUT');
+  // the money boxes stay on one row in the summary and never stack
+  const totalsCard = f.window.document.querySelector('.posx-totals');
+  const boxes = [...totalsCard.querySelectorAll('.posx-total-row input')].map(input => input.id);
+  assert.deepEqual(boxes, ['invSubTotal', 'invDiscTotalView', 'invNetTotal', 'invPaidAmount', 'invRemainAmount']);
+  assert.equal(f.$('invNetTotal').tagName, 'INPUT');
 });
 
 test('floating screens open large and the screen-print button is gone', async t => {
@@ -302,7 +304,7 @@ test('every screen starts with a full width title bar and the items screen has t
   const f = await ready(t, { db: seedDatabase() });
   const sections = ['sec-invoice', 'sec-items', 'sec-categories', 'sec-stock', 'sec-labels', 'sec-parties', 'sec-invlog', 'sec-treasury', 'sec-profits', 'sec-settings'];
   for (const id of sections) {
-    assert.equal(Boolean(f.$(id).querySelector('.page-bar, .pos-titlebar')), true, id);
+    assert.equal(Boolean(f.$(id).querySelector('.page-bar, .pos-titlebar, .ws-head')), true, id);
   }
   f.window.openSec('sec-items', 'الأصناف');
   assert.equal(f.$('headItemsCount').textContent, '2');
@@ -588,12 +590,14 @@ test('POS keeps invoice data on the left, money boxes side by side and no quick-
   assert.equal(f.window.document.querySelectorAll('.cash-chip').length, 0);
   const wrap = f.window.document.querySelector('#sec-invoice .pos-wrap');
   assert.equal(wrap.dataset.mode, 'sale');
-  const money = f.window.document.querySelector('.pos-sum-major');
-  assert.equal(money.children.length, 3);
-  assert.equal([...money.children].map(cell => cell.querySelector('label').textContent).join('|'), 'الصافي المطلوب|المدفوع|المتبقي (آجل)');
-  // invoice data tabs now live inside the cart card
-  const cartCard = f.window.document.querySelector('.pos-cart-card');
-  assert.equal(cartCard.querySelector('.pos-cart-data #invTabs') !== null, true);
+  // the totals are compact, clearly labelled rows (net, paid, remaining) in the summary card
+  const rows = [...f.window.document.querySelectorAll('.posx-totals .posx-total-row > span:first-child')].map(cell => cell.textContent.trim());
+  assert.deepEqual(rows, ['إجمالي البنود', 'خصم إضافي', 'الصافي المطلوب', 'المدفوع', 'المتبقي (آجل)']);
+  assert.equal(f.$('invNetTotal').tagName, 'INPUT');
+  // invoice data tabs sit in the invoice-data card, above the contextual fields
+  const dataCard = f.window.document.querySelector('#invTabs')?.closest('.ws-card');
+  assert.ok(dataCard, 'the invoice tabs live inside a workspace card');
+  assert.equal(f.$('invTabs').getAttribute('role'), 'tablist');
   f.window.openInvoiceSec('purchase');
   assert.equal(wrap.dataset.mode, 'purchase');
   assert.equal(f.$('invPanelTitle') !== null, true);
@@ -621,7 +625,7 @@ test('settings page uses real sections instead of a scroll list', async t => {
   assert.equal(f.$('staffManagerPanel').closest('[data-settings-panel]').hidden, true);
   f.window.switchSettingsTab('staff');
   assert.equal(f.$('staffManagerPanel').closest('[data-settings-panel]').hidden, false);
-  assert.deepEqual([...f.window.document.querySelectorAll('#settingsTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, false, false, true]);
+  assert.deepEqual([...f.window.document.querySelectorAll('#settingsTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, false, true, false, false]);
   f.window.switchSettingsTab('sync');
   assert.equal(f.$('syncPanel').closest('[data-settings-panel]').hidden, false);
 });
@@ -997,7 +1001,7 @@ test('opening a page from the dropdown registers a tab, re-opening reuses it and
 test('the dashboard shows a KPI strip and framed feature groups', async t => {
   const f = await ready(t, { db: seedDatabase() });
   assert.equal(f.$('dashKpis').querySelectorAll('.dash-kpi').length, 4);
-  assert.equal(f.$('dashBody').querySelectorAll('.dash-group').length, 6);
+  assert.equal(f.$('dashBody').querySelectorAll('.dash-group').length, 7);
   assert.ok(f.$('dashBody').querySelectorAll('.dash-card').length >= 20);
   assert.equal(f.$('dashKpiCash').textContent, '0.00');
   // a card opens its page and registers a tab
@@ -1009,4 +1013,120 @@ test('the dashboard shows a KPI strip and framed feature groups', async t => {
   assert.equal(f.$('titleBarName').textContent, 'مكتبة الجمال');
   assert.match(f.$('footerPhone').textContent, /01000000000/);
   assert.match(f.$('titleBarUser').textContent, /مكتبة الجمال|مدير/);
+});
+
+test('sales invoice page: utility rail, metadata, item grid and money summary', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('sale');
+  // left utility rail: add-item action, calculator and free notes
+  assert.ok(f.window.document.querySelector('.posx-rail .posx-add'));
+  assert.equal(f.window.document.querySelectorAll('.posx-rail .calc-keys button').length, 20);
+  assert.equal(f.$('posNotes').tagName, 'TEXTAREA');
+  // the calculator actually computes
+  ['7', '×', '8', '='].forEach(key => f.window.calcInput(key));
+  assert.match(f.$('calcScreen').textContent, /56$/);
+  f.window.calcInput('C');
+  assert.equal(f.$('calcScreen').textContent, '0');
+  // invoice metadata: date, number, warehouse, safe, employee and client
+  assert.match(f.$('invDateView').value, /^\d{4}\/\d{2}\/\d{2}$/);
+  assert.match(f.$('invNumberView').value, /^#\d+/);
+  assert.ok(f.$('invWarehouseView').options.length >= 1);
+  assert.ok(f.$('invSafeView').options.length >= 1);
+  assert.match(f.$('invEmployeeView').value, /مدير|مكتبة/);
+  assert.equal(f.$('invPartySelect').tagName, 'SELECT');
+  // the item grid keeps the requested columns in order
+  const heads = [...f.window.document.querySelectorAll('#invCartTable thead th')].map(th => th.textContent.trim());
+  assert.deepEqual(heads, ['الباركود', 'اسم الصنف', 'الوحدة', 'الكمية', 'السعر', 'خصم %', 'صافي السعر', 'الإجمالي', 'حذف']);
+  addLine(f, '1001', 2);
+  const cells = [...f.$('invCartTbody').querySelector('tr').children].map(cell => cell.textContent.trim());
+  assert.equal(cells[0], '1001'); assert.match(cells[1], /كتاب/); assert.equal(cells[2], 'عدد');
+  // summary blocks + the three prominent triggers
+  assert.equal(f.$('invSubTotal').value, '300.00');
+  assert.equal(f.$('invNetTotal').value, '300.00');
+  assert.match(f.window.document.querySelector('.pos-action.save-print').textContent, /حفظ وطباعة/);
+  assert.match(f.window.document.querySelector('.pos-action.preview').textContent, /معاينة/);
+  assert.match(f.window.document.querySelector('.pos-action.save').textContent, /حفظ/);
+});
+
+test('clients page: search form, action boxes, debt totals and row actions', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('customers');
+  // data-entry fields for the contact sheet
+  for (const id of ['partyCode', 'partyName', 'partyCountry', 'partyCity', 'partyPhone', 'partyPhone2', 'partyEmail', 'partyBalance', 'partyAddress', 'partyNotes']) {
+    assert.ok(f.$(id), `#${id} should exist`);
+  }
+  f.fill('partyName', 'مدرسة الأمل'); f.fill('partyCity', 'شبين الكوم'); f.fill('partyPhone2', '01011112222');
+  f.fill('partyEmail', 'amal@example.com'); f.fill('partyBalance', 150); f.window.saveParty();
+  const saved = f.saved().parties.find(party => party.name === 'مدرسة الأمل');
+  assert.equal(saved.city, 'شبين الكوم'); assert.equal(saved.phone2, '01011112222'); assert.equal(saved.email, 'amal@example.com');
+  assert.equal(saved.balance, 150);
+  assert.equal(saved.country, 'مصر', 'the country field travels with the party');
+  // the grid shows code, contact and row actions (edit / view / delete)
+  const row = [...f.$('partiesTbody').querySelectorAll('tr')].find(tr => tr.textContent.includes('مدرسة الأمل'));
+  assert.ok(row, 'the new client is listed');
+  assert.match(row.textContent, /C-\d+/);
+  assert.equal(row.querySelectorAll('.iconbtn').length, 3);
+  assert.match(row.innerHTML, /editParty\(/); assert.match(row.innerHTML, /showStatementFor\(/); assert.match(row.innerHTML, /deleteParty\(/);
+  // debt totals across all clients
+  const totals = f.window.partyDebtTotals('customer');
+  assert.equal(totals.count, f.saved().parties.filter(party => party.type === 'customer').length);
+  assert.ok(totals.totalDebt >= 150);
+  // search narrows the list without touching the data
+  f.fill('partySearchInp', 'الأمل'); f.window.filterParties('الأمل');
+  assert.equal(f.$('partiesTbody').querySelectorAll('tr').length, 1);
+  f.window.filterParties('');
+  assert.ok(f.$('partiesTbody').querySelectorAll('tr').length >= 2);
+});
+
+test('program settings page: vertical sections and the business preferences persist', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('settings');
+  const tabs = [...f.window.document.querySelectorAll('#settingsTabs [data-settings-tab]')].map(button => button.dataset.settingsTab);
+  assert.deepEqual(tabs, ['look', 'store', 'staff', 'images', 'sync']);
+  assert.equal(f.window.document.querySelector('#settingsTabs').classList.contains('set-rail'), true);
+  f.window.switchSettingsTab('store');
+  assert.equal(f.window.document.querySelector('[data-settings-panel="store"]').hidden, false);
+  for (const id of ['setStoreName', 'setStorePhone', 'setStoreAddress', 'setInvoiceNote', 'setPrinter', 'setCurrency', 'setPaperSize', 'setDefaultWarehouse', 'setDefaultSafe']) {
+    assert.ok(f.$(id), `#${id} should exist`);
+  }
+  f.fill('setStoreName', 'مكتبة النور'); f.fill('setStorePhone', '01099990000');
+  f.fill('setInvoiceNote', 'الاستبدال خلال أسبوع'); f.fill('setCurrency', 'ر.س');
+  f.$('setPaperSize').value = 'A4'; f.window.saveSettings();
+  const settings = f.saved().settings;
+  assert.equal(settings.name, 'مكتبة النور'); assert.equal(settings.invoiceNote, 'الاستبدال خلال أسبوع');
+  assert.equal(settings.currency, 'ر.س'); assert.equal(settings.paperSize, 'A4');
+  assert.equal(f.$('titleBarName').textContent, 'مكتبة النور');
+  // the images section keeps the logo and app-icon controls
+  f.window.switchSettingsTab('images');
+  for (const id of ['storeLogoInput', 'appIconLogo', 'appIconColor', 'appIconPreview']) assert.ok(f.$(id), `#${id} should exist`);
+});
+
+test('employees page: colourful HR tiles, staff records, attendance and payroll', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('employees');
+  assert.equal(f.$('sec-hr').classList.contains('active'), true);
+  assert.ok(f.window.document.querySelectorAll('#hrTiles .hr-tile').length >= 10);
+  assert.ok(f.window.document.querySelector('.hr-hero'), 'the corporate background band is present');
+  // add an employee from the inline form
+  f.fill('hrEmpName', 'سارة محمد'); f.fill('hrEmpPhone', '01055556666');
+  f.fill('hrEmpJob', 'كاشير'); f.fill('hrEmpSalary', 6000); f.window.saveHrEmployee();
+  const hr = f.window.hrRead();
+  assert.equal(hr.employees.length, 1); assert.equal(hr.employees[0].salary, 6000);
+  assert.match(f.$('hrEmployeesTbody').textContent, /سارة محمد/);
+  // attendance for today
+  f.$('hrAttStaff').value = String(hr.employees[0].id);
+  f.$('hrAttState').value = 'late'; f.window.saveHrAttendance();
+  assert.equal(f.window.hrRead().attendance.length, 1);
+  assert.match(f.$('hrAttendanceToday').textContent, /متأخر/);
+  // deductions, bonuses and the payroll net
+  f.$('hrDedStaff').value = String(hr.employees[0].id); f.fill('hrDedAmount', 250); f.window.saveHrLedger('deduction');
+  f.$('hrBonusStaff').value = String(hr.employees[0].id); f.fill('hrBonusAmount', 500); f.window.saveHrLedger('bonus');
+  f.window.showHrPanel('payroll');
+  assert.equal(f.window.document.querySelector('[data-hr-panel="payroll"]').classList.contains('active'), true);
+  assert.match(f.$('hrPayrollTbody').textContent, /6250\.00/);
+  // panels switch one at a time
+  f.window.showHrPanel('departments');
+  assert.equal(f.window.document.querySelector('[data-hr-panel="payroll"]').classList.contains('active'), false);
+  assert.equal(f.window.document.querySelector('[data-hr-panel="departments"]').classList.contains('active'), true);
+  assert.equal(f.$('tabBar').textContent.includes('إدارة الموظفين'), true);
 });
