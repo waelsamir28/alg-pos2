@@ -19,8 +19,41 @@ import { fileURLToPath } from 'node:url';
 import { createLocalServer } from './electron/local-server.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-// `npm run electron:dev` points the window at the already-running dev server instead.
-const DEV_URL = process.env.POS_DEV_URL || '';
+
+/**
+ * Screen / zoom state for a till machine.
+ * `POS_ZOOM=0.9` shrinks everything, `POS_ZOOM=1.15` enlarges it, `POS_FULLSCREEN=1` starts maximised
+ * and `POS_KIOSK=1` locks the window (no OS chrome, no minimise/maximise) for a cashier screen.
+ */
+function applyScreenPreferences(window) {
+  const zoom = Number(process.env.POS_ZOOM || '0');
+  if (Number.isFinite(zoom) && zoom > 0.3 && zoom < 3 && Math.abs(zoom - 1) > 0.001) {
+    window.webContents.on('did-finish-load', () => window.webContents.setZoomFactor(zoom));
+  }
+  if (process.env.POS_FULLSCREEN === '1') window.setFullScreen(true);
+  if (process.env.POS_KIOSK === '1') {
+    window.setKiosk(true);
+    window.setMinimizable(false);
+    window.setMaximizable(false);
+  }
+}
+
+// `npm run electron:dev` points the window at the already-running dev server instead
+// (`--dev-url=…`), and `POS_DEV_URL` still works for CI or a custom address.
+const DEV_URL = (process.argv.find(arg => arg.startsWith('--dev-url=')) || '').slice('--dev-url='.length)
+  || process.env.POS_DEV_URL
+  || '';
+
+/** Store the local-only database next to the app installation, so it survives updates and is easy to back up. */
+function configureUserDataPath() {
+  try {
+    // Zero-argument form keeps Electron's default (%APPDATA%/ALG POS) untouched.
+    if (process.env.POS_USER_DATA !== '1') return;
+    app.setPath('userData', path.join(app.getPath('userData'), 'pos-data'));
+  } catch {
+    // A read-only or unusual environment must never stop the app from starting.
+  }
+}
 
 let localServer = null;
 let mainWindow = null;
@@ -70,6 +103,7 @@ function createWindow(url) {
     if (/^https?:/i.test(target)) shell.openExternal(target);
   });
 
+  applyScreenPreferences(mainWindow);
   mainWindow.loadURL(url);
   return mainWindow;
 }
@@ -90,6 +124,8 @@ if (!app.requestSingleInstanceLock()) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   });
+
+  configureUserDataPath();
 
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
