@@ -9,3 +9,5 @@ playwright-report/
 dist-electron/
 release/
 build/out/
+# local build/test archives
+*.zip
