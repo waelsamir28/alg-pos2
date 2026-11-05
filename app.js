@@ -625,6 +625,12 @@ function handleGlobalShortcut(event) {
     const index = items.indexOf(document.activeElement);
     const next = event.key === 'ArrowDown' ? (index + 1) % items.length : (index - 1 + items.length) % items.length;
     items[next].focus();
+    return;
+  }
+  if (openMenuKey && event.key === 'Enter' && document.activeElement?.classList?.contains('nm-item')) {
+    event.preventDefault();
+    document.activeElement.dataset.page ? (closeMenus(), openPage(document.activeElement.dataset.page)) : document.activeElement.click();
+    return;
   }
 }
 
@@ -786,6 +792,8 @@ function openPage(key) {
   if (def.action) { def.action(); return; }
   if (def.home) { activatePage('home'); return; }
   def.run();
+  // picking a page always dismisses the dropdown that started it
+  closeMenus();
   // a permission guard aborts the screen, so no tab is registered for it
   if (!$('windowLayer').classList.contains('open')) return;
   registerTab(key, def.title);
@@ -801,6 +809,7 @@ function registerTab(key, title) {
 }
 /* the home tab only hides the open screens; their tabs (and their state) stay alive */
 function showShellHome() {
+  toggleCalculator(false);
   document.body.classList.remove('screen-open', 'section-open');
   document.body.style.overflow = '';
   if ($('sectionPool')) [...$('sectionPool').querySelectorAll('.float-window')].forEach(el => { el.hidden = true; });
@@ -924,7 +933,7 @@ function openNavMenu(key, button) {
   openMenuKey = key;
   layer.innerHTML = `<div class="nav-menu" role="menu" aria-label="${esc(menu.label)}">
       <div class="nm-head">${esc(menu.label)}</div>
-      ${menu.items.map(item => `<button type="button" class="nm-item" role="menuitem" data-page="${esc(item.page)}" onclick="openPage('${esc(item.page)}')">
+      ${menu.items.map(item => `<button type="button" class="nm-item" role="menuitem" data-page="${esc(item.page)}" onclick="closeMenus();openPage('${esc(item.page)}')">
         ${navIconMarkup(item.icon)}<span class="nm-label">${esc(item.label)}</span>${item.kbd ? `<span class="nm-kbd">${esc(item.kbd)}</span>` : ''}
       </button>`).join('')}
     </div>`;
@@ -1121,6 +1130,34 @@ function paintCalcScreen() {
   if (!screen) return;
   const showLabel = calcState.label && calcState.label !== '0' && calcState.label !== 'خطأ';
   screen.textContent = showLabel ? `${calcState.label} ${calcState.entry}`.trim() : (calcState.entry === 'NaN' ? 'خطأ' : calcState.entry);
+}
+function toggleCalculator(force) {
+  const box = $('calcFloat');
+  if (!box) return;
+  const open = force === undefined ? !box.classList.contains('open') : Boolean(force);
+  box.classList.toggle('open', open);
+  box.setAttribute('aria-hidden', String(!open));
+  if ($('calcToggleBtn')) $('calcToggleBtn').setAttribute('aria-expanded', String(open));
+  if (open) { paintCalcScreen(); dragCalcFloat(); }
+}
+/* the calculator can be dragged by its title bar, like the floating windows */
+function dragCalcFloat() {
+  const box = $('calcFloat'), head = $('calcFloatHead');
+  if (!box || !head || head.dataset.dragReady === '1') return;
+  head.dataset.dragReady = '1';
+  head.addEventListener('pointerdown', event => {
+    if (event.target.closest('button') || window.innerWidth <= 760) return;
+    const rect = box.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
+    box.style.insetInlineStart = 'auto'; box.style.insetBlockStart = 'auto';
+    box.style.left = `${rect.left}px`; box.style.top = `${rect.top}px`;
+    const move = ev => {
+      box.style.left = `${Math.min(Math.max(0, ev.clientX - offsetX), Math.max(0, window.innerWidth - rect.width))}px`;
+      box.style.top = `${Math.min(Math.max(0, ev.clientY - offsetY), Math.max(0, window.innerHeight - rect.height))}px`;
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  });
 }
 function sendCalcToPaid() {
   const value = calcValue(calcState.entry);
@@ -4336,17 +4373,32 @@ function deleteParty(id) {
   if (db.invoices.some(i => i.partyId === id) || db.treasury.some(t => t.partyId === id) || party.balance !== 0) return alert('لا يمكن حذف حساب له رصيد أو حركات مالية. احتفظ بالحساب للحفاظ على كشوف الحساب.');
   if (confirm('حذف هذا الحساب؟') && commitDB(draft => { draft.parties = draft.parties.filter(p => p.id !== id); })) { resetPartyForm(); renderPartiesTable(); }
 }
-/* ---- quick customer created from inside the invoice ---- */
+/* ---- quick customer created from inside the invoice (floating window) ---- */
+const QUICK_PARTY_FIELDS = ['invQuickPartyName', 'invQuickPartyPhone', 'invQuickPartyPhone2', 'invQuickPartyCity', 'invQuickPartyEmail', 'invQuickPartyNotes'];
 function toggleQuickParty(force) {
   const box = $('invQuickParty');
   if (!box) return;
   const buying = $('invMode').value.startsWith('purchase');
   if (!ensurePermission(buying ? 'supplier' : 'customer')) return;
-  const open = force === undefined ? box.hidden : Boolean(force);
-  box.hidden = !open;
+  const open = force === undefined ? !box.classList.contains('open') : Boolean(force);
+  box.classList.toggle('open', open);
+  box.setAttribute('aria-hidden', String(!open));
+  if ($('invQuickPartyTitle')) $('invQuickPartyTitle').textContent = buying ? 'مورد جديد' : 'عميل جديد';
   if ($('invQuickPartyBtn')) $('invQuickPartyBtn').setAttribute('aria-expanded', String(open));
-  if (open) { $('invQuickPartyName').focus(); if ($('invQuickPartyBalance')) $('invQuickPartyBalance').value = '0'; }
-  else { $('invQuickPartyName').value = ''; if ($('invQuickPartyPhone')) $('invQuickPartyPhone').value = ''; }
+  if (open) {
+    clampQuickPartyWindow();
+    $('invQuickPartyName').focus();
+    if ($('invQuickPartyBalance')) $('invQuickPartyBalance').value = '0';
+  } else {
+    QUICK_PARTY_FIELDS.forEach(id => { if ($(id)) $(id).value = ''; });
+  }
+}
+function clampQuickPartyWindow() {
+  const box = $('invQuickParty');
+  if (!box || !window.innerWidth) return;
+  box.style.insetInlineStart = '50%';
+  box.style.insetBlockStart = '50%';
+  if (box.offsetWidth && box.offsetWidth > window.innerWidth - 16) box.style.width = `${window.innerWidth - 16}px`;
 }
 function saveQuickParty() {
   const buying = $('invMode').value.startsWith('purchase');
@@ -4361,9 +4413,20 @@ function saveQuickParty() {
     $('invPartySelect').value = String(existing.id);
     return notify(`الاسم موجود بالفعل — تم اختيار «${existing.name}».`);
   }
+  // every box of the floating window reaches the stored account (empty ones are dropped)
+  const contact = {
+    phone,
+    ...($('invQuickPartyPhone2')?.value.trim() ? { phone2: $('invQuickPartyPhone2').value.trim() } : {}),
+    ...($('invQuickPartyCity')?.value.trim() ? { city: $('invQuickPartyCity').value.trim() } : {}),
+    ...($('invQuickPartyEmail')?.value.trim() ? { email: $('invQuickPartyEmail').value.trim() } : {})
+  };
+  const notes = $('invQuickPartyNotes')?.value.trim();
   let created = null;
   const saved = commitDB(draft => {
-    created = { id: nextId(draft.parties), type: buying ? 'supplier' : 'customer', name, phone, balance: Number.isFinite(balance) ? balance : 0, notes: 'أُضيف من شاشة البيع' };
+    created = {
+      id: nextId(draft.parties), type: buying ? 'supplier' : 'customer', name, ...contact,
+      balance: Number.isFinite(balance) ? balance : 0, notes: notes || 'أُضيف من شاشة البيع'
+    };
     draft.parties.push(created);
   });
   if (!saved) return;
@@ -4537,10 +4600,13 @@ function renderProfits() {
 /* ---------------- settings, sync, backup ---------------- */
 function applySettingsUI() {
   paintTitleChrome();
-  $('lblStoreName').textContent = db.settings.name;
-  $('lblStorePhone').textContent = db.settings.phone || '';
-  $('lblStoreAddress').textContent = db.settings.address || '';
-  $('lblStoreAddress').hidden = !db.settings.address;
+  // the store banner is gone: the store data lives in the title bar and the printed documents only
+  if ($('lblStoreName')) $('lblStoreName').textContent = db.settings.name;
+  if ($('lblStorePhone')) $('lblStorePhone').textContent = db.settings.phone || '';
+  if ($('lblStoreAddress')) {
+    $('lblStoreAddress').textContent = db.settings.address || '';
+    $('lblStoreAddress').hidden = !db.settings.address;
+  }
   document.title = `${db.settings.name} | نقاط البيع`;
 }
 const SETTINGS_TABS = ['look', 'store', 'sync', 'staff', 'images'];
@@ -4933,7 +4999,7 @@ function saveWelcomeWizard() {
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
-  openPage, activatePage, registerTab, closeTab, closeAllTabs, renderTabs, paintNavbar, renderDashboard,
+  openPage, activatePage, registerTab, closeTab, closeAllTabs, renderTabs, paintNavbar, renderDashboard, toggleCalculator,
   toggleNavMenu, openNavMenu, closeMenus, openHomeMenu, paintTitleChrome, paintNavBell, shellSecondaryNav,
   SHELL_MENUS, PAGE_DEFS, DASH_GROUPS,
   openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, resetAccent, setReceiptWidth,

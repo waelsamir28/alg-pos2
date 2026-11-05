@@ -2813,6 +2813,47 @@
   body.shell-v2 #sideNav, body.shell-v2 #navScrim, body.shell-v2 .status-bar { display:none !important; }
   body.shell-v2 #appShell { display:block; padding:0; min-height:0; gap:0; }
 
+  /* ---- slim store bar: the old banner is gone, only the utility icons stay ---- */
+  body.shell-v2 { --banner-h: 34px; }
+  body.shell-v2 .posv3-slim-bar {
+    display:flex; align-items:center; gap:10px; min-height:34px; height:34px; padding:0 12px;
+    position:sticky; top:calc(var(--shell-top) + var(--nav-h)); z-index:54; inset-inline:0;
+    margin:0; border-radius:0; box-shadow:0 2px 8px #08172e1f;
+    border-bottom:1px solid #d7dfea;
+    background:linear-gradient(180deg,#ffffff,#eef2f8);
+    color:#1f2a37;
+  }
+  body.shell-v2 .posv3-slim-bar .head-id { display:flex; align-items:center; gap:6px; }
+  body.shell-v2 .posv3-slim-bar .head-logo img { height:24px; width:24px; border-radius:6px; object-fit:cover; }
+  body.shell-v2 .posv3-slim-bar .head-side { display:flex; align-items:center; gap:8px; margin-inline-start:auto; }
+  body.shell-v2 .posv3-slim-bar .head-icons { display:flex; align-items:center; gap:4px; }
+  body.shell-v2 .posv3-slim-bar .head-icon-btn {
+    width:26px; height:26px; display:grid; place-items:center; border-radius:7px; cursor:pointer;
+    border:1px solid #d7dfea; background:#fff; font-size:13px; line-height:1;
+  }
+  body.shell-v2 .posv3-slim-bar .head-icon-btn:hover { border-color:var(--head-3); background:#eff5fd; }
+  body.shell-v2 .posv3-slim-bar .head-meta { display:flex; align-items:center; gap:5px; }
+  body.shell-v2 .posv3-slim-bar .clock-pill {
+    display:inline-flex; align-items:center; height:24px; padding:0 9px; border-radius:999px;
+    background:#fff; border:1px solid #d7dfea; font-size:10.5px; font-weight:800; color:#33475d;
+    font-variant-numeric:tabular-nums;
+  }
+  body.shell-v2 .posv3-slim-bar .sync-chip {
+    display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 9px; border-radius:999px;
+    background:#fff; border:1px solid #d7dfea; color:#33475d; font-size:10px; font-weight:800; cursor:pointer;
+  }
+  body.shell-v2 .posv3-slim-bar .sync-chip[data-state="synced"] { border-color:#34d39988; background:#eafaf1; color:#0d6b3d; }
+  body.shell-v2 .posv3-slim-bar .sync-chip[data-state="synced"] .status-dot { background:#16a34a; }
+  body.shell-v2 .posv3-slim-bar .sync-chip[data-state="error"] { border-color:#f8717188; background:#fdecea; color:#96231a; }
+  body.shell-v2 .posv3-slim-bar .sync-chip[data-state="error"] .status-dot { background:#dc2626; }
+  body.shell-v2 .posv3-slim-bar .status-dot { width:7px; height:7px; border-radius:50%; background:#94a3b8; }
+  body.shell-v2 .posv3-slim-bar .head-user { font-size:10.5px; font-weight:800; color:#33475d; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 760px) {
+    body.shell-v2 .posv3-slim-bar .head-meta .clock-pill { display:none; }
+  }
+
   /* ================= SHELL v3: banner -> tabs -> page ================= */
   body.shell-v2 { --banner-h:74px; --bar-h:calc(var(--shell-top) + var(--nav-h) + var(--banner-h) + var(--tab-h)); }
 
@@ -3199,6 +3240,205 @@
   .posx-actions .is-wide { grid-column:span 2; }
   .posx-draft { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10.5px; font-weight:700; color:var(--ws-muted); }
 
+  /* ================= POS v3: invoice screen ================= */
+  /* one measuring unit: the party box is twice a normal box, and the barcode box matches it */
+  .pos-wrap.posv3 { --posv3-half:104px; --posv3-party:208px; }
+  .posv3 .pos-titlebar { padding:7px 12px; }
+  .posv3 .pos-titlebar .pos-title { font-size:15px; }
+  .posv3 .pos-titlebar p { font-size:10.5px; }
+
+  /* ---- 1. بيانات الفاتورة: wide rectangular strip ---- */
+  .posv3-meta-card { padding:0; }
+  .posv3-meta-head {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:6px 10px; border-bottom:1px solid var(--ws-line-soft); background:var(--ws-chip);
+  }
+  .posv3-meta-head h3 {
+    display:flex; align-items:center; gap:6px; margin:0; padding:0; border:0; background:none;
+    font-size:12px; font-weight:800; color:var(--ws-ink);
+  }
+  .posv3-meta-tools { display:flex; align-items:center; gap:6px; margin-inline-start:auto; flex-wrap:wrap; }
+  .posv3-chip {
+    display:inline-flex; align-items:center; gap:5px; height:26px; padding:0 8px; border-radius:8px;
+    border:1px solid var(--ws-line); background:var(--ws-field); font-size:10px; font-weight:800; color:var(--ws-muted);
+    white-space:nowrap;
+  }
+  .posv3-chip .ws-select { height:22px; min-width:104px; border:0; background:transparent; padding:0 4px; font-size:11px; font-weight:800; color:var(--ws-ink); }
+  .posv3-icon-btn {
+    display:inline-grid; place-items:center; width:28px; height:26px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--ws-line); background:var(--ws-field); font-size:13px; line-height:1;
+  }
+  .posv3-icon-btn:hover { border-color:var(--ws-head-c); background:color-mix(in srgb,var(--ws-head-c) 10%,transparent); }
+  .posv3-icon-btn[aria-expanded="true"] { color:#fff; background:linear-gradient(135deg,var(--ws-head-b),var(--ws-head-c)); border-color:transparent; }
+
+  /* the wide metadata row: party = barcode width, every other box = half of it */
+  .posv3-meta-row {
+    display:flex; align-items:flex-end; gap:6px; flex-wrap:nowrap;
+    padding:7px 10px; overflow-x:auto;
+  }
+  .pv3-field { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .pv3-field > span { font-size:9.5px; font-weight:800; color:var(--ws-muted); text-align:right; white-space:nowrap; }
+  .pv3-field > .ws-input, .pv3-field > .ws-select, .pv3-field > .pv3-party { width:100%; }
+  .pv3-field .ws-input, .pv3-field .ws-select { height:30px; font-size:11.5px; font-weight:700; padding:0 8px; }
+  /* a normal invoice box = half the party width; the party box follows the barcode width */
+  .posv3-meta-row .pv3-field { flex:0 0 auto; width:var(--posv3-half, 104px); }
+  .posv3-meta-row .pv3-field.pv3-wide { width:var(--posv3-party, 208px); }
+  .pv3-party { display:grid; grid-template-columns:minmax(0,1fr) 32px; gap:5px; }
+  .pv3-party .ws-select { width:100%; }
+  .pv3-add-party {
+    display:grid; place-items:center; width:32px; height:30px; border-radius:8px; cursor:pointer;
+    border:1px solid #128a4a; background:linear-gradient(180deg,#22b463,#128a4a); color:#fff;
+    font-size:16px; font-weight:800; line-height:1; box-shadow:0 4px 10px #128a4a33;
+  }
+  .pv3-add-party:hover { filter:brightness(1.08); }
+  .pv3-add-party[aria-expanded="true"] { background:linear-gradient(180deg,#128a4a,#0b6234); }
+
+  /* second strip: discounts + printable note, aligned with the row above */
+  .posv3-meta-extra {
+    display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap;
+    padding:0 10px 8px;
+  }
+  .posv3-meta-extra .pv3-field.is-narrow { width:104px; }
+  .posv3-meta-extra .pv3-note { flex:1 1 240px; min-width:180px; }
+  .posv3-meta-extra .discount-limit {
+    display:inline-flex; align-items:center; gap:5px; height:26px; padding:0 9px; border-radius:8px;
+    border:1px dashed var(--ws-line); background:var(--ws-chip); font-size:10px; font-weight:800; color:var(--ws-muted);
+  }
+  .posv3-meta-extra .discount-warn { color:#a9261c; }
+  .posv3-meta-extra .pos-panel-title { display:none; }
+  .pos-tabs.is-compact { display:none !important; }
+
+  /* ---- 2. short barcode strip under the invoice data ---- */
+  .posv3-scan {
+    display:flex; align-items:flex-end; gap:6px; padding:7px 10px; border-radius:12px;
+    border:1px solid var(--ws-line); background:linear-gradient(180deg,#f7fbff,#eef5fd);
+    box-shadow:0 4px 12px #0b1b300d;
+  }
+  .posv3-scan .scan-field { display:flex; flex-direction:column; gap:3px; min-width:0; flex:0 0 var(--posv3-party); }
+  .posv3-scan .scan-field > label { font-size:9.5px; font-weight:800; color:var(--ws-muted); text-align:right; }
+  .posv3-scan .scan-input-wrap { position:relative; }
+  .posv3-scan #invBarcodeInp { height:32px; font-size:12.5px; font-weight:800; letter-spacing:.2px; }
+  .posv3-scan .scan-qty { flex:0 0 132px; }
+  .posv3-scan .qty-row { display:flex; align-items:center; gap:4px; }
+  .posv3-scan .qty-row input { width:56px; height:32px; text-align:center; font-weight:800; }
+  .posv3-scan .qty-step { width:28px; height:32px; }
+  .posv3-scan .posv3-scan-icon { flex:0 0 40px; height:32px; padding:0; font-size:15px; }
+  .posv3-scan .posv3-scan-add { flex:1 1 auto; height:32px; padding:0 12px; font-size:12px; }
+
+  /* ---- 3. items grid beside the quick groups ---- */
+  .posv3-grid { display:grid; grid-template-columns:minmax(0,1fr) 292px; gap:10px; align-items:start; }
+  .posv3-grid .posv3-cart { min-width:0; }
+  .posv3-cart-wrap { max-height:calc(100vh - var(--bar-h) - 430px); min-height:150px; overflow:auto; }
+  .posv3-quick { display:flex; flex-direction:column; gap:8px; }
+  .posv3-quick-bar { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; }
+  .posv3-quick-bar .ws-select, .posv3-quick-bar .ws-input { height:30px; font-size:11px; }
+  .posv3-quick .quick-items { max-height:calc(100vh - var(--bar-h) - 470px); min-height:120px; overflow:auto; margin-top:6px; }
+  .posv3-new-item {
+    display:flex; align-items:center; gap:8px; width:100%; margin-top:7px; padding:7px 9px; border-radius:9px; cursor:pointer;
+    border:1px dashed #9dc0e0; background:#f2f8ff; color:#14507f; text-align:right;
+    font-size:11px; font-weight:800;
+  }
+  .posv3-new-item .pa-plus {
+    display:grid; place-items:center; width:22px; height:22px; flex:none; border-radius:50%; font-size:14px;
+    color:#fff; background:linear-gradient(180deg,#2f8ad8,#1b4fa8);
+  }
+  .posv3-new-item small { display:block; font-size:9px; font-weight:700; color:#5a7b98; }
+  .posv3-new-item:hover { border-color:#2f8ad8; background:#e8f3ff; }
+  .posv3-draft-card .ws-card-body { padding:7px 9px; }
+
+  /* ---- 4. summary: one row of big coloured boxes ---- */
+  .posv3-summary { padding:0; }
+  .posv3-summary > h3 {
+    display:flex; align-items:center; gap:6px; padding:6px 10px; margin:0; border-bottom:1px solid var(--ws-line-soft);
+    background:var(--ws-chip); font-size:11.5px; font-weight:800;
+  }
+  .posv3-sum-row { display:flex; align-items:stretch; gap:6px; padding:8px 10px; overflow-x:auto; }
+  .posv3-sum { display:flex; flex-direction:column; gap:3px; flex:1 1 0; min-width:118px; }
+  .posv3-sum > span:first-child { font-size:9.5px; font-weight:800; color:var(--ws-muted); text-align:center; white-space:nowrap; }
+  .posv3-sum .ws-input { height:36px; text-align:center; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; border-width:1.5px; }
+  .posv3-sum .pv3-paid { display:block; }
+  .posv3-sum .pv3-paid .ws-input { width:100%; }
+  .posv3-sum[data-tone="net"] .ws-input { background:linear-gradient(#eaf9dd,#d3f0bb); border-color:#5f9f3e; color:#17540d; }
+  .posv3-sum[data-tone="paid"] .ws-input { background:linear-gradient(#eef6ff,#d8e9ff); border-color:#4f83c0; color:#0f3d70; }
+  .posv3-sum[data-tone="due"] .ws-input { background:linear-gradient(#fff8e2,#ffe9b8); border-color:#d0a33a; color:#6b4703; }
+  .posv3-sum[data-tone="disc"] .ws-input { background:linear-gradient(#fdf1f0,#f7dcd9); border-color:#cf9088; color:#7d2a22; }
+  .posv3-sum[data-tone="sub"] .ws-input { background:linear-gradient(#f3f6fb,#e6ecf6); border-color:#a9bad2; color:#22364f; }
+  body[data-theme="night"] .posv3-sum[data-tone="net"] .ws-input { background:linear-gradient(#22331b,#1a2814); border-color:#4f8a34; color:#c8f0a8; }
+  body[data-theme="night"] .posv3-sum[data-tone="paid"] .ws-input { background:linear-gradient(#1b2a3d,#16222f); border-color:#3f6f9f; color:#bcdcff; }
+  body[data-theme="night"] .posv3-sum[data-tone="due"] .ws-input { background:linear-gradient(#33290f,#2a210c); border-color:#8a6a1c; color:#ffe3a3; }
+  body[data-theme="night"] .posv3-sum[data-tone="sub"] .ws-input { background:linear-gradient(#1c2330,#151b26); border-color:#3d4c63; color:#d6e3f5; }
+  body[data-theme="night"] .posv3-sum[data-tone="disc"] .ws-input { background:linear-gradient(#2f2020,#241818); border-color:#6b3a33; color:#ffc9c2; }
+  body[data-theme="night"] .posv3-scan { background:linear-gradient(180deg,#18202c,#141b25); }
+  .posv3-summary .change-hint { align-self:center; font-size:10.5px; font-weight:800; color:#0d6b3d; white-space:nowrap; }
+  .posv3-summary .change-hint[hidden] { display:none !important; }
+
+  /* ---- 5. finish strip: one row of buttons ---- */
+  .posv3-finish { padding:0; }
+  .posv3-finish > h3 {
+    display:flex; align-items:center; gap:6px; padding:6px 10px; margin:0; border-bottom:1px solid var(--ws-line-soft);
+    background:var(--ws-chip); font-size:11.5px; font-weight:800;
+  }
+  .posv3-actions { display:flex; align-items:stretch; gap:6px; padding:8px 10px; overflow-x:auto; }
+  .posv3-actions .ws-btn { flex:1 1 0; min-width:104px; height:34px; padding:0 9px; font-size:11.5px; white-space:nowrap; }
+  .posv3-actions .ws-btn .kbd { display:none; }
+
+  /* clear the brown function-key strip: the sales screen no longer uses it */
+  .pos-fnbar, .fn-strip.pos-fnbar { display:none !important; }
+
+  /* ================= floating calculator ================= */
+  .posv3-calc-float {
+    position:fixed; inset-block-start:calc(var(--bar-h) + 90px); inset-inline-start:18px; z-index:6400;
+    width:230px; display:none; border-radius:12px; overflow:hidden;
+    background:var(--card-bg, #fff); border:1px solid var(--ws-line, #d5dbe6); box-shadow:0 22px 50px #0b1b3047;
+  }
+  .posv3-calc-float.open { display:block; }
+  .pcf-head {
+    display:flex; align-items:center; gap:6px; padding:6px 9px; cursor:grab;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+    font-size:11.5px; font-weight:800;
+  }
+  .pcf-head b { flex:1 1 auto; }
+  .pcf-close { width:22px; height:22px; border-radius:6px; border:1px solid #ffffff66; background:#ffffff22; color:#fff; cursor:pointer; font-size:11px; }
+  .pcf-close:hover { background:#c0392b; }
+  .pcf-body { display:flex; flex-direction:column; gap:6px; padding:8px; }
+  .pcf-body .calc-screen { height:34px; font-size:16px; }
+
+  /* ================= floating new-customer window ================= */
+  .posv3-party-float {
+    position:fixed; inset-block-start:50%; inset-inline-start:50%; transform:translate(-50%,-50%) scale(.98); z-index:6500;
+    width:min(430px, calc(100vw - 24px)); display:none; border-radius:14px; overflow:hidden;
+    background:var(--card-bg, #fff); border:1px solid var(--ws-line, #d5dbe6); box-shadow:0 26px 64px #0b1b3055;
+  }
+  .posv3-party-float.open { display:block; transform:translate(-50%,-50%); }
+  .ppf-head {
+    display:flex; align-items:center; gap:6px; padding:8px 11px;
+    background:linear-gradient(105deg,var(--head-1),var(--head-2) 55%,var(--head-3)); color:#fff;
+    font-size:12px; font-weight:800;
+  }
+  .ppf-head b { flex:1 1 auto; }
+  .ppf-close { width:24px; height:24px; border-radius:6px; border:1px solid #ffffff66; background:#ffffff22; color:#fff; cursor:pointer; font-size:12px; }
+  .ppf-close:hover { background:#c0392b; }
+  .ppf-body { display:flex; flex-direction:column; gap:7px; padding:10px 11px; }
+  .ppf-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  .ppf-grid .pv3-field:first-child { grid-column:1 / -1; }
+  .ppf-actions { display:flex; gap:7px; margin-top:2px; }
+  .ppf-actions .ws-btn { flex:1 1 0; height:32px; font-size:11.5px; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 1180px) {
+    .posv3-grid { grid-template-columns:minmax(0,1fr) 254px; }
+  }
+  @media (max-width: 900px) {
+    .posv3-grid { grid-template-columns:minmax(0,1fr); }
+    .posv3-quick .quick-items { max-height:200px; }
+    .posv3-cart-wrap { max-height:320px; }
+    .posv3-meta-row { flex-wrap:wrap; }
+    .posv3-meta-row .pv3-field { width:calc(50% - 3px); }
+    .posv3-meta-row .pv3-field.pv3-wide { width:100%; }
+    .posv3-scan { flex-wrap:wrap; }
+    .posv3-scan .scan-field { flex:1 1 calc(100% - 150px); }
+  }
+
   /* ================= clients page ================= */
   .cl-form { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px 10px; }
   .cl-form .ws-field { gap:6px; }
@@ -3348,15 +3588,11 @@
 <nav class="app-navbar" id="appNavbar" aria-label="قائمة البرنامج الرئيسية"></nav>
 <div class="nav-menu-layer" id="navMenuLayer" hidden></div>
 
-<!-- ================= STORE BANNER ================= -->
-<header class="top-bar" id="appHeader" data-header="name" data-align="start">
+
+<!-- ================= SLIM STORE BAR (banner removed) ================= -->
+<header class="top-bar posv3-slim-bar" id="appHeader">
   <div class="head-id">
     <span class="head-logo" id="headLogo"><img id="headLogoImg" alt="شعار المكتبة" src="/icon-192.png"></span>
-    <div class="head-text">
-      <h1 class="store-title" id="lblStoreName">مكتبة الجمال</h1>
-      <div class="store-phone" id="lblStorePhone">01000000000</div>
-      <div class="store-addr" id="lblStoreAddress" hidden></div>
-    </div>
   </div>
   <div class="head-side">
     <div class="head-icons">
@@ -3368,14 +3604,14 @@
       <span class="head-user" id="activeUserBadge" hidden>المدير</span>
     </div>
     <div class="head-meta">
-      <div class="clock-pill"><small>التاريخ</small><span id="liveDate">2025/01/01</span></div>
-      <div class="clock-pill is-time"><small>الوقت</small><span id="liveTime">12:00:00</span></div>
+      <div class="clock-pill"><span id="liveDate">2025/01/01</span></div>
+      <div class="clock-pill is-time"><span id="liveTime">12:00:00</span></div>
       <span id="syncStatusBadge" class="sync-chip" role="button" tabindex="0" data-state="local" title="فتح مركز المزامنة" onclick="openSettingsPage('sync')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSettingsTab('sync');}" style="cursor:pointer"><i class="status-dot"></i><span class="sync-text">محفوظ محلياً</span></span>
     </div>
   </div>
 </header>
 
-<!-- ================= OPEN PAGES AS TABS (under the banner) ================= -->
+<!-- ================= OPEN PAGES AS TABS ================= -->
 <div class="tabbar" id="tabBar" role="tablist" aria-label="الشاشات المفتوحة"></div>
 
 
@@ -3543,7 +3779,7 @@
 
     <!-- ==================== 1. POINT OF SALE ==================== -->
     <div id="sec-invoice" class="sec-view">
-      <div class="pos-wrap ws-page" data-mode="sale">
+      <div class="pos-wrap posv3 ws-page" data-mode="sale">
 
         <!-- ===== invoice header band ===== -->
         <div class="ws-head pos-titlebar">
@@ -3568,155 +3804,108 @@
           </div>
         </div>
 
-        <div class="posx-shell">
-          <!-- ================= MAIN COLUMN ================= -->
-          <div class="posx-main">
+        <div class="posv3-body">
+          <div class="posv3-main">
 
-            <!-- ---- metadata + quick groups ---- -->
-            <div class="ws-grid2">
-              <div class="ws-card">
+            <!-- ============ 1. بيانات الفاتورة: شريط مستطيل عريض ============ -->
+            <section class="ws-card posv3-meta-card">
+              <div class="posv3-meta-head">
                 <h3><span aria-hidden="true">🧾</span>بيانات الفاتورة<span class="hc-extra" id="posDraftHint">مسودة</span></h3>
-                <div class="ws-card-body">
-                  <div class="posx-meta">
-                    <label class="ws-field" for="invDateView"><label for="invDateView">التاريخ</label>
-                      <input type="text" id="invDateView" class="ws-input" readonly value="">
-                    </label>
-                    <label class="ws-field"><label for="invNumberView">رقم الفاتورة</label>
-                      <input type="text" id="invNumberView" class="ws-input" readonly value="">
-                    </label>
-                    <label class="ws-field"><label for="invWarehouseView">المخزن</label>
-                      <select id="invWarehouseView" class="ws-select"></select>
-                    </label>
-                    <label class="ws-field"><label for="invSafeView">الخزينة</label>
-                      <select id="invSafeView" class="ws-select"></select>
-                    </label>
-                    <label class="ws-field"><label for="invEmployeeView">الموظف</label>
-                      <input type="text" id="invEmployeeView" class="ws-input" readonly value="">
-                    </label>
-                    <label class="ws-field" for="invPartySelect"><label for="invPartySelect" id="lblInvParty">العميل</label>
-                      <span class="ws-control" style="display:flex;gap:4px">
-                        <select id="invPartySelect" class="ws-select" onchange="calcInvoiceTotals()"></select>
-                        <button type="button" class="iconbtn" id="invQuickPartyBtn" onclick="toggleQuickParty(true)" title="إضافة عميل جديد دون مغادرة الفاتورة" aria-label="عميل جديد">➕</button>
-                      </span>
-                    </label>
-                  </div>
-
-                  <div class="party-quick" id="invQuickParty" hidden style="margin-top:8px">
-                    <div class="ws-form cols-3">
-                      <label class="ws-field"><span>اسم العميل</span>
-                        <input type="text" class="ws-input" id="invQuickPartyName" placeholder="مثال: مدرسة النور" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
-                      </label>
-                      <label class="ws-field"><span>الهاتف</span>
-                        <input type="text" class="ws-input" id="invQuickPartyPhone" placeholder="01xxxxxxxxx" inputmode="tel" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
-                      </label>
-                      <label class="ws-field"><span>رصيد افتتاحي</span>
-                        <input type="number" class="ws-input" id="invQuickPartyBalance" placeholder="0" value="0" step="any">
-                      </label>
-                    </div>
-                    <div class="pq-actions ws-actions" style="margin-top:6px">
-                      <button type="button" class="ws-btn is-primary" onclick="saveQuickParty()">✔ حفظ واختيار</button>
-                      <button type="button" class="ws-btn" onclick="toggleQuickParty(false)">إلغاء</button>
-                    </div>
-                  </div>
-
-                  <div class="pos-tabs" id="invTabs" role="tablist" aria-label="بيانات إضافية للفاتورة" style="margin-top:8px">
-                    <button type="button" class="pos-tab" data-inv-tab="details" onclick="switchInvoiceTab('details')"><span aria-hidden="true">🧾</span>تفاصيل</button>
-                    <button type="button" class="pos-tab" data-inv-tab="party" onclick="switchInvoiceTab('party')"><span aria-hidden="true">👤</span>الدفع والحساب</button>
-                    <button type="button" class="pos-tab" data-inv-tab="discount" onclick="switchInvoiceTab('discount')"><span aria-hidden="true">💰</span>الخصم</button>
-                    <button type="button" class="pos-tab" data-inv-tab="notes" onclick="switchInvoiceTab('notes')"><span aria-hidden="true">📝</span>ملاحظات</button>
-                  </div>
-                  <div class="pos-inline-fields" data-inv-group="party" data-inv-always="1">
-                    <div class="pos-field">
-                      <label for="invPayType">طريقة الدفع</label>
-                      <select id="invPayType" class="ws-select" onchange="calcInvoiceTotals()">
-                        <option value="cash">نقدي (كاش)</option>
-                        <option value="credit">آجل (على الحساب)</option>
-                        <option value="partial">دفع جزئي</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="pos-inline-fields" data-inv-group="discount" hidden>
-                    <div class="pos-field">
-                      <label for="invDiscAmount">خصم إضافي (مبلغ)</label>
-                      <input type="number" class="ws-input" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
-                    </div>
-                    <div class="pos-field">
-                      <label for="invDiscPct">خصم (%)</label>
-                      <input type="number" class="ws-input" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
-                    </div>
-                    <div class="discount-limit" id="discountLimitBox">
-                      <span aria-hidden="true">🛡️</span>
-                      <span>حد الخصم المسموح لك: <b id="discountLimitValue">100%</b></span>
-                      <b class="discount-warn" id="discountWarn" hidden>تجاوزت الحد — سيُطلب موافقة المدير</b>
-                    </div>
-                  </div>
-                  <div class="pos-inline-fields" data-inv-group="notes" hidden>
-                    <div class="pos-field pos-field-wide">
-                      <label for="invPrintNote">ملاحظات تُطبع على الفاتورة</label>
-                      <input type="text" class="ws-input" id="invPrintNote" placeholder="مثال: الاستبدال خلال أسبوع بشرط الفاتورة" maxlength="120">
-                    </div>
-                  </div>
-                  <div class="pos-inline-fields" data-inv-group="details">
-                    <div class="pos-field">
-                      <label for="invPriceTier">شريحة التسعير</label>
-                      <select id="invPriceTier" class="ws-select" onchange="updateCartPricesByTier()">
-                        <option value="retail">قطاعي</option>
-                        <option value="wholesale">جملة</option>
-                      </select>
-                    </div>
-                    <div class="pos-field" id="invReturnSourceRow" hidden>
-                      <label for="invReturnSource">الفاتورة الأصلية للمرتجع</label>
-                      <select id="invReturnSource" class="ws-select" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
-                    </div>
-                  </div>
-                  <span class="pos-panel-title" id="invPanelTitle">تفاصيل</span>
+                <div class="posv3-meta-tools">
+                  <label class="posv3-chip" for="invPayType">طريقة الدفع
+                    <select id="invPayType" class="ws-select" onchange="calcInvoiceTotals()">
+                      <option value="cash">نقدي (كاش)</option>
+                      <option value="credit">آجل (على الحساب)</option>
+                      <option value="partial">دفع جزئي</option>
+                    </select>
+                  </label>
+                  <label class="posv3-chip" for="invPriceTier">شريحة التسعير
+                    <select id="invPriceTier" class="ws-select" onchange="updateCartPricesByTier()">
+                      <option value="retail">قطاعي</option>
+                      <option value="wholesale">جملة</option>
+                    </select>
+                  </label>
+                  <button type="button" class="posv3-icon-btn is-blue" onclick="toggleCalculator(true)" title="الآلة الحاسبة" aria-label="الآلة الحاسبة" aria-expanded="false" id="calcToggleBtn">🧮</button>
                 </div>
               </div>
+              <div class="posv3-meta-row">
+                <label class="pv3-field pv3-wide" for="invPartySelect"><span id="lblInvParty">العميل</span>
+                  <span class="pv3-party">
+                    <select id="invPartySelect" class="ws-select" onchange="calcInvoiceTotals()"></select>
+                    <button type="button" class="pv3-add-party" id="invQuickPartyBtn" onclick="toggleQuickParty(true)" title="إضافة عميل جديد" aria-label="إضافة عميل جديد" aria-expanded="false">＋</button>
+                  </span>
+                </label>
+                <label class="pv3-field" for="invDateView"><span>التاريخ</span>
+                  <input type="text" id="invDateView" class="ws-input" readonly value="">
+                </label>
+                <label class="pv3-field" for="invNumberView"><span>رقم الفاتورة</span>
+                  <input type="text" id="invNumberView" class="ws-input" readonly value="">
+                </label>
+                <label class="pv3-field" for="invWarehouseView"><span>المخزن</span>
+                  <select id="invWarehouseView" class="ws-select"></select>
+                </label>
+                <label class="pv3-field" for="invSafeView"><span>الخزينة</span>
+                  <select id="invSafeView" class="ws-select"></select>
+                </label>
+                <label class="pv3-field" for="invEmployeeView"><span>الموظف</span>
+                  <input type="text" id="invEmployeeView" class="ws-input" readonly value="">
+                </label>
+              </div>
+              <div class="posv3-meta-extra">
+                <label class="pv3-field is-narrow" for="invDiscPct"><span>خصم %</span>
+                  <input type="number" class="ws-input" id="invDiscPct" value="0" min="0" max="100" step="any" oninput="calcInvoiceTotals()">
+                </label>
+                <label class="pv3-field is-narrow" for="invDiscAmount"><span>خصم إضافي</span>
+                  <input type="number" class="ws-input" id="invDiscAmount" value="0" min="0" step="any" oninput="calcInvoiceTotals()">
+                </label>
+                <span class="discount-limit" id="discountLimitBox">
+                  <span aria-hidden="true">🛡️</span>
+                  <span>حد الخصم: <b id="discountLimitValue">100%</b></span>
+                  <b class="discount-warn" id="discountWarn" hidden>تجاوزت الحد — موافقة المدير</b>
+                </span>
+                <label class="pv3-field pv3-note" for="invPrintNote"><span>ملاحظة تُطبع على الفاتورة</span>
+                  <input type="text" class="ws-input" id="invPrintNote" placeholder="مثال: الاستبدال خلال أسبوع بشرط الفاتورة" maxlength="120">
+                </label>
+                <label class="pv3-field is-narrow" for="invReturnSource" id="invReturnSourceRow" hidden><span>الفاتورة الأصلية</span>
+                  <select id="invReturnSource" class="ws-select" onchange="loadReturnSource()"><option value="">اختر الفاتورة الأصلية</option></select>
+                </label>
+                <span class="pos-panel-title" id="invPanelTitle" hidden>تفاصيل</span>
+              </div>
+              <div class="pos-tabs is-compact" id="invTabs" role="tablist" aria-label="بيانات إضافية للفاتورة" hidden>
+                <button type="button" class="pos-tab" data-inv-tab="details" onclick="switchInvoiceTab('details')">تفاصيل</button>
+                <button type="button" class="pos-tab" data-inv-tab="party" onclick="switchInvoiceTab('party')">الدفع</button>
+                <button type="button" class="pos-tab" data-inv-tab="discount" onclick="switchInvoiceTab('discount')">الخصم</button>
+                <button type="button" class="pos-tab" data-inv-tab="notes" onclick="switchInvoiceTab('notes')">ملاحظات</button>
+              </div>
+            </section>
 
-              <div class="ws-card">
-                <h3><span aria-hidden="true">🗂️</span>مجموعات وأصناف سريعة<span class="hc-extra" id="posTilesHint">اضغط الصنف لإضافته</span></h3>
-                <div class="ws-card-body">
-                  <div class="pos-group-bar">
-                    <label for="posGroupSelect">المجموعة</label>
-                    <select id="posGroupSelect" class="ws-select" onchange="selectPosGroup(this.value)"></select>
-                    <input type="text" id="posQuickSearch" class="ws-input is-search" placeholder="🔍 بحث سريع في الأصناف" oninput="renderPosTiles()">
-                  </div>
-                  <div class="quick-items" id="posQuickItems" style="margin-top:7px;max-height:126px;overflow:auto"></div>
+            <!-- ============ 2. الباركود أسفل بيانات الفاتورة (مختصر) ============ -->
+            <section class="posv3-scan">
+              <div class="scan-field">
+                <label for="invBarcodeInp">الباركود / الكود</label>
+                <div class="scan-input-wrap">
+                  <input type="text" class="ws-input" id="invBarcodeInp" placeholder="امسح الباركود أو اكتب كود/اسم الصنف ثم Enter" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="invSuggest" aria-autocomplete="list" onkeydown="handleScanKey(event)">
+                  <div class="scan-suggest" id="invSuggest" role="listbox" aria-label="أصناف مقترحة" hidden></div>
+                </div>
+                <datalist id="itemsDatalist"></datalist>
+              </div>
+              <div class="scan-field scan-qty">
+                <label for="invAddQty">العدد</label>
+                <div class="qty-row">
+                  <button type="button" class="qty-step" onclick="bumpInvoiceQty(-1)" title="تقليل الكمية" aria-label="تقليل الكمية">−</button>
+                  <input type="number" id="invAddQty" class="ws-input" value="1" min="0.001" step="any" aria-label="الكمية المطلوب إضافتها">
+                  <button type="button" class="qty-step" onclick="bumpInvoiceQty(1)" title="زيادة الكمية" aria-label="زيادة الكمية">+</button>
                 </div>
               </div>
-            </div>
+              <button type="button" class="ws-btn is-ghost posv3-scan-icon" id="cameraScanBtn" onclick="openCameraScanner()" title="مسح الباركود بكاميرا الهاتف" aria-label="مسح الباركود بالكاميرا"><span aria-hidden="true">📷</span></button>
+              <button type="button" class="ws-btn is-primary posv3-scan-add" onclick="addInvItemFromInput()"><span aria-hidden="true">🛒</span>إضافة<span class="kbd">Enter</span></button>
+            </section>
 
-            <!-- ---- barcode entry bar ---- -->
-            <div class="ws-card">
-              <div class="ws-card-body tight">
-                <div class="pos-scanbar">
-                  <div class="scan-field">
-                    <label for="invBarcodeInp">الباركود / الكود</label>
-                    <div class="scan-input-wrap">
-                      <input type="text" class="ws-input" id="invBarcodeInp" placeholder="اقرأ الباركود أو اكتب كود/اسم الصنف ثم Enter" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="invSuggest" aria-autocomplete="list" onkeydown="handleScanKey(event)">
-                      <div class="scan-suggest" id="invSuggest" role="listbox" aria-label="أصناف مقترحة" hidden></div>
-                    </div>
-                    <datalist id="itemsDatalist"></datalist>
-                  </div>
-                  <div class="scan-field scan-qty">
-                    <label for="invAddQty">العدد</label>
-                    <div class="qty-row">
-                      <button type="button" class="qty-step" onclick="bumpInvoiceQty(-1)" title="تقليل الكمية" aria-label="تقليل الكمية">−</button>
-                      <input type="number" id="invAddQty" class="ws-input" value="1" min="0.001" step="any" aria-label="الكمية المطلوب إضافتها" style="width:70px;text-align:center">
-                      <button type="button" class="qty-step" onclick="bumpInvoiceQty(1)" title="زيادة الكمية" aria-label="زيادة الكمية">+</button>
-                    </div>
-                  </div>
-                  <button type="button" class="ws-btn" id="cameraScanBtn" onclick="openCameraScanner()" title="مسح الباركود بكاميرا الهاتف" aria-label="مسح الباركود بالكاميرا"><span aria-hidden="true">📷</span>كاميرا</button>
-                  <button type="button" class="ws-btn is-primary" onclick="addInvItemFromInput()"><span aria-hidden="true">🛒</span>بيع / إضافة<span class="kbd">Enter</span></button>
-                </div>
-              </div>
-            </div>
-
-            <!-- ---- item search + cart grid ---- -->
-            <div class="posx-mid">
-              <div class="ws-card posx-cart">
+            <!-- ============ 3. بنود الفاتورة بجوارها المجموعات والأصناف السريعة ============ -->
+            <div class="posv3-grid">
+              <section class="ws-card posv3-cart">
                 <h3><span aria-hidden="true">📋</span>بنود الفاتورة<span class="hc-extra" id="posCartHint">لا توجد بنود بعد</span></h3>
-                <div class="table-wrap pos-table" id="posCartTableWrap" style="max-height:300px">
+                <div class="table-wrap pos-table posv3-cart-wrap" id="posCartTableWrap">
                   <table class="ws-table" id="invCartTable">
                     <thead>
                       <tr>
@@ -3734,17 +3923,24 @@
                     <tbody id="invCartTbody"></tbody>
                   </table>
                 </div>
-              </div>
-              <div class="posx-side">
-                <div class="ws-card">
-                  <h3><span aria-hidden="true">🔍</span>بحث عن صنف</h3>
+              </section>
+
+              <aside class="posv3-quick" aria-label="مجموعات وأصناف سريعة">
+                <section class="ws-card">
+                  <h3><span aria-hidden="true">🗂️</span>مجموعات وأصناف سريعة<span class="hc-extra" id="posTilesHint">اضغط الصنف لإضافته</span></h3>
                   <div class="ws-card-body tight">
-                    <input type="text" class="ws-input is-search" id="posItemSearch" placeholder="الاسم أو الكود…" oninput="renderPosItemSearch(this.value)" aria-label="بحث في الأصناف">
-                    <div class="posx-search-results" id="posItemSearchResults" style="margin-top:6px"></div>
+                    <div class="posv3-quick-bar">
+                      <select id="posGroupSelect" class="ws-select" onchange="selectPosGroup(this.value)" aria-label="المجموعة"></select>
+                      <input type="text" id="posQuickSearch" class="ws-input is-search" placeholder="🔍 بحث سريع" oninput="renderPosTiles()" aria-label="بحث سريع في الأصناف">
+                    </div>
+                    <div class="quick-items" id="posQuickItems"></div>
+                    <button type="button" class="posv3-new-item" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')">
+                      <span class="pa-plus" aria-hidden="true">＋</span><span>إضافة صنف جديد<small>يفتح شاشة الأصناف</small></span>
+                    </button>
                   </div>
-                </div>
-                <div class="ws-card">
-                  <h3><span aria-hidden="true">💳</span>حالة الدفع</h3>
+                </section>
+
+                <section class="ws-card posv3-draft-card">
                   <div class="ws-card-body tight">
                     <div class="posx-draft" id="draftStrip">
                       <span class="draft-hint" id="draftHint" hidden>💾 مسودة محفوظة</span>
@@ -3754,111 +3950,43 @@
                     </div>
                     <p class="ws-hint" style="margin:6px 0 0" id="posPayHint">يُحدَّد المدفوع تلقائياً في البيع النقدي.</p>
                   </div>
-                </div>
-              </div>
+                </section>
+              </aside>
             </div>
 
-            <!-- ---- totals + actions ---- -->
-            <div class="ws-grid2">
-              <div class="ws-card">
-                <h3><span aria-hidden="true">📊</span>ملخص الفاتورة</h3>
-                <div class="ws-card-body tight">
-                  <div class="posx-totals">
-                    <div class="posx-total-row"><span>إجمالي البنود</span><input type="text" class="ws-input" id="invSubTotal" readonly value="0.00"></div>
-                    <div class="posx-total-row"><span>خصم إضافي</span><input type="text" class="ws-input" id="invDiscTotalView" readonly value="0.00" tabindex="-1"></div>
-                    <div class="posx-total-row"><span>الصافي المطلوب</span><input type="text" class="ws-input" id="invNetTotal" readonly value="0.00"></div>
-                    <div class="posx-total-row"><span>المدفوع</span>
-                      <span class="ws-control">
-                        <input type="number" class="ws-input" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()">
-                        <button type="button" class="iconbtn" title="لوحة الأرقام" onclick="openKeypad({mode:'cart',index:-1,field:'pay'})" aria-label="لوحة الأرقام">⌨</button>
-                      </span>
-                    </div>
-                    <div class="posx-total-row"><span>المتبقي (آجل)</span><input type="text" class="ws-input" id="invRemainAmount" readonly value="0.00"></div>
-                    <input type="text" id="invPaidWithKeypad" readonly value="" tabindex="-1" hidden aria-hidden="true">
-                    <span class="change-hint" id="cashChangeBox" aria-live="polite" hidden>الباقي: <b id="cashChangeValue">0.00</b></span>
-                  </div>
+            <!-- ============ 4. ملخص الفاتورة في سطر واحد ============ -->
+            <section class="ws-card posv3-summary">
+              <h3><span aria-hidden="true">📊</span>ملخص الفاتورة</h3>
+              <div class="posv3-sum-row">
+                <div class="posv3-sum" data-tone="sub"><span>إجمالي البنود</span><input type="text" class="ws-input" id="invSubTotal" readonly value="0.00"></div>
+                <div class="posv3-sum" data-tone="disc"><span>خصم إضافي</span><input type="text" class="ws-input" id="invDiscTotalView" readonly value="0.00" tabindex="-1"></div>
+                <div class="posv3-sum" data-tone="net"><span>الصافي المطلوب</span><input type="text" class="ws-input" id="invNetTotal" readonly value="0.00"></div>
+                <div class="posv3-sum" data-tone="paid"><span>المدفوع</span>
+                  <span class="pv3-paid">
+                    <input type="number" class="ws-input" id="invPaidAmount" value="0" min="0" step="any" oninput="calcInvoiceRemaining()">
+                  </span>
                 </div>
+                <div class="posv3-sum" data-tone="due"><span>المتبقي (آجل)</span><input type="text" class="ws-input" id="invRemainAmount" readonly value="0.00"></div>
+                <span class="change-hint" id="cashChangeBox" aria-live="polite" hidden>الباقي: <b id="cashChangeValue">0.00</b></span>
+                <input type="text" id="invPaidWithKeypad" readonly value="" tabindex="-1" hidden aria-hidden="true">
               </div>
+            </section>
 
-              <div class="ws-card">
-                <h3><span aria-hidden="true">✅</span>إتمام العملية</h3>
-                <div class="ws-card-body tight">
-                  <div class="posx-actions pos-actions-strip">
-                    <button type="button" class="ws-btn is-primary pos-action save" onclick="saveInvoice(false)"><span aria-hidden="true">💾</span>حفظ<span class="kbd">F4</span></button>
-                    <button type="button" class="ws-btn is-blue pos-action save-print" onclick="saveInvoice(true)"><span aria-hidden="true">🖨️</span>حفظ وطباعة<span class="kbd">Ctrl+↵</span></button>
-                    <button type="button" class="ws-btn is-teal pos-action preview" onclick="previewInvoiceA5()"><span aria-hidden="true">🔍</span>معاينة قبل الحفظ</button>
-                    <button type="button" class="ws-btn pos-action thermal" onclick="saveInvoice('thermal')"><span aria-hidden="true">🧾</span>طباعة حرارية</button>
-                    <button type="button" class="ws-btn pos-action hold" onclick="holdCurrentInvoice()"><span aria-hidden="true">⏸️</span>تعليق الفاتورة<span class="kbd">F6</span></button>
-                    <button type="button" class="ws-btn pos-action restore" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled><span aria-hidden="true">↩️</span>استعادة معلقة (0)</button>
-                    <button type="button" class="ws-btn pos-action convert is-wide" id="btnConvertQuote" style="display:none" onclick="convertQuoteToSale()"><span aria-hidden="true">🔄</span>تحويل العرض لفاتورة</button>
-                    <button type="button" class="ws-btn is-danger-soft pos-action clear is-wide" onclick="clearInvCart()"><span aria-hidden="true">🗑️</span>تفريغ الفاتورة<span class="kbd">F7</span></button>
-                  </div>
-                </div>
+            <!-- ============ 5. إتمام العملية: صف أزرار واحد ============ -->
+            <section class="ws-card posv3-finish">
+              <h3><span aria-hidden="true">✅</span>إتمام العملية</h3>
+              <div class="posv3-actions pos-actions-strip">
+                <button type="button" class="ws-btn is-primary pos-action save" onclick="saveInvoice(false)"><span aria-hidden="true">💾</span>حفظ<span class="kbd">F4</span></button>
+                <button type="button" class="ws-btn is-blue pos-action save-print" onclick="saveInvoice(true)"><span aria-hidden="true">🖨️</span>حفظ وطباعة<span class="kbd">Ctrl+↵</span></button>
+                <button type="button" class="ws-btn is-teal pos-action preview" onclick="previewInvoiceA5()"><span aria-hidden="true">🔍</span>معاينة قبل الحفظ</button>
+                <button type="button" class="ws-btn pos-action thermal" onclick="saveInvoice('thermal')"><span aria-hidden="true">🧾</span>طباعة حرارية</button>
+                <button type="button" class="ws-btn pos-action hold" onclick="holdCurrentInvoice()"><span aria-hidden="true">⏸️</span>تعليق<span class="kbd">F6</span></button>
+                <button type="button" class="ws-btn pos-action restore" id="restoreHeldButton" onclick="restoreHeldInvoice()" disabled><span aria-hidden="true">↩️</span>المعلقة (0)</button>
+                <button type="button" class="ws-btn pos-action convert" id="btnConvertQuote" style="display:none" onclick="convertQuoteToSale()"><span aria-hidden="true">🔄</span>تحويل لفاتورة</button>
+                <button type="button" class="ws-btn is-danger-soft pos-action clear" onclick="clearInvCart()"><span aria-hidden="true">🗑️</span>تفريغ<span class="kbd">F7</span></button>
               </div>
-            </div>
+            </section>
           </div>
-
-          <!-- ================= LEFT UTILITY RAIL ================= -->
-          <aside class="posx-rail" aria-label="أدوات سريعة">
-            <button type="button" class="posx-add" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')">
-              <span class="pa-plus" aria-hidden="true">＋</span>
-              <span>إضافة صنف جديد<small>يفتح شاشة الأصناف</small></span>
-            </button>
-
-            <div class="ws-card">
-              <h3><span aria-hidden="true">🧮</span>آلة حاسبة</h3>
-              <div class="ws-card-body tight">
-                <div class="calc">
-                  <div class="calc-screen" id="calcScreen" aria-live="polite">0</div>
-                  <div class="calc-keys" id="calcKeys">
-                    <button type="button" class="is-clear" data-calc="C" onclick="calcInput(this.dataset.calc)" aria-label="مسح" onclick="calcInput(this.dataset.calc)">C</button>
-                    <button type="button" class="is-clear" data-calc="CE" aria-label="مسح الإدخال" onclick="calcInput(this.dataset.calc)">CE</button>
-                    <button type="button" class="is-op" data-calc="%" aria-label="نسبة" onclick="calcInput(this.dataset.calc)">%</button>
-                    <button type="button" class="is-op" data-calc="÷" aria-label="قسمة" onclick="calcInput(this.dataset.calc)">÷</button>
-                    <button type="button" data-calc="7" onclick="calcInput(this.dataset.calc)">7</button>
-                    <button type="button" data-calc="8" onclick="calcInput(this.dataset.calc)">8</button>
-                    <button type="button" data-calc="9" onclick="calcInput(this.dataset.calc)">9</button>
-                    <button type="button" class="is-op" data-calc="×" aria-label="ضرب" onclick="calcInput(this.dataset.calc)">×</button>
-                    <button type="button" data-calc="4" onclick="calcInput(this.dataset.calc)">4</button>
-                    <button type="button" data-calc="5" onclick="calcInput(this.dataset.calc)">5</button>
-                    <button type="button" data-calc="6" onclick="calcInput(this.dataset.calc)">6</button>
-                    <button type="button" class="is-op" data-calc="−" aria-label="طرح" onclick="calcInput(this.dataset.calc)">−</button>
-                    <button type="button" data-calc="1" onclick="calcInput(this.dataset.calc)">1</button>
-                    <button type="button" data-calc="2" onclick="calcInput(this.dataset.calc)">2</button>
-                    <button type="button" data-calc="3" onclick="calcInput(this.dataset.calc)">3</button>
-                    <button type="button" class="is-op" data-calc="+" aria-label="جمع" onclick="calcInput(this.dataset.calc)">+</button>
-                    <button type="button" data-calc="0" onclick="calcInput(this.dataset.calc)">0</button>
-                    <button type="button" data-calc="." onclick="calcInput(this.dataset.calc)">.</button>
-                    <button type="button" class="is-op" data-calc="←" aria-label="حذف رقم" onclick="calcInput(this.dataset.calc)">←</button>
-                    <button type="button" class="is-eq" data-calc="=" aria-label="يساوي" onclick="calcInput(this.dataset.calc)">=</button>
-                  </div>
-                  <button type="button" class="ws-btn is-sm is-block" onclick="sendCalcToPaid()" title="وضع الناتج في خانة المدفوع">⤴ المبلغ إلى المدفوع</button>
-                </div>
-                <span class="ws-hint">يدعم الجمع والطرح والضرب والقسمة والنسبة.</span>
-              </div>
-            </div>
-
-            <div class="ws-card">
-              <h3><span aria-hidden="true">📝</span>ملاحظات</h3>
-              <div class="ws-card-body tight">
-                <textarea class="ws-input ws-textarea posx-note" id="posNotes" placeholder="ملاحظات سريعة…" aria-label="ملاحظات"></textarea>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <!-- ===== FUNCTION KEYS BAR (bottom) ===== -->
-        <div class="fn-strip pos-fnbar" aria-label="مفاتيح الوظائف">
-          <button type="button" class="fn-btn" onclick="openSalesInvoice()"><b>F2</b>بيع</button>
-          <button type="button" class="fn-btn" onclick="openSalesInvoice()"><b>F3</b>فاتورة جديدة</button>
-          <button type="button" class="fn-btn" onclick="saveInvoice(false)"><b>F4</b>حفظ</button>
-          <button type="button" class="fn-btn" onclick="restoreHeldInvoice()"><b>F5</b>المعلقة</button>
-          <button type="button" class="fn-btn" onclick="holdCurrentInvoice()"><b>F6</b>تعليق</button>
-          <button type="button" class="fn-btn" onclick="clearInvCart()"><b>F7</b>تفريغ</button>
-          <button type="button" class="fn-btn" onclick="focusCartField('qty')"><b>F8</b>الكمية</button>
-          <button type="button" class="fn-btn" onclick="focusCartField('price')"><b>F9</b>السعر</button>
-          <button type="button" class="fn-btn" onclick="saveInvoice(true)"><b>F10</b>طباعة</button>
-          <button type="button" class="fn-btn" onclick="openInvLog('sale')"><b>F11</b>فواتير سابقة</button>
         </div>
       </div>
     </div>
@@ -5631,6 +5759,77 @@
   <div class="st-item" id="statusClock">—</div>
   <div class="st-item" id="installHint" hidden><button type="button" class="status-install" onclick="installApp()">⬇️ تثبيت على الجهاز</button></div>
 </footer>
+
+<!-- ================= FLOATING CALCULATOR ================= -->
+<div class="posv3-calc-float" id="calcFloat" role="dialog" aria-label="الآلة الحاسبة" aria-hidden="true">
+  <div class="pcf-head" id="calcFloatHead">
+    <span aria-hidden="true">🧮</span><b>الآلة الحاسبة</b>
+    <button type="button" class="pcf-close" onclick="toggleCalculator(false)" aria-label="إغلاق الحاسبة">✕</button>
+  </div>
+  <div class="pcf-body">
+    <div class="calc-screen" id="calcScreen" aria-live="polite">0</div>
+    <div class="calc-keys" id="calcKeys">
+      <button type="button" class="is-clear" data-calc="C" onclick="calcInput(this.dataset.calc)" aria-label="مسح">C</button>
+      <button type="button" class="is-clear" data-calc="CE" onclick="calcInput(this.dataset.calc)" aria-label="مسح الإدخال">CE</button>
+      <button type="button" class="is-op" data-calc="%" onclick="calcInput(this.dataset.calc)" aria-label="نسبة">%</button>
+      <button type="button" class="is-op" data-calc="÷" onclick="calcInput(this.dataset.calc)" aria-label="قسمة">÷</button>
+      <button type="button" data-calc="7" onclick="calcInput(this.dataset.calc)">7</button>
+      <button type="button" data-calc="8" onclick="calcInput(this.dataset.calc)">8</button>
+      <button type="button" data-calc="9" onclick="calcInput(this.dataset.calc)">9</button>
+      <button type="button" class="is-op" data-calc="×" onclick="calcInput(this.dataset.calc)" aria-label="ضرب">×</button>
+      <button type="button" data-calc="4" onclick="calcInput(this.dataset.calc)">4</button>
+      <button type="button" data-calc="5" onclick="calcInput(this.dataset.calc)">5</button>
+      <button type="button" data-calc="6" onclick="calcInput(this.dataset.calc)">6</button>
+      <button type="button" class="is-op" data-calc="−" onclick="calcInput(this.dataset.calc)" aria-label="طرح">−</button>
+      <button type="button" data-calc="1" onclick="calcInput(this.dataset.calc)">1</button>
+      <button type="button" data-calc="2" onclick="calcInput(this.dataset.calc)">2</button>
+      <button type="button" data-calc="3" onclick="calcInput(this.dataset.calc)">3</button>
+      <button type="button" class="is-op" data-calc="+" onclick="calcInput(this.dataset.calc)" aria-label="جمع">+</button>
+      <button type="button" data-calc="0" onclick="calcInput(this.dataset.calc)">0</button>
+      <button type="button" data-calc="." onclick="calcInput(this.dataset.calc)">.</button>
+      <button type="button" class="is-op" data-calc="←" onclick="calcInput(this.dataset.calc)" aria-label="حذف رقم">←</button>
+      <button type="button" class="is-eq" data-calc="=" onclick="calcInput(this.dataset.calc)" aria-label="يساوي">=</button>
+    </div>
+    <button type="button" class="ws-btn is-sm is-block" onclick="sendCalcToPaid()" title="وضع الناتج في خانة المدفوع">⤴ المبلغ إلى المدفوع</button>
+  </div>
+</div>
+
+<!-- ================= FLOATING NEW CUSTOMER WINDOW ================= -->
+<div class="posv3-party-float" id="invQuickParty" role="dialog" aria-label="عميل جديد" aria-hidden="true">
+  <div class="ppf-head" id="invQuickPartyHead">
+    <span aria-hidden="true">👤</span><b id="invQuickPartyTitle">عميل جديد</b>
+    <button type="button" class="ppf-close" onclick="toggleQuickParty(false)" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="ppf-body">
+    <label class="pv3-field pv3-wide" for="invQuickPartyName"><span class="req">اسم العميل</span>
+      <input type="text" class="ws-input" id="invQuickPartyName" placeholder="مثال: مدرسة النور" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+    </label>
+    <div class="ppf-grid">
+      <label class="pv3-field" for="invQuickPartyPhone"><span>الهاتف</span>
+        <input type="text" class="ws-input" id="invQuickPartyPhone" placeholder="01xxxxxxxxx" inputmode="tel" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickParty();}">
+      </label>
+      <label class="pv3-field" for="invQuickPartyPhone2"><span>هاتف آخر</span>
+        <input type="text" class="ws-input" id="invQuickPartyPhone2" placeholder="اختياري" inputmode="tel" autocomplete="off">
+      </label>
+      <label class="pv3-field" for="invQuickPartyCity"><span>المدينة</span>
+        <input type="text" class="ws-input" id="invQuickPartyCity" placeholder="المدينة" autocomplete="off">
+      </label>
+      <label class="pv3-field" for="invQuickPartyEmail"><span>البريد</span>
+        <input type="email" class="ws-input" id="invQuickPartyEmail" placeholder="name@mail.com" autocomplete="off">
+      </label>
+      <label class="pv3-field" for="invQuickPartyBalance"><span>رصيد افتتاحي</span>
+        <input type="number" class="ws-input" id="invQuickPartyBalance" placeholder="0" value="0" step="any">
+      </label>
+    </div>
+    <label class="pv3-field" for="invQuickPartyNotes"><span>ملاحظات</span>
+      <input type="text" class="ws-input" id="invQuickPartyNotes" placeholder="اختياري" autocomplete="off">
+    </label>
+    <div class="ppf-actions">
+      <button type="button" class="ws-btn is-primary" onclick="saveQuickParty()">✔ حفظ واختيار</button>
+      <button type="button" class="ws-btn" onclick="toggleQuickParty(false)">إلغاء</button>
+    </div>
+  </div>
+</div>
 
 <div id="appNotice" role="alert" hidden></div>
 <div id="printAreaA5" dir="rtl"></div>
