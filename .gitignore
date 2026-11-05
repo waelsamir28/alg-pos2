@@ -6,3 +6,8 @@ coverage/
 test-results/
 playwright-report/
 *.log
+dist-electron/
+release/
+build/out/
+# local build/test archives
+*.zip
