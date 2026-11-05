@@ -356,6 +356,7 @@ function updateClock() {
   if ($('liveTime')) $('liveTime').textContent = time;
   if ($('statusDate')) $('statusDate').textContent = date;
   if ($('statusTime')) $('statusTime').textContent = time;
+  if ($('statusStore')) $('statusStore').textContent = storeSetting('defaultWarehouse', 'الرئيسي');
   if ($('titleBarClock')) $('titleBarClock').textContent = `${date} ${now.toTimeString().slice(0, 5)}`;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
@@ -532,7 +533,7 @@ function initializeApp() {
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
-  $('sideNav').addEventListener('click', event => {
+  $('sideNav')?.addEventListener('click', event => {
     const link = event.target.closest('.nav-link'); if (!link) return;
     document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('selected', item === link));
     if (window.innerWidth <= 760) toggleSidebar(false);
@@ -562,6 +563,7 @@ function initializeApp() {
   applyInvoiceTones(); applyDocSettingsUI();
   document.body.classList.add('shell-v2');
   paintNavbar(); renderDashboard(); renderTabs(); paintTitleChrome(); shellSecondaryNav();
+  paintCalcScreen(); syncInvoiceChrome(); renderHr();
   ['wallet', 'cart', 'chart', 'alert'].forEach((name, index) => {
     const slot = document.querySelectorAll('#dashKpis .dk-ico')[index];
     if (slot) slot.innerHTML = lookIcon(name);
@@ -665,6 +667,12 @@ const SHELL_MENUS = [
     { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' },
     { label: 'كشف حساب مورد', page: 'suppliers-statement', icon: 'receipt' }
   ] },
+  { key: 'staff', label: 'الموظفون', icon: 'user', items: [
+    { label: 'إدارة الموظفين', page: 'employees', icon: 'user' },
+    { label: 'الحضور والانصراف', page: 'employees-attendance', icon: 'bell' },
+    { label: 'المرتبات والخصومات', page: 'employees-payroll', icon: 'money' },
+    { label: 'الإجازات والجزاءات', page: 'employees-vacations', icon: 'doc' }
+  ] },
   { key: 'money', label: 'الخزينة', icon: 'wallet', items: [
     { label: 'الخزينة', page: 'treasury-all', icon: 'wallet', kbd: 'F1' },
     { label: 'وارد الخزينة', page: 'treasury-in', icon: 'plus' },
@@ -684,36 +692,40 @@ const SHELL_MENUS = [
   ] }
 ];
 const PAGE_DEFS = {
-  home: { title: 'لوحة المتابعة', home: true },
-  sale: { title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
-  purchase: { title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
-  sale_return: { title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
-  purchase_return: { title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
-  quote: { title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
-  'log-sale': { title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
-  'log-purchase': { title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
-  'log-sale-period': { title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
-  items: { title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
-  categories: { title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
-  labels: { title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
-  'stock-zero': { title: 'كشف النواقص', run: () => openStockFilter('zero') },
-  'stock-low': { title: 'حد الطلب', run: () => openStockFilter('low') },
-  'stock-all': { title: 'جرد المخزن', run: () => openStockFilter('all') },
-  customers: { title: 'إدارة العملاء', run: () => openPartySec('customer') },
-  suppliers: { title: 'إدارة الموردين', run: () => openPartySec('supplier') },
-  'customers-balances': { title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
-  'suppliers-balances': { title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
-  'customers-statement': { title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
-  'suppliers-statement': { title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
-  'treasury-all': { title: 'الخزينة', run: () => openTreasury('all') },
-  'treasury-in': { title: 'وارد الخزينة', run: () => openTreasury('in') },
-  'treasury-out': { title: 'منصرف الخزينة', run: () => openTreasury('out') },
-  'treasury-expense': { title: 'المصروفات', run: () => openTreasury('expense') },
-  'profits-general': { title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
-  'profits-item': { title: 'أرباح صنف', run: () => openProfitSec('item') },
-  'profits-period': { title: 'أرباح فترة', run: () => openProfitSec('period') },
-  settings: { title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
-  activity: { title: 'سجل النشاط', run: () => openActivityPage() },
+  home: { title: 'لوحة المتابعة', home: true, section: '' },
+  sale: { section: 'sec-invoice', title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
+  purchase: { section: 'sec-invoice', title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
+  sale_return: { section: 'sec-invoice', title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
+  purchase_return: { section: 'sec-invoice', title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
+  quote: { section: 'sec-invoice', title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
+  'log-sale': { section: 'sec-invlog', title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
+  'log-purchase': { section: 'sec-invlog', title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
+  'log-sale-period': { section: 'sec-invlog', title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
+  items: { section: 'sec-items', title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
+  categories: { section: 'sec-categories', title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
+  labels: { section: 'sec-labels', title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
+  'stock-zero': { section: 'sec-stock', title: 'كشف النواقص', run: () => openStockFilter('zero') },
+  'stock-low': { section: 'sec-stock', title: 'حد الطلب', run: () => openStockFilter('low') },
+  'stock-all': { section: 'sec-stock', title: 'جرد المخزن', run: () => openStockFilter('all') },
+  customers: { section: 'sec-parties', title: 'إدارة العملاء', run: () => openPartySec('customer') },
+  suppliers: { section: 'sec-parties', title: 'إدارة الموردين', run: () => openPartySec('supplier') },
+  employees: { section: 'sec-hr', title: 'إدارة الموظفين', run: () => openHrPage('employees') },
+  'employees-attendance': { section: 'sec-hr', title: 'الحضور والانصراف', run: () => openHrPage('attendance') },
+  'employees-payroll': { section: 'sec-hr', title: 'المرتبات', run: () => openHrPage('payroll') },
+  'employees-vacations': { section: 'sec-hr', title: 'الإجازات', run: () => openHrPage('vacations') },
+  'customers-balances': { section: 'sec-parties', title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
+  'suppliers-balances': { section: 'sec-parties', title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
+  'customers-statement': { section: 'sec-parties', title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
+  'suppliers-statement': { section: 'sec-parties', title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
+  'treasury-all': { section: 'sec-treasury', title: 'الخزينة', run: () => openTreasury('all') },
+  'treasury-in': { section: 'sec-treasury', title: 'وارد الخزينة', run: () => openTreasury('in') },
+  'treasury-out': { section: 'sec-treasury', title: 'منصرف الخزينة', run: () => openTreasury('out') },
+  'treasury-expense': { section: 'sec-treasury', title: 'المصروفات', run: () => openTreasury('expense') },
+  'profits-general': { section: 'sec-profits', title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
+  'profits-item': { section: 'sec-profits', title: 'أرباح صنف', run: () => openProfitSec('item') },
+  'profits-period': { section: 'sec-profits', title: 'أرباح فترة', run: () => openProfitSec('period') },
+  settings: { section: 'sec-settings', title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
+  activity: { section: 'sec-settings', title: 'سجل النشاط', run: () => openActivityPage() },
   lock: { title: 'قفل الشاشة', action: () => lockApp() },
   'close-all': { title: 'إغلاق الكل', action: () => closeAllTabs() }
 };
@@ -748,6 +760,12 @@ const DASH_GROUPS = [
     { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt' },
     { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' }
   ] },
+  { key: 'staff', title: 'الموظفون', tint: 'staff', icon: 'user', items: [
+    { label: 'إدارة الموظفين', page: 'employees', icon: 'user' },
+    { label: 'الحضور والانصراف', page: 'employees-attendance', icon: 'bell' },
+    { label: 'المرتبات', page: 'employees-payroll', icon: 'money' },
+    { label: 'الإجازات', page: 'employees-vacations', icon: 'doc' }
+  ] },
   { key: 'settings', title: 'البرنامج', tint: 'settings', icon: 'settings', items: [
     { label: 'الإعدادات', page: 'settings', icon: 'settings' },
     { label: 'المستخدمون', page: 'lock', icon: 'lock' },
@@ -767,12 +785,13 @@ function openPage(key) {
   if (!def) return;
   if (def.action) { def.action(); return; }
   if (def.home) { activatePage('home'); return; }
-  // permission-guarded pages return early: only register a tab when the screen actually opened
   def.run();
   // a permission guard aborts the screen, so no tab is registered for it
   if (!$('windowLayer').classList.contains('open')) return;
   registerTab(key, def.title);
-  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+  activeTab = key;
+  presentActivePane();
+  renderTabs();
 }
 function registerTab(key, title) {
   const existing = openTabs.find(tab => tab.key === key);
@@ -780,21 +799,48 @@ function registerTab(key, title) {
   else { openTabs.push({ key, title }); activeTab = key; }
   renderTabs();
 }
+/* the home tab only hides the open screens; their tabs (and their state) stay alive */
+function showShellHome() {
+  document.body.classList.remove('screen-open', 'section-open');
+  document.body.style.overflow = '';
+  if ($('sectionPool')) [...$('sectionPool').querySelectorAll('.float-window')].forEach(el => { el.hidden = true; });
+  if ($('windowLayer')) { $('windowLayer').classList.remove('open'); $('windowLayer').hidden = true; }
+  ensureHomeVisible();
+  renderTabs();
+}
+function ensureHomeVisible() {
+  ['dashWrap', 'homeDashboard', 'alertsPanel', 'classicPanel'].forEach(id => { if ($(id)) $(id).hidden = false; });
+}
+/* exactly one visible pane: the screen that belongs to the active tab */
+function presentActivePane() {
+  const layer = $('windowLayer');
+  if (!layer) return;
+  const win = activeFloatId ? floatWindows.get(activeFloatId) : null;
+  if (!win) { showShellHome(); return; }
+  [...floatWindows.values()].forEach(entry => {
+    const current = entry.el === win.el;
+    entry.el.hidden = !current;
+    entry.el.classList.toggle('active', current);
+  });
+  layer.hidden = false;
+  layer.classList.add('open');
+  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+  if ($('windowDock')) $('windowDock').hidden = true;
+  ['dashWrap', 'homeDashboard', 'alertsPanel', 'classicPanel'].forEach(id => { if ($(id)) $(id).hidden = true; });
+  document.body.classList.add('screen-open');
+  document.body.classList.remove('section-open');
+  document.body.style.overflow = '';
+}
 function activatePage(key) {
   closeMenus();
-  if (key === 'home') {
-    activeTab = 'home';
-    closeWorkspace();
-    document.body.classList.remove('screen-open');
-    renderTabs();
-    return;
-  }
+  if (key === 'home') { activeTab = 'home'; showShellHome(); return; }
   const def = pageDef(key);
-  if (!def) return;
+  if (!def || def.action) return;
   if (!openTabs.some(tab => tab.key === key)) { openPage(key); return; }
-  activeTab = key;
+  // re-run the screen so shared pages (invoice modes, clients/suppliers) show their own data
   def.run();
-  document.body.classList.add('screen-open');
+  activeTab = key;
+  presentActivePane();
   renderTabs();
 }
 function closeTab(key) {
@@ -802,26 +848,46 @@ function closeTab(key) {
   const index = openTabs.findIndex(tab => tab.key === key);
   if (index < 0) return;
   const wasActive = activeTab === key;
+  const def = pageDef(key);
   openTabs.splice(index, 1);
+  // drop only the screen of this tab; a shared screen stays alive for its other tabs
+  if (def && def.section && !openTabs.some(tab => pageDef(tab.key)?.section === def.section)) removeFloatWindow(def.section);
   if (wasActive) {
-    const next = openTabs[Math.max(0, index - 1)];
-    if (next) activatePage(next.key); else activatePage('home');
-  } else renderTabs();
+    const next = openTabs.filter(tab => tab.key !== 'home').at(-1);
+    if (next) activatePage(next.key); else { activeTab = 'home'; showShellHome(); }
+  } else { presentActivePane(); renderTabs(); }
+}
+function removeFloatWindow(sectionId) {
+  const win = floatWindows.get(sectionId);
+  if (!win) return;
+  win.el.remove();
+  floatWindows.delete(sectionId);
+  if (activeFloatId === sectionId) activeFloatId = [...floatWindows.keys()].at(-1) || null;
 }
 function closeAllTabs() {
   openTabs = openTabs.filter(tab => tab.key === 'home');
-  activatePage('home');
+  for (const [id, entry] of [...floatWindows]) { entry.el.remove(); floatWindows.delete(id); }
+  activeFloatId = null;
+  activeTab = 'home';
+  showShellHome();
   notify('تم إغلاق كل الشاشات.');
 }
 function renderTabs() {
   const bar = $('tabBar');
   if (!bar) return;
   if (!openTabs.some(tab => tab.key === 'home')) openTabs.unshift({ key: 'home', title: 'الرئيسية', home: true });
-  bar.innerHTML = openTabs.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
+  // the pinned home tab always sits at the far right, new tabs open next to it
+  const ordered = [openTabs.find(tab => tab.key === 'home'), ...openTabs.filter(tab => tab.key !== 'home')];
+  const tabs = ordered.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
       data-tab="${esc(tab.key)}" aria-selected="${String(tab.key === activeTab)}" onclick="activatePage('${esc(tab.key)}')">
       <span>${esc(tab.title)}</span>
       <span class="tab-x" role="button" tabindex="-1" aria-label="إغلاق ${esc(tab.title)}" onclick="event.stopPropagation();closeTab('${esc(tab.key)}')">✕</span>
-    </button>`).join('') + '<button type="button" class="tab-add" onclick="openHomeMenu()" title="شاشة أخرى" aria-label="فتح شاشة أخرى">+</button>';
+    </button>`).join('');
+  const extra = ordered.length > 1
+    ? `<span class="tab-extra"><span>${ordered.length - 1} شاشة مفتوحة</span><button type="button" onclick="closeAllTabs()" title="إغلاق كل الشاشات" aria-label="إغلاق كل الشاشات">✕ إغلاق الكل</button></span>`
+    : '<span class="tab-extra"><span>اضغط أي زر في القائمة ليفتح في تبويب</span></span>';
+  bar.innerHTML = tabs + extra;
+  if ($('tabCount')) $('tabCount').textContent = String(ordered.length - 1);
 }
 function paintNavbar() {
   const bar = $('appNavbar');
@@ -912,9 +978,589 @@ function paintTitleChrome() {
   paintNavBell();
 }
 function shellSecondaryNav() {
-  // keep exactly one close control per screen: the tab bar replaces the in-page ✕
+  // the tab strip is the only page switcher now: no in-page ✕ and no window title bar
   document.querySelectorAll('.page-close-btn').forEach(button => { button.hidden = true; button.style.display = 'none'; });
-  document.querySelectorAll('.win-header, #winHeader').forEach(header => { header.hidden = true; });
+  document.querySelectorAll('.win-header, #winHeader, .float-titlebar').forEach(header => { header.hidden = true; });
+}
+
+/* ================================================================== */
+/* WORKSPACE PAGES: links, POS utilities, clients, settings, HR        */
+/* ================================================================== */
+function storeSetting(key, fallback = '') {
+  const value = db?.settings?.[key];
+  return typeof value === 'string' && value.trim() ? value : fallback;
+}
+function optionList(values) {
+  return values.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+}
+/* keep one tab per screen: a more specific link renames the invoice tab */
+function linkPageTab(key, title) {
+  if (!openTabs.some(tab => tab.key === key)) return;
+  registerTab(key, title);
+}
+function openSalesInvoice() { openPage('sale'); linkPageTab('sale', 'فاتورة مبيعات'); }
+function openPurchaseInvoice() { openPage('purchase'); linkPageTab('purchase', 'فاتورة مشتريات'); }
+function openSaleReturn() { openPage('sale_return'); linkPageTab('sale_return', 'مرتجع مبيعات'); }
+function openPurchaseReturn() { openPage('purchase_return'); linkPageTab('purchase_return', 'مرتجع مشتريات'); }
+function openQuotePage() { openPage('quote'); linkPageTab('quote', 'عرض أسعار'); }
+function openCustomersPage() { openPage('customers'); linkPageTab('customers', 'إدارة العملاء'); }
+function openSuppliersPage() { openPage('suppliers'); linkPageTab('suppliers', 'إدارة الموردين'); }
+function openSettingsPage(tab = 'look') { switchSettingsTab(tab); openPage('settings'); }
+
+/* ---------------- invoice workspace utilities ---------------- */
+const INVOICE_PAGE_TITLES = { sale: 'فاتورة مبيعات', sale_return: 'مرتجع مبيعات', purchase: 'فاتورة مشتريات', purchase_return: 'مرتجع مشتريات', quote: 'عرض أسعار' };
+function syncInvoiceChrome() {
+  const currentMode = $('invMode')?.value || 'sale';
+  if (INVOICE_PAGE_TITLES[currentMode] && openTabs.some(tab => tab.key === currentMode)) registerTab(currentMode, INVOICE_PAGE_TITLES[currentMode]);
+  if ($('invDateView')) $('invDateView').value = localDate().replaceAll('-', '/');
+  if ($('invNumberView')) {
+    const draftId = Number($('invCartTbody')?.dataset?.quoteId) || 0;
+    const next = draftId || nextId(db.invoices);
+    $('invNumberView').value = `#${next}`;
+    $('invNumberView').title = draftId ? 'رقم عرض السعر المفتوح للتحويل' : 'رقم الفاتورة التالي';
+  }
+  if ($('invEmployeeView')) $('invEmployeeView').value = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
+  if ($('statusStore')) $('statusStore').textContent = storeSetting('defaultWarehouse', 'الرئيسي');
+  if ($('posPayHint')) {
+    const payType = $('invPayType')?.value || 'cash';
+    $('posPayHint').textContent = payType === 'cash' ? 'البيع النقدي يملأ المدفوع تلقائياً ويحسب الباقي.'
+      : payType === 'credit' ? 'البيع الآجل يضيف المبلغ على رصيد حساب العميل.' : 'أدخل المبلغ المدفوع ويُحسب المتبقي على الحساب.';
+  }
+  paintCalcScreen();
+}
+function paintInvoiceSelects() {
+  const warehouses = [storeSetting('defaultWarehouse', 'الرئيسي'), ...db.items.map(item => item.warehouse).filter(Boolean)];
+  const safes = [storeSetting('defaultSafe', 'الخزينة الرئيسية')];
+  if ($('invWarehouseView')) {
+    const previous = $('invWarehouseView').value;
+    $('invWarehouseView').innerHTML = optionList([...new Set(warehouses)]);
+    if (previous) $('invWarehouseView').value = previous;
+  }
+  if ($('invSafeView')) {
+    const previous = $('invSafeView').value;
+    $('invSafeView').innerHTML = optionList([...new Set(safes)]);
+    if (previous) $('invSafeView').value = previous;
+  }
+}
+function renderPosItemSearch(term = $('posItemSearch')?.value || '') {
+  const host = $('posItemSearchResults');
+  if (!host) return;
+  const query = String(term).trim().toLocaleLowerCase();
+  if (!query) {
+    host.innerHTML = '<p class="ws-hint" style="margin:2px 0">اكتب حرفين على الأقل للبحث بالاسم أو الكود.</p>';
+    return;
+  }
+  const matches = db.items.filter(item => `${item.name} ${item.code}`.toLocaleLowerCase().includes(query)).slice(0, 12);
+  host.innerHTML = matches.length ? matches.map(item => `<button type="button" class="posx-hit" onclick="addWatchItem(${item.id})">
+      <b>${esc(item.name)}</b><small>${esc(item.code)}</small><span class="ph-price">${money(item.sell)}</span>
+    </button>`).join('') : '<p class="ws-hint" style="margin:2px 0">لا توجد نتائج مطابقة.</p>';
+}
+function addWatchItem(itemId) {
+  const item = db.items.find(entry => entry.id === itemId);
+  if (!item) return;
+  if ($('invBarcodeInp')) $('invBarcodeInp').value = item.code;
+  addInvItemFromInput();
+}
+
+/* ---------------- sidebar calculator ---------------- */
+let calcState = { entry: '0', stored: null, operator: null, replace: true, label: '0' };
+function calcValue(value) { return Number(String(value).replace(/[^\d.-]/g, '')) || 0; }
+function calcFormat(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 'خطأ';
+  return String(Math.round(number * 1e8) / 1e8);
+}
+function calcApply(left, operator, right) {
+  if (operator === '+') return left + right;
+  if (operator === '−') return left - right;
+  if (operator === '×') return left * right;
+  if (operator === '÷') return right ? left / right : NaN;
+  return right;
+}
+function calcInput(key) {
+  const state = calcState;
+  if (/^[0-9]$/.test(key)) {
+    state.entry = state.replace || state.entry === '0' ? key : `${state.entry}${key}`;
+    state.replace = false;
+  } else if (key === '.') {
+    if (state.replace) { state.entry = '0.'; state.replace = false; }
+    else if (!state.entry.includes('.')) state.entry = `${state.entry}.`;
+  } else if (key === 'C') {
+    calcState = { entry: '0', stored: null, operator: null, replace: true, label: '0' };
+    return paintCalcScreen();
+  } else if (key === 'CE') {
+    state.entry = '0'; state.replace = true;
+  } else if (key === '←') {
+    state.entry = state.entry.length > 1 ? state.entry.slice(0, -1) : '0';
+    if (state.entry === '0') state.replace = true;
+  } else if (key === '%') {
+    state.entry = calcFormat(calcValue(state.entry) / 100);
+    state.replace = true;
+  } else if (['+', '−', '×', '÷'].includes(key)) {
+    const current = calcValue(state.entry);
+    state.stored = state.stored === null || state.operator === null ? current : calcApply(state.stored, state.operator, current);
+    state.operator = key; state.replace = true;
+    state.label = `${calcFormat(state.stored)} ${key}`;
+    state.entry = calcFormat(state.stored);
+    return paintCalcScreen();
+  } else if (key === '=') {
+    if (state.operator !== null && state.stored !== null) {
+      const result = calcApply(state.stored, state.operator, calcValue(state.entry));
+      state.label = `${calcFormat(state.stored)} ${state.operator} ${calcFormat(calcValue(state.entry))} =`;
+      state.entry = calcFormat(result);
+      state.stored = null; state.operator = null; state.replace = true;
+      return paintCalcScreen();
+    }
+    return;
+  }
+  state.label = '';
+  paintCalcScreen();
+}
+function paintCalcScreen() {
+  const screen = $('calcScreen');
+  if (!screen) return;
+  const showLabel = calcState.label && calcState.label !== '0' && calcState.label !== 'خطأ';
+  screen.textContent = showLabel ? `${calcState.label} ${calcState.entry}`.trim() : (calcState.entry === 'NaN' ? 'خطأ' : calcState.entry);
+}
+function sendCalcToPaid() {
+  const value = calcValue(calcState.entry);
+  if (!Number.isFinite(value) || value < 0) return;
+  if ($('invPaidAmount')) { $('invPaidAmount').value = calcFormat(value); calcInvoiceRemaining(); }
+}
+
+/* ---------------- clients page ---------------- */
+let partyFilter = '';
+function partyDisplayCode(party) {
+  if (party.code) return party.code;
+  if (party.type === 'customer') {
+    const index = db.parties.filter(entry => entry.type === 'customer').findIndex(entry => entry.id === party.id);
+    return `C-${String(1000 + Math.max(0, index) + 1)}`;
+  }
+  const index = db.parties.filter(entry => entry.type === 'supplier').findIndex(entry => entry.id === party.id);
+  return `S-${String(2000 + Math.max(0, index) + 1)}`;
+}
+function partyMatches(party, term) {
+  const query = String(term || '').trim().toLocaleLowerCase();
+  if (!query) return true;
+  return [party.name, party.code, partyDisplayCode(party), party.phone, party.phone2, party.email, party.city, party.country]
+    .filter(Boolean).some(value => String(value).toLocaleLowerCase().includes(query));
+}
+function filterParties(term) {
+  partyFilter = String(term ?? '');
+  if (typeof renderPartiesTable === 'function') renderPartiesTable();
+}
+function partyDebtTotals(type = $('partyType')?.value || 'customer') {
+  const list = db.parties.filter(party => party.type === type);
+  const debtors = list.filter(party => roundMoney(party.balance) > 0);
+  return {
+    count: list.length,
+    debtors: debtors.length,
+    totalDebt: roundMoney(debtors.reduce((sum, party) => sum + party.balance, 0)),
+    totalCredit: roundMoney(list.filter(party => party.balance < 0).reduce((sum, party) => sum + Math.abs(party.balance), 0))
+  };
+}
+function showTotalDebt() {
+  const type = $('partyType')?.value || 'customer';
+  const totals = partyDebtTotals(type);
+  const label = type === 'supplier' ? 'الموردين' : 'العملاء';
+  const body = `${label}: ${totals.count} حساب — منهم ${totals.debtors} عليهم مديونية.\n` +
+    `مجموع الديون: ${money(totals.totalDebt)}\n` +
+    `أرصدة دائنة (لهم): ${money(totals.totalCredit)}`;
+  notify(`مجموع ديون ${label}: ${money(totals.totalDebt)} (${totals.debtors} حساب)`);
+  alert(`📉 حساب مجموع الديون — ${label}\n\n${body}`);
+}
+function showSelectedDebt() {
+  const editId = Number($('partyEditId')?.value) || 0;
+  const party = db.parties.find(entry => entry.id === editId);
+  if (!party) { notify('اختر عميلاً من الجدول أولاً لحساب مديونيته.'); return; }
+  const invoices = db.invoices.filter(inv => inv.partyId === party.id && ['sale', 'purchase'].includes(inv.mode) && inv.remainAmount > 0);
+  const due = roundMoney(invoices.reduce((sum, inv) => sum + inv.remainAmount, 0));
+  alert(`📋 ${party.name}\n\nالرصيد الحالي: ${money(party.balance)}\nمتبقي فواتير آجلة: ${money(due)} (${invoices.length} فاتورة)\nآخر حركة: ${invoices.at(-1)?.date || '—'}`);
+}
+function showPartyBalances() {
+  const list = db.parties.filter(party => party.type === ($('partyType')?.value || 'customer')).slice()
+    .sort((a, b) => b.balance - a.balance);
+  if (!list.length) { notify('لا توجد حسابات مسجلة بعد.'); return; }
+  const rows = list.slice(0, 10).map(party => `${partyDisplayCode(party)} — ${party.name}: ${money(party.balance)}`).join('\n');
+  alert(`📊 الأرصدة مرتبة تنازلياً\n\n${rows}${list.length > 10 ? `\n… و${list.length - 10} حساب آخر` : ''}`);
+}
+function selectPartyRow(partyId) {
+  const party = db.parties.find(entry => entry.id === partyId);
+  if (!party) return;
+  $$('#partiesTbody tr').forEach(row => row.classList.toggle('is-selected', Number(row.dataset.partyId) === partyId));
+  if ($('partyContactHint')) $('partyContactHint').textContent = party.name;
+  const write = (id, value) => { if ($(id)) $(id).textContent = value || '—'; };
+  write('partyViewCountry', party.country);
+  write('partyViewCity', party.city);
+  write('partyViewPhone', party.phone);
+  write('partyViewPhone2', party.phone2);
+  write('partyViewEmail', party.email);
+  write('partyViewBalance', money(party.balance));
+  write('partyViewAddress', party.address || party.notes);
+  $$('#partiesTbody tr').forEach(row => row.dataset.selected = String(Number(row.dataset.partyId) === partyId));
+}
+
+/* ================================================================== */
+/* EMPLOYEES & HR (local records, per device)                          */
+/* ================================================================== */
+const HR_KEY = `${DB_KEY}_HR`;
+const HR_LEDGERS = { deduction: 'deductions', advance: 'advances', bonus: 'bonuses' };
+const HR_LEDGER_LABELS = { deduction: 'خصم', advance: 'سلفة', bonus: 'مكافأة' };
+const HR_STATES = { present: 'حاضر', late: 'متأخر', absent: 'غائب', leave: 'إجازة' };
+const HR_VACATIONS = { annual: 'سنوية', sick: 'مرضية', unpaid: 'بدون راتب', permission: 'إذن' };
+function hrRead() {
+  let raw = {};
+  try { raw = JSON.parse(localStorage.getItem(HR_KEY) || '{}') || {}; } catch { raw = {}; }
+  const list = key => Array.isArray(raw[key]) ? raw[key] : [];
+  return {
+    employees: list('employees'), departments: list('departments'), jobs: list('jobs'),
+    attendance: list('attendance'), vacations: list('vacations'), penalties: list('penalties'),
+    deductions: list('deductions'), advances: list('advances'), bonuses: list('bonuses')
+  };
+}
+function hrWrite(data) {
+  try { localStorage.setItem(HR_KEY, JSON.stringify(data)); return true; }
+  catch { notify('تعذر حفظ بيانات الموظفين على هذا الجهاز.'); return false; }
+}
+function hrMutate(change) {
+  const data = hrRead();
+  const result = change(data);
+  if (result === false) return false;
+  if (!hrWrite(data)) return false;
+  renderHr();
+  return result ?? true;
+}
+function hrNextId(list) { return list.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1; }
+function hrEmployeeName(id) {
+  const data = hrRead();
+  const employee = data.employees.find(entry => String(entry.id) === String(id));
+  return employee ? employee.name : '—';
+}
+function hrSalaryOf(employee) { return roundMoney(Number(employee?.salary) || 0); }
+function hrLedgerSum(data, listName, staffId) {
+  return roundMoney((data[listName] || []).filter(row => String(row.staffId) === String(staffId))
+    .reduce((sum, row) => sum + (Number(row.amount) || 0), 0));
+}
+function hrFillStaffSelect(id, placeholder = false) {
+  const select = $(id);
+  if (!select) return;
+  const data = hrRead();
+  const previous = select.value;
+  select.innerHTML = (placeholder ? '<option value="">اختر الموظف</option>' : '') +
+    data.employees.map(employee => `<option value="${esc(employee.id)}">${esc(employee.name)}</option>`).join('');
+  if (data.employees.some(employee => String(employee.id) === previous)) select.value = previous;
+}
+function showHrPanel(key = 'employees') {
+  const panel = key || 'employees';
+  $$('#hrTiles .hr-tile').forEach(tile => {
+    const active = tile.dataset.hr === panel;
+    tile.classList.toggle('is-active', active);
+    tile.setAttribute('aria-selected', String(active));
+  });
+  $$('#hrPanels .hr-panel').forEach(section => section.classList.toggle('active', section.dataset.hrPanel === panel));
+  if (panel === 'reports') renderHrReport();
+}
+function openHrTile(panel) { openHrPage(panel); }
+function openHrPage(panel = 'employees') {
+  if (!ensurePermission('admin')) return;
+  openSec('sec-hr', '👔 إدارة الموظفين');
+  setActiveNav('staff');
+  if ($('sec-hr')) $('sec-hr').dataset.hrPanel = panel;
+  showHrPanel(panel);
+  renderHr();
+}
+function renderHr() {
+  if (!$('hrEmployeesTbody')) return;
+  const data = hrRead();
+  const today = localDate();
+  const todayRows = data.attendance.filter(row => row.date === today);
+
+  $('hrEmployeesTbody').innerHTML = data.employees.map((employee, index) => {
+    const status = todayRows.find(row => String(row.staffId) === String(employee.id));
+    const tone = !status ? 'info' : status.state === 'present' ? 'ok' : status.state === 'late' ? 'warn' : 'bad';
+    const label = status ? HR_STATES[status.state] || status.state : 'لم يُسجل';
+    return `<tr><td>${index + 1}</td><td class="is-name">${esc(employee.name)}</td><td>${esc(employee.job || '—')}</td>
+      <td>${esc(employee.department || '—')}</td><td dir="ltr">${esc(employee.phone || '—')}</td>
+      <td class="is-num">${money(employee.salary)}</td><td><span class="ws-tag" data-tone="${tone}">${esc(label)}</span></td>
+      <td class="no-print"><span class="row-actions">
+        <button type="button" class="iconbtn is-edit" title="تعديل" onclick="editHrEmployee(${employee.id})">✎</button>
+        <button type="button" class="iconbtn is-del" title="حذف" onclick="deleteHrRecord('employees', ${employee.id})">✕</button>
+      </span></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="ws-empty">لا يوجد موظفون مسجلون — استخدم «إدارة الموظفين ⚙» في الأعلى لإضافة أول موظف.</td></tr>';
+  if ($('hrEmployeesHint')) $('hrEmployeesHint').textContent = `${data.employees.length} موظف`;
+  if ($('hrCountEmployees')) $('hrCountEmployees').textContent = String(data.employees.length);
+
+  // attendance
+  if ($('hrAttendanceDate')) $('hrAttendanceDate').textContent = today.replaceAll('-', '/');
+  $('hrAttendanceToday').innerHTML = todayRows.map(row => `<tr><td class="is-name">${esc(hrEmployeeName(row.staffId))}</td>
+      <td>${esc(row.inTime || '—')}</td><td>${esc(row.outTime || '—')}</td>
+      <td><span class="ws-tag" data-tone="${row.state === 'present' ? 'ok' : row.state === 'late' ? 'warn' : 'bad'}">${esc(HR_STATES[row.state] || row.state)}</span></td></tr>`
+  ).join('') || '<tr><td colspan="4" class="ws-empty">لم يُسجل حضور اليوم بعد.</td></tr>';
+  if ($('hrCountAttendance')) $('hrCountAttendance').textContent = String(todayRows.length);
+
+  // payroll
+  let payrollTotal = 0;
+  $('hrPayrollTbody').innerHTML = data.employees.map((employee, index) => {
+    const bonus = hrLedgerSum(data, 'bonuses', employee.id), deduction = hrLedgerSum(data, 'deductions', employee.id);
+    const advance = hrLedgerSum(data, 'advances', employee.id), penalty = roundMoney((data.penalties || [])
+      .filter(row => String(row.staffId) === String(employee.id)).reduce((sum, row) => sum + (Number(row.amount) || 0), 0));
+    const net = roundMoney(hrSalaryOf(employee) + bonus - deduction - advance - penalty);
+    payrollTotal += net;
+    return `<tr><td>${index + 1}</td><td class="is-name">${esc(employee.name)}</td><td class="is-num">${money(employee.salary)}</td>
+      <td class="is-num">${money(bonus)}</td><td class="is-num">${money(roundMoney(deduction + penalty))}</td>
+      <td class="is-num">${money(advance)}</td><td class="is-num"><b>${money(net)}</b></td>
+      <td><span class="ws-tag" data-tone="${net > 0 ? 'ok' : 'bad'}">${net > 0 ? 'مستحق' : 'مسدد'}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="ws-empty">لا توجد مرتبات — أضف موظفين أولاً.</td></tr>';
+  if ($('hrPayrollTotal')) $('hrPayrollTotal').textContent = `الإجمالي: ${money(payrollTotal)}`;
+  if ($('hrCountPayroll')) $('hrCountPayroll').textContent = String(data.employees.length);
+  if ($('hrKpiEmployees')) $('hrKpiEmployees').textContent = String(data.employees.length);
+  if ($('hrKpiPresent')) $('hrKpiPresent').textContent = String(todayRows.filter(row => ['present', 'late'].includes(row.state)).length);
+  if ($('hrKpiPayroll')) $('hrKpiPayroll').textContent = money(payrollTotal);
+  const deductionTotal = roundMoney((data.deductions || []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0));
+  if ($('hrKpiDeductions')) $('hrKpiDeductions').textContent = money(deductionTotal);
+  if ($('hrDeductionTotal')) $('hrDeductionTotal').textContent = `الإجمالي: ${money(deductionTotal)}`;
+  if ($('hrAdvanceTotal')) $('hrAdvanceTotal').textContent = `الإجمالي: ${money(roundMoney((data.advances || []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0)))}`;
+  if ($('hrBonusTotal')) $('hrBonusTotal').textContent = `الإجمالي: ${money(roundMoney((data.bonuses || []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0)))}`;
+
+  // departments & jobs
+  if ($('hrDepartmentsTbody')) {
+    $('hrDepartmentsTbody').innerHTML = data.departments.map(department => `<tr><td class="is-name">${esc(department.name)}</td>
+      <td>${esc(department.head || '—')}</td><td>${data.employees.filter(employee => employee.department === department.name).length}</td>
+      <td class="no-print"><button type="button" class="iconbtn is-del" onclick="deleteHrRecord('departments', ${department.id})">✕</button></td></tr>`
+    ).join('') || '<tr><td colspan="4" class="ws-empty">لا توجد أقسام مسجلة.</td></tr>';
+    if ($('hrDeptCount')) $('hrDeptCount').textContent = `${data.departments.length} قسم`;
+    if ($('hrCountDepartments')) $('hrCountDepartments').textContent = String(data.departments.length);
+  }
+  if ($('hrJobsTbody')) {
+    $('hrJobsTbody').innerHTML = data.jobs.map(job => `<tr><td class="is-name">${esc(job.name)}</td><td>${esc(job.department || '—')}</td>
+      <td class="is-num">${money(job.salary)}</td><td>${data.employees.filter(employee => employee.job === job.name).length}</td>
+      <td class="no-print"><button type="button" class="iconbtn is-del" onclick="deleteHrRecord('jobs', ${job.id})">✕</button></td></tr>`
+    ).join('') || '<tr><td colspan="5" class="ws-empty">لا توجد وظائف مسجلة.</td></tr>';
+    if ($('hrCountJobs')) $('hrCountJobs').textContent = String(data.jobs.length);
+  }
+  if ($('hrJobDept')) {
+    const previous = $('hrJobDept').value;
+    $('hrJobDept').innerHTML = '<option value="">بدون قسم</option>' + data.departments.map(department => `<option value="${esc(department.name)}">${esc(department.name)}</option>`).join('');
+    if (previous) $('hrJobDept').value = previous;
+  }
+
+  // vacations
+  if ($('hrVacationsTbody')) {
+    $('hrVacationsTbody').innerHTML = data.vacations.map(vacation => `<tr><td class="is-name">${esc(hrEmployeeName(vacation.staffId))}</td>
+      <td>${esc(HR_VACATIONS[vacation.type] || vacation.type)}</td><td>${esc(vacation.from)}</td><td>${esc(vacation.to)}</td>
+      <td class="is-num">${vacation.days}</td>
+      <td class="no-print"><button type="button" class="iconbtn is-del" onclick="deleteHrRecord('vacations', ${vacation.id})">✕</button></td></tr>`
+    ).join('') || '<tr><td colspan="6" class="ws-empty">لا توجد إجازات مسجلة.</td></tr>';
+    if ($('hrCountVacations')) $('hrCountVacations').textContent = String(data.vacations.length);
+  }
+
+  // penalties
+  if ($('hrPenaltiesTbody')) {
+    const penalties = data.penalties || [];
+    $('hrPenaltiesTbody').innerHTML = penalties.slice().reverse().map(penalty => `<tr><td>${esc(penalty.date)}</td>
+      <td class="is-name">${esc(hrEmployeeName(penalty.staffId))}</td><td class="is-name">${esc(penalty.reason)}</td>
+      <td class="is-num">${money(penalty.amount)}</td>
+      <td class="no-print"><button type="button" class="iconbtn is-del" onclick="deleteHrRecord('penalties', ${penalty.id})">✕</button></td></tr>`
+    ).join('') || '<tr><td colspan="5" class="ws-empty">لا توجد جزاءات.</td></tr>';
+    if ($('hrCountPenalties')) $('hrCountPenalties').textContent = String(penalties.length);
+  }
+
+  // ledgers (deductions / advances / bonuses)
+  for (const [kind, listName] of Object.entries(HR_LEDGERS)) {
+    const body = $({ deductions: 'hrDeductionsTbody', advances: 'hrAdvancesTbody', bonuses: 'hrBonusesTbody' }[listName]);
+    const rows = data[listName] || [];
+    if (body) {
+      body.innerHTML = rows.slice().reverse().map(row => `<tr><td>${esc(row.date)}</td>
+        <td class="is-name">${esc(hrEmployeeName(row.staffId))}</td><td class="is-name">${esc(row.reason || HR_LEDGER_LABELS[kind])}</td>
+        <td class="is-num">${money(row.amount)}</td>
+        <td class="no-print"><button type="button" class="iconbtn is-del" onclick="deleteHrRecord('${listName}', ${row.id})">✕</button></td></tr>`
+      ).join('') || `<tr><td colspan="5" class="ws-empty">لا توجد ${HR_LEDGER_LABELS[kind]}ات مسجلة.</td></tr>`;
+    }
+    const counter = $({ deductions: 'hrCountDeductions', advances: 'hrCountAdvances', bonuses: 'hrCountBonuses' }[listName]);
+    if (counter) counter.textContent = String(rows.length);
+  }
+
+  for (const id of ['hrAttStaff', 'hrVacStaff', 'hrPenStaff', 'hrDedStaff', 'hrAdvStaff', 'hrBonusStaff']) hrFillStaffSelect(id, true);
+  if ($('hrReportStaff')) {
+    const previous = $('hrReportStaff').value;
+    $('hrReportStaff').innerHTML = '<option value="all">كل الموظفين</option>' + data.employees.map(employee => `<option value="${esc(employee.id)}">${esc(employee.name)}</option>`).join('');
+    if (previous) $('hrReportStaff').value = previous;
+  }
+}
+function saveHrEmployee() {
+  const name = $('hrEmpName').value.trim();
+  if (name.length < 2) return alert('أدخل اسم الموظف (حرفان على الأقل).');
+  const editId = Number($('hrEmpEditId').value) || 0;
+  const record = {
+    name, phone: $('hrEmpPhone').value.trim(), email: $('hrEmpEmail').value.trim(),
+    job: $('hrEmpJob').value.trim(), department: $('hrEmpDept').value.trim(),
+    salary: roundMoney(Number($('hrEmpSalary').value) || 0), hireDate: $('hrEmpHireDate').value || localDate(),
+    notes: $('hrEmpNotes').value.trim()
+  };
+  const saved = hrMutate(data => {
+    if (editId) { const employee = data.employees.find(entry => entry.id === editId); if (!employee) return false; Object.assign(employee, record); return true; }
+    data.employees.push({ id: hrNextId(data.employees), ...record });
+    return true;
+  });
+  if (!saved) return;
+  ['hrEmpName', 'hrEmpPhone', 'hrEmpEmail', 'hrEmpJob', 'hrEmpDept', 'hrEmpNotes'].forEach(id => { if ($(id)) $(id).value = ''; });
+  if ($('hrEmpSalary')) $('hrEmpSalary').value = '0';
+  if ($('hrEmpEditId')) $('hrEmpEditId').value = '';
+  if ($('hrEmpFormTitle')) $('hrEmpFormTitle').textContent = 'بيانات الموظف';
+  notify(editId ? 'تم تحديث بيانات الموظف.' : 'تمت إضافة الموظف.');
+}
+function editHrEmployee(id) {
+  const data = hrRead();
+  const employee = data.employees.find(entry => entry.id === id);
+  if (!employee) return;
+  if ($('hrEmpEditId')) $('hrEmpEditId').value = String(employee.id);
+  if ($('hrEmpName')) $('hrEmpName').value = employee.name || '';
+  if ($('hrEmpPhone')) $('hrEmpPhone').value = employee.phone || '';
+  if ($('hrEmpEmail')) $('hrEmpEmail').value = employee.email || '';
+  if ($('hrEmpJob')) $('hrEmpJob').value = employee.job || '';
+  if ($('hrEmpDept')) $('hrEmpDept').value = employee.department || '';
+  if ($('hrEmpSalary')) $('hrEmpSalary').value = String(employee.salary || 0);
+  if ($('hrEmpHireDate')) $('hrEmpHireDate').value = employee.hireDate || '';
+  if ($('hrEmpNotes')) $('hrEmpNotes').value = employee.notes || '';
+  if ($('hrEmpFormTitle')) $('hrEmpFormTitle').textContent = `تعديل الموظف — ${employee.name}`;
+  showHrPanel('employees');
+  $('hrEmpName')?.focus();
+}
+function deleteHrRecord(listName, id) {
+  const data = hrRead();
+  const label = listName === 'employees' ? 'الموظف' : 'السجل';
+  if (!window.confirm(`حذف ${label}؟`)) return;
+  const removed = hrMutate(next => {
+    next[listName] = (next[listName] || []).filter(row => row.id !== id);
+    if (listName === 'employees') {
+      for (const key of ['attendance', 'vacations', 'penalties', 'deductions', 'advances', 'bonuses']) {
+        next[key] = (next[key] || []).filter(row => String(row.staffId) !== String(id));
+      }
+    }
+    return true;
+  });
+  if (removed) notify('تم حذف السجل.');
+  void data;
+}
+function renderHrAttendance() { renderHr(); }
+function saveHrAttendance() {
+  const staffId = Number($('hrAttStaff').value) || 0;
+  if (!staffId) return alert('اختر الموظف أولاً.');
+  const state = $('hrAttState').value, today = localDate();
+  const saved = hrMutate(data => {
+    const existing = data.attendance.find(row => row.date === today && String(row.staffId) === String(staffId));
+    const record = { date: today, staffId, state, inTime: $('hrAttIn').value || '', outTime: $('hrAttOut').value || '', note: '' };
+    if (existing) Object.assign(existing, record);
+    else data.attendance.push({ id: hrNextId(data.attendance), ...record });
+    return true;
+  });
+  if (saved) notify(`تم تسجيل ${HR_STATES[state] || state} لـ ${hrEmployeeName(staffId)}.`);
+}
+function saveHrDepartment() {
+  const name = $('hrDeptName').value.trim();
+  if (name.length < 2) return alert('أدخل اسم القسم.');
+  const saved = hrMutate(data => {
+    if (data.departments.some(department => department.name === name)) return false;
+    data.departments.push({ id: hrNextId(data.departments), name, head: $('hrDeptHead').value.trim() });
+    return true;
+  });
+  if (saved === false) return alert('هذا القسم موجود بالفعل.');
+  $('hrDeptName').value = ''; $('hrDeptHead').value = '';
+  notify('تمت إضافة القسم.');
+}
+function saveHrJob() {
+  const name = $('hrJobName').value.trim();
+  if (name.length < 2) return alert('أدخل اسم الوظيفة.');
+  const saved = hrMutate(data => {
+    data.jobs.push({ id: hrNextId(data.jobs), name, department: $('hrJobDept').value, salary: roundMoney(Number($('hrJobSalary').value) || 0) });
+    return true;
+  });
+  if (saved) { $('hrJobName').value = ''; $('hrJobSalary').value = '0'; notify('تمت إضافة الوظيفة.'); }
+}
+function saveHrVacation() {
+  const staffId = Number($('hrVacStaff').value) || 0, from = $('hrVacFrom').value, to = $('hrVacTo').value;
+  if (!staffId || !from || !to) return alert('اختر الموظف وتاريخ البداية والنهاية.');
+  const days = Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86400000) + 1);
+  if (!Number.isFinite(days)) return alert('التواريخ غير صالحة.');
+  const saved = hrMutate(data => {
+    data.vacations.push({ id: hrNextId(data.vacations), staffId, type: $('hrVacType').value, from, to, days });
+    return true;
+  });
+  if (saved) notify(`تم تسجيل إجازة ${days} يوم.`);
+}
+function saveHrPenalty() {
+  const staffId = Number($('hrPenStaff').value) || 0, amount = roundMoney(Number($('hrPenAmount').value) || 0);
+  const reason = $('hrPenReason').value.trim();
+  if (!staffId || amount <= 0 || !reason) return alert('اختر الموظف وأدخل مبلغ الجزاء والسبب.');
+  const saved = hrMutate(data => {
+    data.penalties.push({ id: hrNextId(data.penalties), staffId, amount, reason, date: localDate() });
+    return true;
+  });
+  if (saved) { $('hrPenAmount').value = '0'; $('hrPenReason').value = ''; notify('تم تسجيل الجزاء.'); }
+}
+function saveHrLedger(kind) {
+  const listName = HR_LEDGERS[kind];
+  if (!listName) return;
+  const fieldIds = {
+    deduction: ['hrDedStaff', 'hrDedAmount', 'hrDedReason'],
+    advance: ['hrAdvStaff', 'hrAdvAmount', 'hrAdvReason'],
+    bonus: ['hrBonusStaff', 'hrBonusAmount', 'hrBonusReason']
+  }[kind];
+  const staffId = Number($(fieldIds[0]).value) || 0;
+  const amount = roundMoney(Number($(fieldIds[1]).value) || 0);
+  const reason = $(fieldIds[2]).value.trim();
+  if (!staffId || amount <= 0) return alert('اختر الموظف وأدخل مبلغاً موجباً.');
+  const saved = hrMutate(data => {
+    data[listName].push({ id: hrNextId(data[listName]), staffId, amount, reason, date: localDate() });
+    return true;
+  });
+  if (saved) { $(fieldIds[1]).value = '0'; $(fieldIds[2]).value = ''; notify(`تم تسجيل ${HR_LEDGER_LABELS[kind]}.`); }
+}
+function hrReportRows(staffId = 'all', from = '', to = '') {
+  const data = hrRead();
+  const inRange = date => (!from || date >= from) && (!to || date <= to);
+  return data.employees
+    .filter(employee => staffId === 'all' || String(employee.id) === String(staffId))
+    .map(employee => {
+      const rows = data.attendance.filter(row => String(row.staffId) === String(employee.id) && inRange(row.date));
+      const hours = rows.reduce((sum, row) => {
+        if (!row.inTime || !row.outTime) return sum;
+        const [inH, inM] = row.inTime.split(':').map(Number), [outH, outM] = row.outTime.split(':').map(Number);
+        return sum + Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
+      }, 0) / 60;
+      const vacations = data.vacations.filter(row => String(row.staffId) === String(employee.id)).reduce((sum, row) => sum + (Number(row.days) || 0), 0);
+      return {
+        id: employee.id, name: employee.name,
+        present: rows.filter(row => row.state === 'present').length,
+        late: rows.filter(row => row.state === 'late').length,
+        absent: rows.filter(row => row.state === 'absent').length,
+        leave: rows.filter(row => row.state === 'leave').length + vacations,
+        hours: Math.round(hours * 10) / 10
+      };
+    });
+}
+function renderHrReport() {
+  const body = $('hrReportTbody');
+  if (!body) return;
+  const from = $('hrReportFrom')?.value || '', to = $('hrReportTo')?.value || '';
+  const rows = hrReportRows($('hrReportStaff')?.value || 'all', from, to);
+  body.innerHTML = rows.map(row => `<tr><td class="is-name">${esc(row.name)}</td><td class="is-num">${row.present}</td>
+    <td class="is-num">${row.late}</td><td class="is-num">${row.absent}</td><td class="is-num">${row.leave}</td>
+    <td class="is-num">${row.hours}</td></tr>`).join('') || '<tr><td colspan="6" class="ws-empty">لا توجد بيانات في هذا النطاق.</td></tr>';
+  if ($('hrReportRange')) $('hrReportRange').textContent = `${from || 'البداية'} → ${to || 'اليوم'}`;
+}
+function printHrReport() {
+  const rows = hrReportRows($('hrReportStaff')?.value || 'all', $('hrReportFrom')?.value || '', $('hrReportTo')?.value || '');
+  const area = $('printAreaA5');
+  if (!area) return;
+  area.innerHTML = `<div style="padding:14px;font-family:'Cairo',Tahoma,sans-serif" dir="rtl">
+    <h2 style="margin:0 0 8px">${esc(db.settings.name)} — تقرير الحضور والانصراف</h2>
+    <p style="margin:0 0 10px;font-size:11px">${esc($('hrReportRange')?.textContent || '')}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr><th>الموظف</th><th>حضور</th><th>تأخير</th><th>غياب</th><th>إجازات</th><th>ساعات</th></tr></thead>
+      <tbody>${rows.map(row => `<tr><td>${esc(row.name)}</td><td>${row.present}</td><td>${row.late}</td><td>${row.absent}</td><td>${row.leave}</td><td>${row.hours}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  window.print();
 }
 
 const SEC_TITLES = {
@@ -922,7 +1568,7 @@ const SEC_TITLES = {
   'sec-categories': '📁 بيانات المجموعات', 'sec-stock': '🏢 جرد المخزن',
   'sec-labels': '🏷️ طباعة ملصقات الباركود', 'sec-parties': '👥 إدارة العملاء والموردين',
   'sec-invlog': '📑 سجل الفواتير', 'sec-treasury': '💰 الخزنة والحسابات',
-  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام',
+  'sec-profits': '📈 التقارير والأرباح', 'sec-settings': '⚙️ إعدادات النظام', 'sec-hr': '👔 إدارة الموظفين',
   'sec-contact': '📞 اتصل بنا', 'sec-maintenance': '🛠️ الصيانة'
 };
 const floatWindows = new Map();
@@ -942,6 +1588,7 @@ function openSec(secId, titleText) {
   if (secId === 'sec-items') { populateCategoriesSelect(); renderItemsTable(); }
   if (secId === 'sec-categories') renderCategoriesTable();
   if (secId === 'sec-parties') renderPartiesTable();
+  if (secId === 'sec-hr') { renderHr(); showHrPanel($('sec-hr').dataset.hrPanel || 'employees'); }
   if (secId === 'sec-settings') loadSettingsForm();
   if (secId === 'sec-invlog') renderInvLog();
   if (secId === 'sec-treasury') { renderTreasury(); if ($('kpiCashSide')) $('kpiCashSide').textContent = money(treasuryBalance()); }
@@ -1121,6 +1768,8 @@ function deleteMaintenanceRequest(id) {
   renderMaintenanceRequests();
 }
 function closeWorkspace() {
+  // in the tabbed shell the ✕ of a page closes its tab, so the strip and the screen stay in step
+  if (document.body.classList.contains('shell-v2') && activeTab && activeTab !== 'home') { closeTab(activeTab); return; }
   if (activeFloatId) closeFloat(activeFloatId);
   else closeAllFloat();
 }
@@ -2146,6 +2795,9 @@ function updateInvoiceUI() {
   $('invPaidAmount').disabled = quote || $('invPayType').value !== 'partial';
   renderPosTiles();
   renderInvCart();
+  paintInvoiceSelects();
+  syncInvoiceChrome();
+  if ($('invBarcodeInp') && invCart.length === 0) renderPosItemSearch('');
 }
 function selectPosGroup(group) {
   posGroup = group;
@@ -2405,19 +3057,19 @@ function renderInvCart() {
   $('invCartTbody').innerHTML = invCart.map((c, index) => {
     const gross = lineGross(c);
     const net = c.returnNetTotal !== undefined && isReturn ? c.returnNetTotal : gross;
+    const unit = esc((db.items.find(item => item.id === c.id) || {}).unit || 'عدد');
     return `<tr data-index="${index}" class="${index === selectedCartIndex ? 'selected-row' : ''}" onclick="selectCartRow(${index})">
-      <td>${index + 1}</td>
       <td><strong>${esc(c.code)}</strong></td>
-      <td class="cell-name">${esc(c.name)}</td>
-      <td>عدد</td>
-      <td><input aria-label="سعر ${esc(c.name)}" type="number" min="0" step="any" value="${esc(c.price)}" ${isReturn ? 'disabled' : ''} onchange="updateCartRow(${index},'price',this.value)"></td>
+      <td class="cell-name is-name">${esc(c.name)}</td>
+      <td>${unit}</td>
       <td><input aria-label="كمية ${esc(c.name)}" type="number" min="0.001" ${isReturn ? `max="${c.maxQty}"` : ''} step="any" value="${esc(c.qty)}" onchange="updateCartRow(${index},'qty',this.value)"></td>
+      <td><input aria-label="سعر ${esc(c.name)}" type="number" min="0" step="any" value="${esc(c.price)}" ${isReturn ? 'disabled' : ''} onchange="updateCartRow(${index},'price',this.value)"></td>
       <td><input aria-label="خصم ${esc(c.name)}" type="number" min="0" max="100" step="any" value="${esc(c.discPct)}" ${isReturn ? 'disabled' : ''} onchange="updateCartRow(${index},'discPct',this.value)"></td>
-      <td>${money(gross)}</td>
+      <td><strong>${money(gross)}</strong></td>
       <td><strong>${money(net)}</strong></td>
-      <td class="no-print"><button type="button" class="act-btn bg-red" style="padding:1px 6px" title="حذف البند" onclick="event.stopPropagation();removeCartRow(${index})">✖</button></td>
+      <td class="no-print"><button type="button" class="iconbtn is-del" title="حذف البند" aria-label="حذف البند" onclick="event.stopPropagation();removeCartRow(${index})">✕</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" class="empty-row">الفاتورة فارغة. اقرأ باركود الصنف أو اضغط على أحد الأصناف السريعة لإضافتها.</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="empty-row">الفاتورة فارغة. اقرأ باركود الصنف أو اضغط على أحد الأصناف السريعة لإضافتها.</td></tr>';
   if ($('posCartHint')) $('posCartHint').textContent = invCart.length ? `${invCart.length} بند — انقر على البند ثم F8/F9 لتعديل الكمية أو السعر` : 'لا توجد بنود بعد';
   calcInvoiceTotals();
 }
@@ -3606,6 +4258,12 @@ function openPartyReport(type, report) {
 }
 function resetPartyForm() {
   $('partyEditId').value = ''; $('partyName').value = ''; $('partyPhone').value = ''; $('partyBalance').value = 0; $('partyBalance').disabled = false; $('partyNotes').value = '';
+  for (const id of ['partyCode', 'partyCountry', 'partyCity', 'partyPhone2', 'partyEmail', 'partyAddress']) { if ($(id)) $(id).value = ''; }
+  if ($('partyCountry')) $('partyCountry').value = 'مصر';
+  if ($('partyFormTitle')) $('partyFormTitle').textContent = $('partyType')?.value === 'supplier' ? 'بيانات المورد' : 'بيانات العميل';
+  if ($('partyContactHint')) $('partyContactHint').textContent = 'اختر عميلاً من الجدول';
+  $$('#partiesTbody tr').forEach(row => row.classList.remove('is-selected'));
+  delete $('partiesTbody')?.dataset?.selected;
 }
 function saveParty() {
   if (!ensurePermission($('partyType').value === 'supplier' ? 'supplier' : 'customer')) return;
@@ -3613,9 +4271,18 @@ function saveParty() {
   if (!name) return alert('أدخل الاسم.');
   if (!editId && (!Number.isFinite(balance))) return alert('الرصيد الافتتاحي يجب أن يكون رقماً صالحاً.');
   if (db.parties.some(p => p.id !== editId && p.type === type && p.name.toLocaleLowerCase() === name.toLocaleLowerCase())) return alert('يوجد حساب بنفس الاسم بالفعل.');
+  const contact = {
+    phone: $('partyPhone').value.trim(), notes: $('partyNotes').value.trim(),
+    ...($('partyCode') ? { code: $('partyCode').value.trim() } : {}),
+    ...($('partyCountry') ? { country: $('partyCountry').value.trim() } : {}),
+    ...($('partyCity') ? { city: $('partyCity').value.trim() } : {}),
+    ...($('partyPhone2') ? { phone2: $('partyPhone2').value.trim() } : {}),
+    ...($('partyEmail') ? { email: $('partyEmail').value.trim() } : {}),
+    ...($('partyAddress') ? { address: $('partyAddress').value.trim() } : {})
+  };
   const saved = commitDB(draft => {
-    if (editId) { const party = draft.parties.find(p => p.id === editId); if (!party) throw new Error('الحساب غير موجود.'); Object.assign(party, { name, phone: $('partyPhone').value.trim(), notes: $('partyNotes').value.trim() }); }
-    else draft.parties.push({ id: nextId(draft.parties), type, name, phone: $('partyPhone').value.trim(), balance, notes: $('partyNotes').value.trim() });
+    if (editId) { const party = draft.parties.find(p => p.id === editId); if (!party) throw new Error('الحساب غير موجود.'); Object.assign(party, { name, ...contact }); }
+    else draft.parties.push({ id: nextId(draft.parties), type, name, balance, ...contact });
   }, { flash: 'تم حفظ الحساب' });
   if (saved) { resetPartyForm(); renderPartiesTable(); }
 }
@@ -3623,22 +4290,45 @@ function editParty(id) {
   const party = db.parties.find(p => p.id === id); if (!party || !ensurePermission(party.type === 'supplier' ? 'supplier' : 'customer')) return;
   $('partyEditId').value = id; $('partyType').value = party.type; $('partyName').value = party.name; $('partyPhone').value = party.phone;
   $('partyBalance').value = party.balance; $('partyBalance').disabled = true; $('partyNotes').value = party.notes;
+  for (const [key, field] of [['code', 'partyCode'], ['country', 'partyCountry'], ['city', 'partyCity'], ['phone2', 'partyPhone2'], ['email', 'partyEmail'], ['address', 'partyAddress']]) {
+    if ($(field)) $(field).value = party[key] || '';
+  }
+  selectPartyRow(id);
   $('partyFormTitle').textContent = 'تعديل بيانات الحساب — الرصيد يُعدّل بالفواتير والسندات'; window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function renderPartiesTable() {
-  const list = db.parties.filter(p => p.type === $('partyType').value);
+  const all = db.parties.filter(p => p.type === $('partyType').value);
+  const list = all.filter(party => partyMatches(party, partyFilter));
   const previousVoucher = $('voucherPartyId').value, previousStatement = $('statementPartySelect').value;
   $('voucherPartyId').innerHTML = options(list, p => `${p.name} (${money(p.balance)})`);
   $('statementPartySelect').innerHTML = options(list, p => p.name);
   if (list.some(p => String(p.id) === previousVoucher)) $('voucherPartyId').value = previousVoucher;
   if (list.some(p => String(p.id) === previousStatement)) $('statementPartySelect').value = previousStatement;
-  $('partiesTbody').innerHTML = list.map((p, index) => `<tr><td>${index + 1}</td><td class="cell-name">${esc(p.name)}</td><td>${esc(p.phone || '-')}</td><td>${esc(p.notes || '-')}</td><td style="font-weight:bold">${money(p.balance)}</td>
-    <td class="no-print"><button type="button" class="act-btn bg-blue" onclick="showStatementFor(${p.id})">كشف حساب</button></td><td class="no-print"><button type="button" class="act-btn bg-orange" onclick="editParty(${p.id})">تعديل</button></td><td class="no-print"><button type="button" class="act-btn bg-red" onclick="deleteParty(${p.id})">حذف</button></td></tr>`).join('') || '<tr><td colspan="8">لا توجد حسابات مسجلة.</td></tr>';
-  $('partiesTbody').closest('table').querySelectorAll('thead th').forEach((th, i) => th.classList.toggle('no-print', i >= 5));
-  if ($('headPartiesCount')) $('headPartiesCount').textContent = String(list.length);
-  if ($('headPartiesBalance')) $('headPartiesBalance').textContent = money(list.reduce((sum, p) => sum + p.balance, 0));
-  if ($('partiesHeadTitle')) $('partiesHeadTitle').textContent = $('partyType').value === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء والمدارس';
-  if ($('partyStatementBox').style.display !== 'none') renderPartyStatement();
+  const tone = balance => roundMoney(balance) > 0 ? 'bad' : roundMoney(balance) < 0 ? 'info' : 'ok';
+  const stateLabel = balance => roundMoney(balance) > 0 ? 'مديونية' : roundMoney(balance) < 0 ? 'دائن' : 'مسدد';
+  $('partiesTbody').innerHTML = list.map(p => {
+    const selected = Number($('partyEditId')?.value) === p.id || Number($('partiesTbody').dataset.selected || 0) === p.id;
+    return `<tr data-party-id="${p.id}" class="${selected ? 'is-selected' : ''}" onclick="selectPartyRow(${p.id})">
+      <td>${esc(partyDisplayCode(p))}</td>
+      <td class="is-name">${esc(p.name)}</td>
+      <td>${esc(p.city || '-')}</td>
+      <td dir="ltr">${esc(p.phone || '-')}</td>
+      <td class="is-num" style="font-weight:bold">${money(p.balance)}</td>
+      <td><span class="ws-tag" data-tone="${tone(p.balance)}">${stateLabel(p.balance)}</span></td>
+      <td class="no-print"><span class="row-actions">
+        <button type="button" class="iconbtn is-edit" title="تعديل" aria-label="تعديل" onclick="event.stopPropagation();editParty(${p.id})">✎</button>
+        <button type="button" class="iconbtn is-view" title="كشف حساب" aria-label="كشف حساب" onclick="event.stopPropagation();showStatementFor(${p.id})">👁</button>
+        <button type="button" class="iconbtn is-del" title="حذف" aria-label="حذف" onclick="event.stopPropagation();deleteParty(${p.id})">✕</button>
+      </span></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="ws-empty">لا توجد حسابات مسجلة.</td></tr>';
+  const headers = $('partiesTbody').closest('table')?.querySelectorAll('thead th') || [];
+  headers.forEach((th, i) => th.classList.toggle('no-print', i >= 5));
+  if ($('headPartiesCount')) $('headPartiesCount').textContent = String(all.length);
+  if ($('partyListCount')) $('partyListCount').textContent = `${list.length} من ${all.length} سجل`;
+  if ($('partyListTitle')) $('partyListTitle').textContent = $('partyType').value === 'supplier' ? 'قائمة الموردين' : 'قائمة العملاء';
+  if ($('headPartiesBalance')) $('headPartiesBalance').textContent = money(all.reduce((sum, p) => sum + p.balance, 0));
+  if ($('partiesHeadTitle')) $('partiesHeadTitle').textContent = $('partyType').value === 'supplier' ? '🚚 إدارة الموردين ودور النشر' : '👥 إدارة العملاء';
+  if ($('partyStatementBox') && $('partyStatementBox').style.display !== 'none') renderPartyStatement();
 }
 function deleteParty(id) {
   if (!ensurePermission('admin')) return;
@@ -3728,13 +4418,13 @@ function printPartyStatementA5() {
 
 /* ---------------- invoice log ---------------- */
 /* ---- invoice log views: sales, purchases, quotes and everything, each with its own look ---- */
-const LOG_KINDS = {
+const LOG_KINDS = {  
   sale: { title: '🛍️ سجل فواتير المبيعات', section: '🛍️ فواتير المبيعات المسجلة', party: 'العميل', chip: 'إجمالي المبيعات',
-    filters: ['sale', 'sale_return'], permission: 'sales-log' },
+    filters: ['sale', 'sale_return'], permission: 'sales-log' },  
   purchase: { title: '🚚 سجل فواتير المشتريات', section: '🚚 فواتير المشتريات المسجلة', party: 'المورد', chip: 'إجمالي المشتريات',
-    filters: ['purchase', 'purchase_return'], permission: 'purchase-log' },
+    filters: ['purchase', 'purchase_return'], permission: 'purchase-log' },  
   quote: { title: '🧾 سجل عروض الأسعار', section: '🧾 عروض الأسعار', party: 'العميل', chip: 'إجمالي العروض',
-    filters: ['quote'], permission: 'sales-log' },
+    filters: ['quote'], permission: 'sales-log' },  
   all: { title: '📚 سجل كل الحركات', section: '📚 كل الفواتير والحركات', party: 'العميل / المورد', chip: 'إجمالي الحركة',
     filters: ['sale', 'sale_return', 'purchase', 'purchase_return', 'quote'], permission: 'admin' }
 };
@@ -3853,10 +4543,10 @@ function applySettingsUI() {
   $('lblStoreAddress').hidden = !db.settings.address;
   document.title = `${db.settings.name} | نقاط البيع`;
 }
-const SETTINGS_TABS = ['look', 'store', 'sync', 'staff'];
+const SETTINGS_TABS = ['look', 'store', 'sync', 'staff', 'images'];
 function switchSettingsTab(tab) {
   if (!SETTINGS_TABS.includes(tab)) tab = 'look';
-  document.querySelectorAll('#settingsTabs .pos-tab').forEach(button => {
+  document.querySelectorAll('#settingsTabs [data-settings-tab]').forEach(button => {
     const active = button.dataset.settingsTab === tab;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -3867,6 +4557,23 @@ function switchSettingsTab(tab) {
 }
 function loadSettingsForm() {
   $('setStoreName').value = db.settings.name; $('setStoreAddress').value = db.settings.address; $('setStorePhone').value = db.settings.phone;
+  if ($('setStoreMobile')) $('setStoreMobile').value = storeSetting('mobile');
+  if ($('setInvoiceNote')) $('setInvoiceNote').value = storeSetting('invoiceNote');
+  if ($('setCurrency')) $('setCurrency').value = storeSetting('currency', 'ج.م');
+  if ($('setPaperSize')) $('setPaperSize').value = storeSetting('paperSize', 'A5');
+  if ($('setPrinter')) $('setPrinter').value = storeSetting('printer');
+  if ($('setDefaultWarehouse')) {
+    const values = [...new Set([storeSetting('defaultWarehouse', 'الرئيسي'), ...db.items.map(item => item.warehouse).filter(Boolean)])];
+    $('setDefaultWarehouse').innerHTML = optionList(values);
+    $('setDefaultWarehouse').value = storeSetting('defaultWarehouse', 'الرئيسي');
+  }
+  if ($('setDefaultSafe')) {
+    $('setDefaultSafe').innerHTML = optionList([...new Set([storeSetting('defaultSafe', 'الخزينة الرئيسية'), 'الخزينة الرئيسية'])]);
+    $('setDefaultSafe').value = storeSetting('defaultSafe', 'الخزينة الرئيسية');
+  }
+  if ($('setStoreHint')) $('setStoreHint').textContent = `آخر تحديث: ${localDate().replaceAll('-', '/')}`;
+  if ($('setThemeChip')) $('setThemeChip').textContent = `الثيم: ${THEME_LABELS[getAppearance().theme] || THEME_LABELS['win11-indigo']}`;
+  if ($('storeLogoPreview') && lookSettings().storeLogo) $('storeLogoPreview').style.backgroundImage = `url(${lookSettings().storeLogo})`;
   $('setPinCode').value = ''; $('setSyncKey').value = sessionToken();
   $('rememberSyncKey').checked = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)) || !sessionToken();
   $('receiptWidth').value = getAppearance().receiptWidth === '58' ? '58' : '80';
@@ -3881,6 +4588,7 @@ function loadSettingsForm() {
   renderStaffTable(); renderAuditTable(); applyAppearance(); updateSyncStateBox();
 }
 function openSettingsTab(tab = 'look') {
+  if (!SETTINGS_TABS.includes(tab)) tab = 'look';
   openSec('sec-settings', '⚙️ إعدادات النظام');
   setActiveNav(tab === 'staff' ? 'staff' : 'settings');
   switchSettingsTab(tab);
@@ -3935,7 +4643,14 @@ function saveSettings() {
   const name = $('setStoreName').value.trim(), pin = $('setPinCode').value.trim(), token = $('setSyncKey').value.trim();
   if (!name) return alert('اسم المكتبة مطلوب.');
   if (pin && pin.length < 4) return alert('رقم قفل الشاشة يجب أن يكون أربعة أحرف على الأقل.');
-  if (!commitDB(draft => { Object.assign(draft.settings, { name, address: $('setStoreAddress').value.trim(), phone: $('setStorePhone').value.trim(), ...(pin ? { pin } : {}) }); })) return;
+  const business = {
+    name, address: $('setStoreAddress').value.trim(), phone: $('setStorePhone').value.trim(), ...(pin ? { pin } : {}),
+    mobile: $('setStoreMobile')?.value.trim() || '', invoiceNote: $('setInvoiceNote')?.value.trim() || '',
+    currency: $('setCurrency')?.value.trim() || 'ج.م', paperSize: $('setPaperSize')?.value || 'A5',
+    printer: $('setPrinter')?.value || '', defaultWarehouse: $('setDefaultWarehouse')?.value || 'الرئيسي',
+    defaultSafe: $('setDefaultSafe')?.value || 'الخزينة الرئيسية'
+  };
+  if (!commitDB(draft => { Object.assign(draft.settings, business); })) return;
   try {
     if (token) sessionStorage.setItem(TOKEN_KEY, token); else sessionStorage.removeItem(TOKEN_KEY);
     if (token && $('rememberSyncKey').checked) localStorage.setItem(REMEMBERED_TOKEN_KEY, token);
@@ -4242,9 +4957,14 @@ Object.assign(window, {
   invoiceDocHtml, invoiceDocBody, openInvoiceDocument, invoiceDocTheme, DOC_THEME, exportInvoicePdfById, invoiceShareText, whatsappLink, shareInvoiceOnWhatsApp, updateCartPricesByTier, updateCartRow, removeCartRow, calcInvoiceTotals, calcInvoiceRemaining, clearInvCart,
   holdCurrentInvoice, restoreHeldInvoice, convertQuoteToSale, loadQuoteForSale, saveInvoice, printInvoiceById, printInvoiceThermalById,
   openPartySec, openPartyReport, resetPartyForm, saveParty, editParty, deleteParty, savePartyVoucher, toggleQuickParty, saveQuickParty, showStatementFor, renderPartyStatement,
-  printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud,
+  printPartyStatementA5, openInvLog, renderInvLog, openTreasury, addTreasuryMove, openProfitSec, renderProfits, saveSettings, syncToCloud, loadSettingsForm, renderHrAttendance,
   exportFullBackup, importFullBackup, exportItemsCSV, exportCurrentReportExcel, exportCurrentReportPDF, printItemsReportA5, printCurrentScreenA5, lockApp, unlockApp,
   switchInvoiceTab, switchItemsTab, selectPosGroup, addPosTile, bumpInvoiceQty, selectCartRow, focusCartField, openKeypad, setKeypadTab, closeKeypad, keypadPress, applyKeypad,
+  openSalesInvoice, openPurchaseInvoice, openSaleReturn, openPurchaseReturn, openQuotePage, openCustomersPage, openSuppliersPage, openSettingsPage,
+  syncInvoiceChrome, paintInvoiceSelects, renderPosItemSearch, addWatchItem, calcInput, paintCalcScreen, sendCalcToPaid, linkPageTab,
+  filterParties, partyDebtTotals, showTotalDebt, showSelectedDebt, showPartyBalances, selectPartyRow, partyDisplayCode, partyMatches, hrFillStaffSelect, hrEmployeeName, hrSalaryOf, storeSetting, optionList,
+  openHrPage, openHrTile, showHrPanel, renderHr, saveHrEmployee, editHrEmployee, deleteHrRecord, saveHrAttendance, saveHrDepartment, saveHrJob,
+  saveHrVacation, saveHrPenalty, saveHrLedger, hrRead, hrWrite, hrMutate, hrReportRows, renderHrReport, printHrReport, HR_KEY,
   renderPosTiles, renderLabels, printLabels,
   toggleDashboard, setDashboardOpen, toggleActionGroup, setActionGroup, expandAllGroups, collapseAllGroups,
   applyLook, lookSettings, saveLook, setLookOption, setNightMode, setAutoNight, applyAutoNight, applyPalette, updateDashboardKPIs,
