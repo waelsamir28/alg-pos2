@@ -8,6 +8,32 @@
 - Node.js 22 أو أحدث
 - أول مرة فقط: `npm install` (يُنزّل Electron، ويحتاج إنترنت)
 
+## إصلاح خطأ «Electron failed to install correctly»
+
+لو ظهرت الرسالة دي عند `npm run electron`:
+
+```
+Error: Electron failed to install correctly, please delete node_modules/electron and try installing again
+```
+
+معناها إن حزمة Electron نزلت لكن **ملف التشغيل نفسه (dist) ما اتنزّلش** — بيحصل بسبب بروكسي/فايروول
+أو مانع فيروسات أو انقطاع التحميل. الحل:
+
+```bash
+npm run fix:electron
+```
+
+السكربت بينزّل نسخة Electron الرسمية لنسخة ويندوز عندك (نسخة الـ 33.4.11 المضبوطة في `package-lock.json`)،
+يتحقق من بصمة SHA256، يفك الضغط داخل `node_modules/electron/dist`، ويكتب `path.txt` ويحدّث كاش
+electron-builder — فمش محتاج تحذف `node_modules` ولا تعيد `npm install`.
+
+**لو GitHub محجوب عندك:** نزّل الملف `electron-v33.4.11-win32-x64.zip` من جهاز أو شبكة تانية وحطه في
+`%TEMP%` (اكتب `echo %TEMP%` في CMD لمعرفة المسار) ثم شغّل `npm run fix:electron` — هيلاقي الملف
+ويستخدمه بدل التنزيل.
+
+> كمان `npm run electron` بيشغّل نفس الفحص تلقائيًا قبل التشغيل، فلو الملفات ناقصة هيصلحها أو يقولك السبب
+> بلغة واضحة بدل رسالة Electron المبهمة.
+
 ## التشغيل أثناء التطوير
 
 ```bash

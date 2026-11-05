@@ -91,3 +91,21 @@ test('the asset resolver only maps bundle files', () => {
   assert.equal(resolveAsset('/tests/app.test.js'), null);
   assert.equal(resolveAsset('/fonts/../app.js'), null);
 });
+
+test('the electron repair script is wired into the package scripts and fails clearly', async t => {
+  const { readFile } = await import('node:fs/promises');
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.scripts['fix:electron'], 'node scripts/fix-electron.js');
+  // running the app must verify the runtime first, so the cryptic Electron error never appears alone
+  assert.match(pkg.scripts['pre-electron'] || '', /fix-electron\.js --verify/);
+  assert.equal(pkg.scripts.electron, 'electron .');
+  // the script itself must refuse politely when the package is missing instead of throwing a stack trace
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const run = promisify(execFile);
+  const result = await run(process.execPath, [new URL('../scripts/fix-electron.js', import.meta.url).pathname], { cwd: '/tmp' })
+    .then(out => ({ code: 0, ...out }))
+    .catch(error => ({ code: error.code, stdout: error.stdout, stderr: error.stderr }));
+  assert.notEqual(result.code, 0);
+  assert.match(result.stderr, /node_modules\/electron غير موجود/);
+});
