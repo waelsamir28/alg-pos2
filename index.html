@@ -2692,12 +2692,232 @@
   }
   @media (max-width:600px) { .wizard-themes { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
+<style id="shellV2Style">
+  /* ================= SHELL V2: title bar -> navbar -> tabs -> content -> footer ================= */
+  body.shell-v2 {
+    --shell-top: 36px;
+    --nav-h: 40px;
+    --tab-h: 34px;
+    --bar-h: calc(var(--shell-top) + var(--nav-h) + var(--tab-h));
+    --content-bg: #f4f6fa;
+    --card-bg: #ffffff;
+    --card-line: #e2e8f1;
+    --card-shadow: 0 1px 2px #0f172a0a, 0 8px 24px #0f172a0d;
+    background: var(--content-bg);
+  }
+  body[data-theme="night"].shell-v2 { --content-bg:#141810; --card-bg:#20251b; --card-line:#3a4132; --card-shadow:0 8px 24px #00000055; }
+
+  /* ---- 1. title bar ---- */
+  .titlebar {
+    display:flex; align-items:center; gap:10px; height:var(--shell-top); padding:0 12px;
+    background:linear-gradient(180deg,#ffffff,#eef2f8); border-bottom:1px solid #d7dfea; color:#1f2a37;
+    position:sticky; top:0; z-index:60;
+  }
+  .titlebar .tb-logo { display:flex; align-items:center; gap:7px; min-width:0; }
+  .titlebar .tb-logo img { width:20px; height:20px; border-radius:5px; object-fit:cover; }
+  .titlebar .tb-name { font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .titlebar .tb-spacer { flex:1 1 auto; }
+  .titlebar .tb-chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#4a5568;
+    padding:2px 8px; border-radius:999px; background:#ffffff; border:1px solid #dbe3ee; white-space:nowrap; }
+  .titlebar .tb-btn { display:none; }
+
+  /* ---- 2. navbar (the blue bar) ---- */
+  .app-navbar {
+    display:flex; align-items:stretch; gap:2px; height:var(--nav-h); padding:0 8px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--head-3) 92%,#ffffff),var(--head-2) 55%,color-mix(in srgb,var(--head-1) 92%,#000000));
+    border-bottom:1px solid color-mix(in srgb,var(--head-1) 70%,#000000); color:#fff;
+    position:sticky; top:var(--shell-top); z-index:55; box-shadow:0 2px 8px #0b1b3022;
+  }
+  .app-navbar .nv-btn {
+    display:inline-flex; align-items:center; gap:6px; height:100%; padding:0 12px; border:0; background:none;
+    color:#ffffffdd; font-size:12.5px; font-weight:800; white-space:nowrap; cursor:pointer;
+    border-bottom:3px solid transparent; transition:background .14s, color .14s, border-color .14s;
+  }
+  .app-navbar .nv-btn:hover, .app-navbar .nv-btn[aria-expanded="true"] { background:#ffffff1f; color:#fff; }
+  .app-navbar .nv-btn[aria-expanded="true"] { border-bottom-color:var(--head-gold, #ffd166); }
+  .app-navbar .nv-caret { font-size:9px; opacity:.75; }
+  .app-navbar .nv-spacer { flex:1 1 auto; }
+  .app-navbar .nv-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:34px; border:0; background:none; color:#fff; opacity:.85; }
+  .app-navbar .nv-icon-btn:hover { opacity:1; background:#ffffff1f; }
+  .app-navbar .nv-bell { position:relative; }
+  .app-navbar .nv-bell b { position:absolute; inset-block-start:6px; inset-inline-end:6px; min-width:14px; height:14px; border-radius:999px;
+    background:#ef4444; color:#fff; font-size:9px; line-height:14px; text-align:center; padding:0 3px; }
+
+  /* ---- dropdown ---- */
+  .nav-menu-layer { position:fixed; inset:0; z-index:70; }
+  .nav-menu-layer[hidden] { display:none !important; }
+  .nav-menu {
+    position:absolute; min-width:250px; max-width:300px; padding:6px;
+    background:var(--card-bg); border:1px solid var(--card-line); border-radius:12px;
+    box-shadow:0 18px 44px #0b1b3033, 0 2px 6px #0b1b3014;
+    opacity:0; transform:translateY(-6px) scale(.985); transform-origin:top;
+    transition:opacity .13s ease, transform .13s ease; direction:rtl;
+  }
+  .nav-menu.in { opacity:1; transform:none; }
+  .nav-menu .nm-head { padding:6px 10px 4px; font-size:10.5px; font-weight:800; letter-spacing:.6px; color:var(--muted); }
+  .nav-menu .nm-item {
+    display:flex; align-items:center; gap:9px; width:100%; padding:7px 9px; border:0; border-radius:8px;
+    background:none; color:var(--ink); font-size:12px; font-weight:700; text-align:right; cursor:pointer;
+  }
+  .nav-menu .nm-item:hover, .nav-menu .nm-item:focus-visible { background:color-mix(in srgb,var(--head-3) 14%,#ffffff); outline:none; }
+  .nav-menu .nm-item .nm-ico { display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; flex:none;
+    border-radius:6px; background:color-mix(in srgb,var(--head-3) 12%,#ffffff); color:color-mix(in srgb,var(--head-2) 80%,#000000); }
+  .nav-menu .nm-item .nm-ico .look-svg-ico { width:14px; height:14px; }
+  .nav-menu .nm-item .nm-label { flex:1 1 auto; }
+  .nav-menu .nm-item .nm-kbd { font-size:9.5px; color:var(--muted); }
+  .nav-menu .nm-sep { height:1px; margin:5px 8px; background:var(--card-line); }
+
+  /* ---- 3. tab bar ---- */
+  .tabbar {
+    display:flex; align-items:flex-end; gap:4px; height:var(--tab-h); padding:4px 8px 0;
+    background:linear-gradient(180deg,#e7ecf4,#dde4ee); border-bottom:1px solid #c9d3e0;
+    position:sticky; top:calc(var(--shell-top) + var(--nav-h)); z-index:50; overflow-x:auto; overflow-y:hidden;
+    scrollbar-width:thin;
+  }
+  body[data-theme="night"].shell-v2 .tabbar { background:linear-gradient(180deg,#252b21,#1d2219); border-bottom-color:#39402f; }
+  .tab {
+    display:inline-flex; align-items:center; gap:7px; height:calc(var(--tab-h) - 4px); padding:0 10px;
+    border:1px solid #c9d3e0; border-bottom:0; border-start-start-radius:9px; border-start-end-radius:9px;
+    background:#eef2f7; color:#41505f; font-size:11.5px; font-weight:700; white-space:nowrap; cursor:pointer;
+    transition:background .12s, color .12s;
+  }
+  .tab:hover { background:#f7f9fc; color:#1f2a37; }
+  .tab[aria-selected="true"] { background:var(--card-bg); color:#12243a; box-shadow:0 -2px 0 var(--head-3) inset; }
+  .tab .tab-x { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border:0; border-radius:50%;
+    background:#00000010; color:inherit; font-size:10px; line-height:1; cursor:pointer; }
+  .tab .tab-x:hover { background:#ef4444; color:#fff; }
+  .tab.is-home .tab-x { display:none; }
+  .tab-add { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; margin-bottom:2px; border:1px dashed #a9b6c7;
+    border-radius:8px; background:none; color:#5a6b7d; font-size:14px; cursor:pointer; }
+  .tab-add:hover { background:#ffffff; color:#12243a; }
+  body[data-theme="night"].shell-v2 .tab { background:#242a20; border-color:#39402f; color:#c9d3bd; }
+  body[data-theme="night"].shell-v2 .tab[aria-selected="true"] { background:#20251b; color:#f0f4e8; }
+
+  /* ---- 4. content area: the workspace lives inline under the tabs ---- */
+  .app-shell { padding:0 12px 12px; gap:12px; }
+  .main-content { gap:10px; padding-top:10px; }
+  body.shell-v2 .window-layer {
+    position:static; display:none; inset:auto; padding:0; background:none; box-shadow:none;
+  }
+  body.shell-v2 .window-layer.open { display:block; }
+  body.shell-v2 .window-layer .workspace {
+    height:auto; min-height:calc(100vh - var(--bar-h) - 150px); max-height:none;
+    border:1px solid var(--card-line); border-radius:14px; box-shadow:var(--card-shadow); background:var(--card-bg);
+  }
+  body.shell-v2 .win-body { background:var(--content-bg); padding:12px; }
+  body.shell-v2 .sec-view { padding-bottom:8px; }
+  body.shell-v2.screen-open #homeDashboard,
+  body.shell-v2.screen-open .alerts-panel,
+  body.shell-v2.screen-open .section-bar,
+  body.shell-v2.screen-open .action-groups-grid,
+  body.shell-v2.screen-open .classic-panel { display:none !important; }
+  body[data-focus="on"] .titlebar, body[data-focus="on"] .app-navbar, body[data-focus="on"] .tabbar { display:none !important; }
+
+  /* ---- dashboard: framed groups + clean cards ---- */
+  .dash-wrap { display:flex; flex-direction:column; gap:12px; }
+  .dash-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .dash-kpi {
+    display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:14px; background:var(--card-bg);
+    border:1px solid var(--card-line); box-shadow:var(--card-shadow); text-align:right;
+  }
+  .dash-kpi .dk-ico { display:grid; place-items:center; width:38px; height:38px; flex:none; border-radius:11px; color:#fff;
+    background:linear-gradient(140deg,var(--head-3),var(--head-2)); }
+  .dash-kpi .dk-ico .look-svg-ico { width:19px; height:19px; }
+  .dash-kpi .dk-body { min-width:0; }
+  .dash-kpi small { display:block; font-size:10.5px; font-weight:700; color:var(--muted); }
+  .dash-kpi strong { display:block; font-size:17px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .dash-kpi[data-state="good"] .dk-ico { background:linear-gradient(140deg,#12805a,#2ec27e); }
+  .dash-kpi[data-state="warn"] .dk-ico { background:linear-gradient(140deg,#a35a12,#eab23f); }
+  .dash-kpi[data-state="bad"] .dk-ico { background:linear-gradient(140deg,#9d1c1c,#e0503f); }
+
+  .dash-groups { display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px; align-items:start; }
+  .dash-group {
+    --tint: var(--head-3);
+    border:1px solid color-mix(in srgb,var(--tint) 34%,var(--card-line));
+    border-radius:16px; background:var(--card-bg); box-shadow:var(--card-shadow); overflow:hidden;
+  }
+  .dash-group > h3 {
+    display:flex; align-items:center; gap:8px; margin:0; padding:9px 12px;
+    font-size:12px; font-weight:800; color:#fff;
+    background:linear-gradient(105deg,color-mix(in srgb,var(--tint) 88%,#000000),var(--tint));
+  }
+  .dash-group > h3 .dg-ico .look-svg-ico { width:15px; height:15px; }
+  .dash-group .dg-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:10px; }
+  .dash-card {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:82px; padding:8px 6px;
+    border:1px solid color-mix(in srgb,var(--tint) 18%,var(--card-line)); border-radius:12px; background:color-mix(in srgb,var(--tint) 4%,var(--card-bg));
+    color:var(--ink); font-size:11.5px; font-weight:800; text-align:center; cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s;
+  }
+  .dash-card:hover { transform:translateY(-2px); box-shadow:0 10px 22px #0f172a14; border-color:var(--tint); background:var(--card-bg); }
+  .dash-card .dc-ico { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:#fff;
+    background:linear-gradient(140deg,color-mix(in srgb,var(--tint) 90%,#000000),var(--tint)); }
+  .dash-card .dc-ico .look-svg-ico { width:18px; height:18px; }
+  .dash-group[data-tint="cash"] { --tint:#0f7c93; }
+  .dash-group[data-tint="invoice"] { --tint:#2f6bd8; }
+  .dash-group[data-tint="people"] { --tint:#7c4dff; }
+  .dash-group[data-tint="stock"] { --tint:#b4761a; }
+  .dash-group[data-tint="money"] { --tint:#12805a; }
+  .dash-group[data-tint="reports"] { --tint:#b3366f; }
+  .dash-group[data-tint="settings"] { --tint:#4a5568; }
+
+  /* ---- 5. footer banner + status bar ---- */
+  .app-footer {
+    display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap;
+    margin:12px 12px 0; padding:10px 16px; border-radius:12px 12px 0 0;
+    background:linear-gradient(100deg,#7a3b12,#b4600f 55%,#8a4310); color:#fff; font-size:11.5px; font-weight:700;
+  }
+  .app-footer .af-item { display:inline-flex; align-items:center; gap:6px; }
+  .app-footer .af-item .look-svg-ico { width:14px; height:14px; opacity:.9; }
+  .app-footer .af-brand { font-weight:800; letter-spacing:.3px; }
+  .app-status {
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 12px 10px; padding:5px 12px;
+    border-radius:0 0 12px 12px; background:var(--card-bg); border:1px solid var(--card-line); border-top:0;
+    color:var(--muted); font-size:10.5px; font-weight:700;
+  }
+  .app-status .st-item { padding-inline:8px; border-inline-end:1px solid var(--card-line); }
+  .app-status .st-item:last-child { border:0; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 900px) {
+    .dash-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .app-navbar { overflow-x:auto; overflow-y:hidden; }
+    .titlebar .tb-btn { display:inline-flex; align-items:center; justify-content:center; width:26px; height:22px; border:1px solid #d7dfea;
+      border-radius:6px; background:#fff; color:#1f2a37; }
+    .titlebar .tb-chip.is-wide { display:none; }
+  }
+  @media (max-width: 760px) {
+    body.shell-v2 { --shell-top:34px; }
+    .app-shell, .app-shell.sidebar-collapsed, .app-shell.sidebar-open { display:block; }
+    .main-content { padding:8px 4px; }
+    .app-footer { gap:10px; font-size:10.5px; }
+  }
+</style>
 <style id="invoiceToneStyle"></style>
 <style id="thermalPrintStyle"></style>
 </head>
 <body data-theme="win11-indigo">
 
 <!-- ================= APP HEADER ================= -->
+<!-- ================= TITLE BAR ================= -->
+<div class="titlebar" id="titleBar">
+  <button type="button" class="tb-btn" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">☰</button>
+  <div class="tb-logo">
+    <img id="titleBarLogo" src="/icon-192.png" alt="">
+    <span class="tb-name" id="titleBarName">مكتبة الجمال</span>
+  </div>
+  <span class="tb-spacer"></span>
+  <span class="tb-chip is-wide" id="titleBarUser">المدير</span>
+  <span class="tb-chip" id="titleBarClock">—</span>
+  </div>
+
+<!-- ================= MAIN NAVBAR (blue bar) ================= -->
+<nav class="app-navbar" id="appNavbar" aria-label="قائمة البرنامج الرئيسية"></nav>
+<div class="nav-menu-layer" id="navMenuLayer" hidden></div>
+
+<!-- ================= OPEN PAGES AS TABS ================= -->
+<div class="tabbar" id="tabBar" role="tablist" aria-label="الشاشات المفتوحة"></div>
+
 <header class="top-bar" id="appHeader" data-header="name" data-align="start">
   <div class="head-id">
     <span class="head-logo" id="headLogo"><img id="headLogoImg" alt="شعار المكتبة" src="/icon-192.png"></span>
@@ -2845,6 +3065,29 @@
   <main class="main-content" id="mainContent">
 
     <!-- ============ HOME ============ -->
+    <!-- ============ HOME: KPI STRIP + DASHBOARD GROUPS ============ -->
+    <div class="dash-wrap" id="dashWrap">
+      <div class="dash-kpis" id="dashKpis">
+        <button type="button" class="dash-kpi" onclick="openPage('treasury-all')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>رصيد الخزنة</small><strong id="dashKpiCash">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('log-sale')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>مبيعات اليوم</small><strong id="dashKpiSales">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('profits-general')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>صافي الأرباح</small><strong id="dashKpiProfit">0.00</strong></span>
+        </button>
+        <button type="button" class="dash-kpi" onclick="openPage('stock-zero')">
+          <span class="dk-ico" aria-hidden="true"></span>
+          <span class="dk-body"><small>أصناف تحت حد الطلب</small><strong id="dashKpiLow">0</strong></span>
+        </button>
+      </div>
+      <div class="dash-groups" id="dashBody"></div>
+    </div>
+
     <section class="home-dashboard collapsed" id="homeDashboard" aria-label="لوحة المتابعة اليومية">
       <button type="button" class="board-toggle" id="boardToggle" onclick="toggleDashboard()" aria-expanded="false" aria-controls="boardBody">
         <span class="board-arrow" aria-hidden="true">▾</span>
@@ -4389,6 +4632,14 @@
     <button type="button" class="activity-log-more" onclick="openActivityPage()">عرض السجل الكامل</button>
   </div>
 </aside>
+
+<!-- ================= FOOTER BANNER ================= -->
+<footer class="app-footer" id="appFooter">
+  <span class="af-item"><b class="af-brand" id="footerBrand">مكتبة الجمال</b></span>
+  <span class="af-item"><span id="footerPhone">—</span></span>
+  <span class="af-item"><span id="footerAddress">—</span></span>
+  <span class="af-item"><span>&copy; نظام نقاط البيع وإدارة المكتبات</span></span>
+</footer>
 
 <!-- ================= STATUS BAR ================= -->
 <footer class="app-status">

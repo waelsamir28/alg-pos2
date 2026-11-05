@@ -112,6 +112,7 @@ function ensurePermission(permission) {
 function roleLabel(role) { return ({ admin: 'مدير', cashier: 'كاشير', inventory: 'مخزن' })[role] || 'موظف'; }
 function updateActiveUserBadge() {
   paintStaffAvatar();
+  if ($('titleBarUser')) $('titleBarUser').textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
   if ($('statusUser')) $('statusUser').textContent = activeStaff().name;
   if ($('statusRole')) $('statusRole').textContent = activeStaff().role === 'admin' ? 'مدير عام' : roleLabel(activeStaff().role);
 }
@@ -355,6 +356,7 @@ function updateClock() {
   if ($('liveTime')) $('liveTime').textContent = time;
   if ($('statusDate')) $('statusDate').textContent = date;
   if ($('statusTime')) $('statusTime').textContent = time;
+  if ($('titleBarClock')) $('titleBarClock').textContent = `${date} ${now.toTimeString().slice(0, 5)}`;
   if ($('statusClock')) $('statusClock').textContent = `${date} ${now.toTimeString().slice(0, 5)} ${new Intl.DateTimeFormat('ar-EG', { weekday: 'long' }).format(now)}`;
 }
 /* ------------------------------------------------------------------ */
@@ -558,6 +560,17 @@ function initializeApp() {
   for (const event of ['pointerdown', 'keydown', 'wheel', 'focusin']) window.addEventListener(event, noteActivity, { passive: true });
   rememberDeviceStep(isTrustedDevice());
   applyInvoiceTones(); applyDocSettingsUI();
+  document.body.classList.add('shell-v2');
+  paintNavbar(); renderDashboard(); renderTabs(); paintTitleChrome(); shellSecondaryNav();
+  ['wallet', 'cart', 'chart', 'alert'].forEach((name, index) => {
+    const slot = document.querySelectorAll('#dashKpis .dk-ico')[index];
+    if (slot) slot.innerHTML = lookIcon(name);
+  });
+  window.addEventListener('resize', closeMenus, { passive: true });
+  document.addEventListener('click', event => {
+    if (!$('navMenuLayer') || $('navMenuLayer').hidden) return;
+    if (!event.target.closest('.app-navbar') && !event.target.closest('.nav-menu')) closeMenus();
+  }, true);
   applyAutoNight(); applyLook(); updateDashboardKPIs();
   renderActivityLog(); paintDraftHint(); startDraftAutosave(); renderStockAlerts(); syncAppBadge();
   const scan = $('invBarcodeInp');
@@ -576,6 +589,17 @@ function handleGlobalShortcut(event) {
   }
   const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName);
   const inInvoice = $('windowLayer').classList.contains('open') && $('sec-invoice').classList.contains('active');
+  if (event.altKey && !event.ctrlKey && /^[1-9]$/.test(event.key)) {
+    const menu = SHELL_MENUS[Number(event.key) - 1];
+    const button = document.querySelector(`.app-navbar .nv-btn[data-menu="${menu?.key}"]`);
+    if (menu && button) { event.preventDefault(); toggleNavMenu(menu.key, button); }
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w' && document.body.classList.contains('shell-v2')) {
+    if (activeTab && activeTab !== 'home') { event.preventDefault(); closeTab(activeTab); }
+    return;
+  }
+  if (event.key === 'Escape' && openMenuKey) { event.preventDefault(); closeMenus(); return; }
   if (event.key === 'Escape' && document.body.dataset.focus === 'on') { exitFocusMode(); return; }
   if (event.key === 'F9' && event.shiftKey && !typing) { event.preventDefault(); toggleFocusMode(); return; }
   if (event.key === 'Escape' && $('windowLayer').classList.contains('open')) { closeWorkspace(); return; }
@@ -592,11 +616,307 @@ function handleGlobalShortcut(event) {
   if (event.key === 'F11') { event.preventDefault(); openInvLog('sale'); return; }
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && inInvoice) { event.preventDefault(); saveInvoice('thermal'); return; }
   if (!typing && event.key === 'Delete' && inInvoice && selectedCartIndex >= 0) { event.preventDefault(); removeCartRow(selectedCartIndex); }
+  if (openMenuKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+    const items = [...document.querySelectorAll('.nav-menu .nm-item')];
+    if (!items.length) return;
+    event.preventDefault();
+    const index = items.indexOf(document.activeElement);
+    const next = event.key === 'ArrowDown' ? (index + 1) % items.length : (index - 1 + items.length) % items.length;
+    items[next].focus();
+  }
 }
 
 /* ------------------------------------------------------------------ */
 /* Shell: screens, window, navigation, appearance                      */
 /* ------------------------------------------------------------------ */
+/* ===================== SHELL V2: navbar menus, dropdowns, page tabs, dashboard cards ===================== */
+const SHELL_MENUS = [
+  { key: 'home', label: 'الرئيسية', icon: 'home', items: [
+    { label: 'لوحة المتابعة', page: 'home', icon: 'grid' },
+    { label: 'تنبيهات النظام', page: 'home', icon: 'alert' }
+  ] },
+  { key: 'sales', label: 'المبيعات', icon: 'cart', items: [
+    { label: 'فاتورة مبيعات', page: 'sale', icon: 'cart', kbd: 'F2' },
+    { label: 'مرتجع مبيعات', page: 'sale_return', icon: 'swap' },
+    { label: 'عرض أسعار', page: 'quote', icon: 'doc' },
+    { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt', kbd: 'F11' },
+    { label: 'مبيعات فترة', page: 'log-sale-period', icon: 'chart' }
+  ] },
+  { key: 'purchases', label: 'المشتريات', icon: 'truck', items: [
+    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
+    { label: 'مرتجع مشتريات', page: 'purchase_return', icon: 'swap' },
+    { label: 'فواتير المشتريات', page: 'log-purchase', icon: 'receipt' }
+  ] },
+  { key: 'stock', label: 'المخازن', icon: 'box', items: [
+    { label: 'بيانات الأصناف', page: 'items', icon: 'box' },
+    { label: 'المجموعات', page: 'categories', icon: 'folder' },
+    { label: 'كشف النواقص', page: 'stock-zero', icon: 'alert' },
+    { label: 'حد الطلب', page: 'stock-low', icon: 'alert' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' },
+    { label: 'ملصقات الباركود', page: 'labels', icon: 'tag' }
+  ] },
+  { key: 'people', label: 'العملاء', icon: 'users', items: [
+    { label: 'إدارة العملاء', page: 'customers', icon: 'users' },
+    { label: 'أرصدة العملاء', page: 'customers-balances', icon: 'chart' },
+    { label: 'كشف حساب عميل', page: 'customers-statement', icon: 'receipt' }
+  ] },
+  { key: 'suppliers', label: 'الموردون', icon: 'truck', items: [
+    { label: 'إدارة الموردين', page: 'suppliers', icon: 'truck' },
+    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' },
+    { label: 'كشف حساب مورد', page: 'suppliers-statement', icon: 'receipt' }
+  ] },
+  { key: 'money', label: 'الخزينة', icon: 'wallet', items: [
+    { label: 'الخزينة', page: 'treasury-all', icon: 'wallet', kbd: 'F1' },
+    { label: 'وارد الخزينة', page: 'treasury-in', icon: 'plus' },
+    { label: 'منصرف الخزينة', page: 'treasury-out', icon: 'download' },
+    { label: 'المصروفات', page: 'treasury-expense', icon: 'money' }
+  ] },
+  { key: 'reports', label: 'التقارير', icon: 'chart', items: [
+    { label: 'التقرير العام وصافي الأرباح', page: 'profits-general', icon: 'chart' },
+    { label: 'أرباح صنف', page: 'profits-item', icon: 'chart' },
+    { label: 'أرباح فترة', page: 'profits-period', icon: 'chart' },
+    { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
+  ] },
+  { key: 'file', label: 'ملف', icon: 'doc', items: [
+    { label: 'إعدادات النظام', page: 'settings', icon: 'settings' },
+    { label: 'تغيير المستخدم', page: 'lock', icon: 'lock' },
+    { label: 'إغلاق كل الشاشات', page: 'close-all', icon: 'trash' }
+  ] }
+];
+const PAGE_DEFS = {
+  home: { title: 'لوحة المتابعة', home: true },
+  sale: { title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
+  purchase: { title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
+  sale_return: { title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
+  purchase_return: { title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
+  quote: { title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
+  'log-sale': { title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
+  'log-purchase': { title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
+  'log-sale-period': { title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
+  items: { title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
+  categories: { title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
+  labels: { title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
+  'stock-zero': { title: 'كشف النواقص', run: () => openStockFilter('zero') },
+  'stock-low': { title: 'حد الطلب', run: () => openStockFilter('low') },
+  'stock-all': { title: 'جرد المخزن', run: () => openStockFilter('all') },
+  customers: { title: 'إدارة العملاء', run: () => openPartySec('customer') },
+  suppliers: { title: 'إدارة الموردين', run: () => openPartySec('supplier') },
+  'customers-balances': { title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
+  'suppliers-balances': { title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
+  'customers-statement': { title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
+  'suppliers-statement': { title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
+  'treasury-all': { title: 'الخزينة', run: () => openTreasury('all') },
+  'treasury-in': { title: 'وارد الخزينة', run: () => openTreasury('in') },
+  'treasury-out': { title: 'منصرف الخزينة', run: () => openTreasury('out') },
+  'treasury-expense': { title: 'المصروفات', run: () => openTreasury('expense') },
+  'profits-general': { title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
+  'profits-item': { title: 'أرباح صنف', run: () => openProfitSec('item') },
+  'profits-period': { title: 'أرباح فترة', run: () => openProfitSec('period') },
+  settings: { title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
+  activity: { title: 'سجل النشاط', run: () => openActivityPage() },
+  lock: { title: 'قفل الشاشة', action: () => lockApp() },
+  'close-all': { title: 'إغلاق الكل', action: () => closeAllTabs() }
+};
+const DASH_GROUPS = [
+  { key: 'cash', title: 'النقدية والخزنة', tint: 'cash', icon: 'wallet', items: [
+    { label: 'الخزينة', page: 'treasury-all', icon: 'wallet' },
+    { label: 'وارد', page: 'treasury-in', icon: 'plus' },
+    { label: 'منصرف', page: 'treasury-out', icon: 'download' },
+    { label: 'المصروفات', page: 'treasury-expense', icon: 'money' }
+  ] },
+  { key: 'invoice', title: 'الفواتير', tint: 'invoice', icon: 'cart', items: [
+    { label: 'فاتورة مبيعات', page: 'sale', icon: 'cart' },
+    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
+    { label: 'مرتجع مبيعات', page: 'sale_return', icon: 'swap' },
+    { label: 'عرض أسعار', page: 'quote', icon: 'doc' }
+  ] },
+  { key: 'people', title: 'العملاء والموردون', tint: 'people', icon: 'users', items: [
+    { label: 'العملاء', page: 'customers', icon: 'users' },
+    { label: 'الموردون', page: 'suppliers', icon: 'truck' },
+    { label: 'أرصدة العملاء', page: 'customers-balances', icon: 'chart' },
+    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' }
+  ] },
+  { key: 'stock', title: 'المخزون والأصناف', tint: 'stock', icon: 'box', items: [
+    { label: 'الأصناف', page: 'items', icon: 'box' },
+    { label: 'المجموعات', page: 'categories', icon: 'folder' },
+    { label: 'النواقص', page: 'stock-zero', icon: 'alert' },
+    { label: 'الملصقات', page: 'labels', icon: 'tag' }
+  ] },
+  { key: 'reports', title: 'التقارير', tint: 'reports', icon: 'chart', items: [
+    { label: 'الأرباح', page: 'profits-general', icon: 'chart' },
+    { label: 'أرباح صنف', page: 'profits-item', icon: 'chart' },
+    { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' }
+  ] },
+  { key: 'settings', title: 'البرنامج', tint: 'settings', icon: 'settings', items: [
+    { label: 'الإعدادات', page: 'settings', icon: 'settings' },
+    { label: 'المستخدمون', page: 'lock', icon: 'lock' },
+    { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
+  ] }
+];
+let openTabs = [];
+let activeTab = '';
+let openMenuKey = '';
+function pageDef(key) { return PAGE_DEFS[key] || null; }
+function navIconMarkup(name) {
+  const svg = lookIcon(name);
+  return `<span class="nm-ico" aria-hidden="true">${svg || ''}</span>`;
+}
+function openPage(key) {
+  const def = pageDef(key);
+  if (!def) return;
+  if (def.action) { def.action(); return; }
+  if (def.home) { activatePage('home'); return; }
+  // permission-guarded pages return early: only register a tab when the screen actually opened
+  def.run();
+  // a permission guard aborts the screen, so no tab is registered for it
+  if (!$('windowLayer').classList.contains('open')) return;
+  registerTab(key, def.title);
+  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+}
+function registerTab(key, title) {
+  const existing = openTabs.find(tab => tab.key === key);
+  if (existing) { existing.title = title || existing.title; activeTab = key; }
+  else { openTabs.push({ key, title }); activeTab = key; }
+  renderTabs();
+}
+function activatePage(key) {
+  closeMenus();
+  if (key === 'home') {
+    activeTab = 'home';
+    closeWorkspace();
+    document.body.classList.remove('screen-open');
+    renderTabs();
+    return;
+  }
+  const def = pageDef(key);
+  if (!def) return;
+  if (!openTabs.some(tab => tab.key === key)) { openPage(key); return; }
+  activeTab = key;
+  def.run();
+  document.body.classList.add('screen-open');
+  renderTabs();
+}
+function closeTab(key) {
+  if (key === 'home') { activatePage('home'); return; }
+  const index = openTabs.findIndex(tab => tab.key === key);
+  if (index < 0) return;
+  const wasActive = activeTab === key;
+  openTabs.splice(index, 1);
+  if (wasActive) {
+    const next = openTabs[Math.max(0, index - 1)];
+    if (next) activatePage(next.key); else activatePage('home');
+  } else renderTabs();
+}
+function closeAllTabs() {
+  openTabs = openTabs.filter(tab => tab.key === 'home');
+  activatePage('home');
+  notify('تم إغلاق كل الشاشات.');
+}
+function renderTabs() {
+  const bar = $('tabBar');
+  if (!bar) return;
+  if (!openTabs.some(tab => tab.key === 'home')) openTabs.unshift({ key: 'home', title: 'الرئيسية', home: true });
+  bar.innerHTML = openTabs.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
+      data-tab="${esc(tab.key)}" aria-selected="${String(tab.key === activeTab)}" onclick="activatePage('${esc(tab.key)}')">
+      <span>${esc(tab.title)}</span>
+      <span class="tab-x" role="button" tabindex="-1" aria-label="إغلاق ${esc(tab.title)}" onclick="event.stopPropagation();closeTab('${esc(tab.key)}')">✕</span>
+    </button>`).join('') + '<button type="button" class="tab-add" onclick="openHomeMenu()" title="شاشة أخرى" aria-label="فتح شاشة أخرى">+</button>';
+}
+function paintNavbar() {
+  const bar = $('appNavbar');
+  if (!bar) return;
+  const theme = db.settings || {};
+  bar.innerHTML = SHELL_MENUS.map(menu => `<button type="button" class="nv-btn" data-menu="${menu.key}"
+      aria-haspopup="menu" aria-expanded="false" onclick="toggleNavMenu('${menu.key}', this)">
+      <span aria-hidden="true">${lookIcon(menu.icon)}</span><span>${esc(menu.label)}</span><span class="nv-caret" aria-hidden="true">▾</span>
+    </button>`).join('')
+    + `<span class="nv-spacer"></span>
+      <button type="button" class="nv-icon-btn nv-bell" title="التنبيهات" aria-label="التنبيهات" onclick="openStockAlertsPage()">
+        ${lookIcon('bell')}<b id="navBellCount" hidden>0</b>
+      </button>
+      <button type="button" class="nv-icon-btn" title="تثبيت التطبيق" aria-label="تثبيت التطبيق" onclick="installApp()">${lookIcon('download')}</button>
+      <button type="button" class="nv-icon-btn" title="${theme.name ? esc(theme.name) : 'المستخدم'}" aria-label="قفل الشاشة" onclick="lockApp()">${lookIcon('user')}</button>`;
+  paintNavBell();
+}
+function paintNavBell() {
+  const bell = $('navBellCount');
+  if (!bell) return;
+  const count = lowStockItems().length;
+  bell.hidden = count === 0;
+  bell.textContent = String(count);
+}
+function findMenu(key) { return SHELL_MENUS.find(menu => menu.key === key) || null; }
+function toggleNavMenu(key, button) {
+  if (openMenuKey === key) { closeMenus(); return; }
+  openNavMenu(key, button);
+}
+function openNavMenu(key, button) {
+  const menu = findMenu(key);
+  const layer = $('navMenuLayer');
+  if (!menu || !layer) return;
+  openMenuKey = key;
+  layer.innerHTML = `<div class="nav-menu" role="menu" aria-label="${esc(menu.label)}">
+      <div class="nm-head">${esc(menu.label)}</div>
+      ${menu.items.map(item => `<button type="button" class="nm-item" role="menuitem" data-page="${esc(item.page)}" onclick="openPage('${esc(item.page)}')">
+        ${navIconMarkup(item.icon)}<span class="nm-label">${esc(item.label)}</span>${item.kbd ? `<span class="nm-kbd">${esc(item.kbd)}</span>` : ''}
+      </button>`).join('')}
+    </div>`;
+  layer.hidden = false;
+  document.querySelectorAll('.app-navbar .nv-btn').forEach(btn => btn.setAttribute('aria-expanded', String(btn.dataset.menu === key)));
+  const box = layer.querySelector('.nav-menu');
+  const rect = button.getBoundingClientRect();
+  const width = Math.min(300, Math.max(250, rect.width + 60));
+  box.style.width = `${width}px`;
+  const rtl = (window.getComputedStyle?.(document.documentElement)?.direction || 'rtl') === 'rtl';
+  let left = rtl ? rect.right - width : rect.left;
+  left = Math.max(6, Math.min(window.innerWidth - width - 6, left));
+  box.style.top = `${Math.round(rect.bottom + 4)}px`;
+  box.style.left = `${Math.round(left)}px`;
+  window.requestAnimationFrame(() => box.classList.add('in'));
+  box.querySelector('.nm-item')?.focus({ preventScroll: true });
+}
+function openHomeMenu() {
+  const first = document.querySelector('.app-navbar .nv-btn[data-menu="sales"]');
+  if (first) openNavMenu('sales', first); else { const m = document.querySelector('.app-navbar .nv-btn'); if (m) openNavMenu(m.dataset.menu, m); }
+}
+function closeMenus() {
+  const layer = $('navMenuLayer');
+  if (!layer || layer.hidden) { openMenuKey = ''; return; }
+  layer.hidden = true;
+  layer.innerHTML = '';
+  openMenuKey = '';
+  document.querySelectorAll('.app-navbar .nv-btn').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+}
+function renderDashboard() {
+  const host = $('dashBody');
+  if (!host) return;
+  host.innerHTML = DASH_GROUPS.map(group => `<section class="dash-group" data-tint="${esc(group.tint)}">
+      <h3><span class="dg-ico" aria-hidden="true">${lookIcon(group.icon)}</span>${esc(group.title)}</h3>
+      <div class="dg-grid">
+        ${group.items.map(item => `<button type="button" class="dash-card" data-page="${esc(item.page)}" onclick="openPage('${esc(item.page)}')">
+          <span class="dc-ico" aria-hidden="true">${lookIcon(item.icon)}</span><span>${esc(item.label)}</span>
+        </button>`).join('')}
+      </div>
+    </section>`).join('');
+}
+function paintTitleChrome() {
+  if ($('titleBarName')) $('titleBarName').textContent = db.settings.name;
+  if ($('titleBarLogo')) $('titleBarLogo').src = lookSettings().storeLogo || '/icon-192.png';
+  if ($('titleBarUser')) $('titleBarUser').textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
+  if ($('titleBarClock')) $('titleBarClock').textContent = `${localDate()} ${new Date().toTimeString().slice(0, 5)}`;
+  if ($('footerBrand')) $('footerBrand').textContent = db.settings.name;
+  if ($('footerPhone')) $('footerPhone').textContent = db.settings.phone ? `☎ ${db.settings.phone}` : '';
+  if ($('footerAddress')) $('footerAddress').textContent = db.settings.address || '';
+  document.title = `${db.settings.name} | نقاط البيع`;
+  paintNavBell();
+}
+function shellSecondaryNav() {
+  // keep exactly one close control per screen: the tab bar replaces the in-page ✕
+  document.querySelectorAll('.page-close-btn').forEach(button => { button.hidden = true; button.style.display = 'none'; });
+  document.querySelectorAll('.win-header, #winHeader').forEach(header => { header.hidden = true; });
+}
+
 const SEC_TITLES = {
   'sec-invoice': '🛒 شاشة البيع والاستعلام', 'sec-items': '📦 بيانات الأصناف والمخزون',
   'sec-categories': '📁 بيانات المجموعات', 'sec-stock': '🏢 جرد المخزن',
@@ -1056,6 +1376,13 @@ function updateDashboardKPIs() {
   const lowCount = db.items.filter(i => i.qty <= i.minQty).length;
   if ($('kpiLowStock')) $('kpiLowStock').textContent = lowCount;
   paintKpiStates({ cash, salesToday, lowCount });
+  if ($('dashKpiCash')) $('dashKpiCash').textContent = money(cash);
+  if ($('dashKpiSales')) $('dashKpiSales').textContent = money(salesToday);
+  if ($('dashKpiProfit')) $('dashKpiProfit').textContent = money(calculateTotalProfits().net);
+  if ($('dashKpiLow')) $('dashKpiLow').textContent = String(lowCount);
+  const kpiStrip = [['dashKpiCash', cash < 0 ? 'bad' : cash === 0 ? 'warn' : 'good'], ['dashKpiSales', salesToday > 0 ? 'good' : 'warn'],
+    ['dashKpiProfit', calculateTotalProfits().net > 0 ? 'good' : 'warn'], ['dashKpiLow', lowCount === 0 ? 'good' : lowCount > 5 ? 'bad' : 'warn']];
+  for (const [id, state] of kpiStrip) { const card = $(id)?.closest('.dash-kpi'); if (card) card.dataset.state = state; }
   if ($('kpiCashSide')) $('kpiCashSide').textContent = money(cash);
 }
 
@@ -1375,6 +1702,8 @@ function applyLook(settings = lookSettings()) {
   paintAppIconPreview();
   paintLookControls(look);
   paintIconMode(look.icons);
+  if ($('appNavbar') && $('appNavbar').children.length) { paintNavbar(); renderDashboard(); }
+  if ($('titleBarLogo')) $('titleBarLogo').src = look.storeLogo || '/icon-192.png';
   return look;
 }
 function paintLookControls(look) {
@@ -3193,6 +3522,7 @@ function lowStockItems() {
 }
 function stockAlertOpen() { const box = $('stockAlerts'); return Boolean(box && !box.hidden); }
 function renderStockAlerts() {
+  paintNavBell();
   const list = $('stockAlertsList');
   if (!list) return;
   const rows = lowStockItems();
@@ -3516,6 +3846,7 @@ function renderProfits() {
 }
 /* ---------------- settings, sync, backup ---------------- */
 function applySettingsUI() {
+  paintTitleChrome();
   $('lblStoreName').textContent = db.settings.name;
   $('lblStorePhone').textContent = db.settings.phone || '';
   $('lblStoreAddress').textContent = db.settings.address || '';
@@ -3887,6 +4218,9 @@ function saveWelcomeWizard() {
 
 // Explicit public API for the HTML buttons; implementation details remain module-scoped.
 Object.assign(window, {
+  openPage, activatePage, registerTab, closeTab, closeAllTabs, renderTabs, paintNavbar, renderDashboard,
+  toggleNavMenu, openNavMenu, closeMenus, openHomeMenu, paintTitleChrome, paintNavBell, shellSecondaryNav,
+  SHELL_MENUS, PAGE_DEFS, DASH_GROUPS,
   openSec, closeWorkspace, minimizeWorkspace, restoreWorkspace, maximizeWorkspace, selectTheme, setCustomAccent, resetAccent, setReceiptWidth,
   toggleSidebar, showHome, toggleDarkMode, toggleClassicGrid, quickAddCategory, generateNewCode, calcPriceFromProfit, calcProfitFromPrice,
   saveItem, resetItemForm, saveStaff, deleteStaff, renderItemsTable, inlineUpdateItem, toggleQuickEditItems, editItem, deleteItem,
