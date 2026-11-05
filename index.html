@@ -2806,16 +2806,85 @@
   }
   body.shell-v2 .win-body { background:var(--content-bg); padding:12px; }
   body.shell-v2 .sec-view { padding-bottom:8px; }
-  body.shell-v2.screen-open #homeDashboard,
-  body.shell-v2.screen-open .alerts-panel,
-  body.shell-v2.screen-open .section-bar,
-  body.shell-v2.screen-open .action-groups-grid,
-  body.shell-v2.screen-open .classic-panel { display:none !important; }
+  body.shell-v2 [hidden] { display:none !important; }
   body[data-focus="on"] .titlebar, body[data-focus="on"] .app-navbar, body[data-focus="on"] .tabbar { display:none !important; }
   /* the shell replaces the legacy header / nav / tool strip / side nav / status bar */
-  body.shell-v2 #appHeader, body.shell-v2 #mainNav, body.shell-v2 .tool-strip,
+  body.shell-v2 #mainNav, body.shell-v2 .tool-strip,
   body.shell-v2 #sideNav, body.shell-v2 #navScrim, body.shell-v2 .status-bar { display:none !important; }
-  body.shell-v2 #appShell { display:block; padding:0; }
+  body.shell-v2 #appShell { display:block; padding:0; min-height:0; gap:0; }
+
+  /* ================= SHELL v3: banner -> tabs -> page ================= */
+  body.shell-v2 { --banner-h:74px; --bar-h:calc(var(--shell-top) + var(--nav-h) + var(--banner-h) + var(--tab-h)); }
+
+  /* ---- 1. the store banner sits directly under the blue menu bar ---- */
+  body.shell-v2 .top-bar {
+    position:sticky; top:calc(var(--shell-top) + var(--nav-h)); z-index:54; inset-inline:0;
+    min-height:var(--banner-h); padding:8px 16px; margin:0; border-radius:0;
+    border-bottom:2px solid color-mix(in srgb,var(--head-gold) 70%,transparent);
+    box-shadow:0 6px 18px #08172e33;
+  }
+  body.shell-v2 .top-bar .store-title { font-size:clamp(16px,1.7vw,22px); }
+  body.shell-v2 .top-bar .head-meta .clock-pill,
+  body.shell-v2 .top-bar .head-meta .sync-chip { height:30px; min-width:92px; font-size:11px; }
+  body.shell-v2 .top-bar .head-icon-btn { width:32px; height:32px; font-size:15px; }
+  body.shell-v2 .top-bar .head-icons, body.shell-v2 .top-bar .head-meta, body.shell-v2 .top-bar .head-side { gap:6px; }
+  body.shell-v2 .top-bar .head-id { flex-direction:row; align-items:center; gap:10px; }
+  body.shell-v2 .top-bar .head-logo img { height:44px; }
+
+  /* ---- 2. the tab strip sits directly under the banner ---- */
+  body.shell-v2 .tabbar {
+    position:sticky; top:calc(var(--shell-top) + var(--nav-h) + var(--banner-h)); z-index:52;
+    display:flex; align-items:flex-end; gap:3px; padding:5px 10px 0;
+    height:calc(var(--tab-h) + 5px); overflow-x:auto; overflow-y:hidden;
+    background:linear-gradient(180deg,#f4f6fa,#e6ebf3); border-bottom:1px solid #cdd6e2;
+  }
+  body.shell-v2 .tab {
+    height:calc(var(--tab-h) - 1px); padding:0 12px; font-size:12px; border-radius:8px 8px 0 0;
+    background:linear-gradient(180deg,#eef2f8,#dde4ee); border:1px solid #c1ccdb; border-bottom:0; color:#33475d;
+  }
+  body.shell-v2 .tab[aria-selected="true"] {
+    background:linear-gradient(180deg,#ffffff,#f7f9fc); color:#0e2a45; font-weight:800;
+    box-shadow:0 -2px 0 var(--head-3) inset; border-color:#b9c6d8;
+  }
+  body.shell-v2 .tab.is-home { font-weight:800; }
+  body.shell-v2 .tab.is-home .tab-x { display:none; }
+  body.shell-v2 .tabbar .tab-extra {
+    margin-inline-start:auto; display:inline-flex; align-items:center; gap:6px; padding-bottom:5px;
+    font-size:10.5px; font-weight:800; color:#5a6b7d; white-space:nowrap;
+  }
+  body.shell-v2 .tabbar .tab-extra button {
+    height:22px; padding:0 8px; border-radius:6px; border:1px solid #c1ccdb; background:#fff;
+    font-size:10px; font-weight:800; color:#33475d; cursor:pointer; font-family:'Cairo',Tahoma,sans-serif;
+  }
+  body.shell-v2 .tabbar .tab-extra button:hover { border-color:#d8453c; color:#a9261c; }
+  body.shell-v2 .tab-add { display:none !important; }
+
+  /* ---- 3. the shell owns the full width: nothing beside the page ---- */
+  body.shell-v2 #appShell { display:block; padding:0; min-height:0; gap:0; }
+  body.shell-v2 #mainContent { padding:10px 12px 14px; display:block; }
+
+  /* ---- 4. exactly one visible pane: the screen of the active tab ---- */
+  body.shell-v2 #windowLayer {
+    position:static; display:none; inset:auto; z-index:auto; padding:0; margin:0;
+    background:none; box-shadow:none; backdrop-filter:none;
+  }
+  body.shell-v2 #windowLayer.open { display:block; }
+  body.shell-v2 #windowLayer .workspace { display:none !important; }
+  body.shell-v2 .float-windows { position:static; inset:auto; overflow:visible; height:auto; }
+  body.shell-v2 .float-window {
+    position:static; display:block; inset:auto !important; width:auto !important; height:auto !important;
+    min-width:0; min-height:0; margin:0; border:1px solid var(--card-line); border-radius:14px;
+    box-shadow:var(--card-shadow); background:var(--card-bg); overflow:visible;
+  }
+  body.shell-v2 .float-window.active { box-shadow:var(--card-shadow); }
+  body.shell-v2 .float-window[hidden], body.shell-v2 .float-window.minimized { display:none !important; }
+  body.shell-v2 .float-window.active:not([hidden]) { display:block; }
+  body.shell-v2 .float-titlebar, body.shell-v2 .float-controls,
+  body.shell-v2 .float-taskbar, body.shell-v2 .window-dock { display:none !important; }
+  body.shell-v2 .float-body { padding:0; overflow:visible; background:var(--card-bg); height:auto; max-height:none; }
+  body.shell-v2 .sec-view { padding:10px; }
+  body.shell-v2 #dashWrap[hidden] { display:none !important; }
+  body.shell-v2 #windowLayer .win-header { display:none !important; }
 
   /* ---- dashboard: framed groups + clean cards ---- */
   .dash-wrap { display:flex; flex-direction:column; gap:12px; }
@@ -3279,9 +3348,7 @@
 <nav class="app-navbar" id="appNavbar" aria-label="قائمة البرنامج الرئيسية"></nav>
 <div class="nav-menu-layer" id="navMenuLayer" hidden></div>
 
-<!-- ================= OPEN PAGES AS TABS ================= -->
-<div class="tabbar" id="tabBar" role="tablist" aria-label="الشاشات المفتوحة"></div>
-
+<!-- ================= STORE BANNER ================= -->
 <header class="top-bar" id="appHeader" data-header="name" data-align="start">
   <div class="head-id">
     <span class="head-logo" id="headLogo"><img id="headLogoImg" alt="شعار المكتبة" src="/icon-192.png"></span>
@@ -3308,123 +3375,13 @@
   </div>
 </header>
 
-<!-- ================= MAIN NAVIGATION TABS ================= -->
-<nav class="main-nav" id="mainNav" aria-label="التنقل الرئيسي">
-  <button type="button" class="main-nav-link active" data-nav="home" onclick="showHome()"><span aria-hidden="true">⌂</span> الرئيسية</button>
-  <button type="button" class="main-nav-link" data-nav="sale" onclick="openSalesInvoice()"><span aria-hidden="true">🛒</span> فاتورة مبيعات</button>
-  <button type="button" class="main-nav-link" data-nav="purchase" onclick="openPurchaseInvoice()"><span aria-hidden="true">📥</span> فاتورة مشتريات</button>
-  <button type="button" class="main-nav-link" data-nav="customers" onclick="openCustomersPage()"><span aria-hidden="true">👥</span> العملاء</button>
-  <button type="button" class="main-nav-link" data-nav="settings" onclick="openSettingsPage('look')"><span aria-hidden="true">⚙️</span> الإعدادات</button>
-  <button type="button" class="main-nav-link" data-nav="staff" onclick="openSettingsPage('staff')"><span aria-hidden="true">👤</span> إدارة الموظفين</button>
-</nav>
+<!-- ================= OPEN PAGES AS TABS (under the banner) ================= -->
+<div class="tabbar" id="tabBar" role="tablist" aria-label="الشاشات المفتوحة"></div>
 
-<!-- ================= MAIN ACTION BAR ================= -->
-<div class="tool-strip">
-  <button type="button" class="y-btn big-action-btn btn-menu" onclick="toggleSidebar()" aria-label="إظهار أو إخفاء القائمة">
-    <span class="y-ico" aria-hidden="true">☰</span><span class="y-txt">القائمة</span>
-  </button>
-  <button type="button" class="y-btn big-action-btn btn-sale" onclick="openSalesInvoice()">
-    <span class="y-ico" aria-hidden="true">🛒</span><span class="y-txt">شاشة البيع</span>
-  </button>
-  <button type="button" class="y-btn big-action-btn btn-labels" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">
-    <span class="y-ico" aria-hidden="true">🏷️</span><span class="y-txt">ملصقات الباركود</span>
-  </button>
-  <button type="button" class="y-btn big-action-btn btn-lock" onclick="lockApp()">
-    <span class="y-ico" aria-hidden="true">🔒</span><span class="y-txt">قفل الشاشة</span>
-  </button>
-</div>
+
 
 <!-- ================= SHELL ================= -->
 <div class="app-shell" id="appShell">
-
-  <aside class="side-nav" id="sideNav" aria-label="القائمة الرئيسية">
-    <div class="side-brand"><span class="brand-mark" aria-hidden="true">📚</span><div><strong>نظام نقاط البيع</strong><small>إدارة المكتبات</small></div></div>
-
-    <div class="side-quick" aria-label="أدوات سريعة">
-      <button type="button" onclick="openSuppliersPage()" title="الموردون"><span aria-hidden="true">🚚</span>الموردون</button>
-      <button type="button" onclick="openSettingsPage('staff')" title="الموظفون"><span aria-hidden="true">👤</span>الموظفون</button>
-      <button type="button" onclick="openPurchaseInvoice()" title="فاتورة مشتريات"><span aria-hidden="true">📥</span>مشتريات</button>
-      <button type="button" onclick="openSaleReturn()" title="مرتجع مبيعات"><span aria-hidden="true">↩️</span>مرتجع مبيعات</button>
-      <button type="button" onclick="quickPlaceholder('التحويلات')" title="تحويلات"><span aria-hidden="true">🔄</span>تحويلات</button>
-      <button type="button" onclick="openStockFilter('all')" title="المخازن"><span aria-hidden="true">📦</span>المخازن</button>
-      <button type="button" onclick="quickPlaceholder('الحضور والانصراف')" title="حضور وانصراف"><span aria-hidden="true">🕒</span>حضور</button>
-      <button type="button" onclick="openTreasury('all')" title="الخزينة"><span aria-hidden="true">💰</span>الخزينة</button>
-      <button type="button" onclick="openTreasury('expense')" title="المصروفات"><span aria-hidden="true">💸</span>المصروفات</button>
-      <button type="button" onclick="openPurchaseReturn()" title="مرتجع مشتريات"><span aria-hidden="true">↩️</span>مرتجع مشتريات</button>
-      <button type="button" onclick="openProfitSec('general')" title="إحصائيات"><span aria-hidden="true">📊</span>إحصائيات</button>
-      <button type="button" onclick="openSettingsPage('sync')" title="المزامنة"><span aria-hidden="true">☁️</span>المزامنة</button>
-      <button type="button" onclick="openSec('sec-maintenance','🛠️ الصيانة')" title="الصيانة"><span aria-hidden="true">🛠️</span>الصيانة</button>
-      <button type="button" onclick="openSec('sec-contact','📞 اتصل بنا')" title="اتصل بنا"><span aria-hidden="true">📞</span>اتصل بنا</button>
-    </div>
-
-    <div class="nav-caption">الرئيسية</div>
-    <div class="nav-group">
-      <button class="nav-link selected" type="button" onclick="showHome()"><span class="nav-icon">⌂</span><span class="nav-label">الرئيسية | لوحة المتابعة</span></button>
-    </div>
-
-    <div class="nav-caption">المبيعات</div>
-    <div class="nav-group">
-      <button class="nav-link accent" type="button" onclick="openSalesInvoice()"><span class="nav-icon">🛒</span><span class="nav-label">شاشة البيع والاستعلام</span></button>
-      <div class="nav-sub">
-        <button class="nav-link" type="button" onclick="openSalesInvoice()"><span class="nav-label">فاتورة مبيعات</span></button>
-        <button class="nav-link" type="button" onclick="openSaleReturn()"><span class="nav-label">مرتجع مبيعات</span></button>
-        <button class="nav-link" type="button" onclick="openQuotePage()"><span class="nav-label">عرض أسعار</span></button>
-        <button class="nav-link" type="button" onclick="openInvLog('sale')"><span class="nav-label">فواتير المبيعات</span></button>
-        <button class="nav-link" type="button" onclick="openInvLog('sale',true)"><span class="nav-label">مبيعات فترة</span></button>
-      </div>
-    </div>
-
-    <div class="nav-caption">المشتريات والموردون</div>
-    <div class="nav-group">
-      <button class="nav-link accent" type="button" onclick="openPurchaseInvoice()"><span class="nav-icon">📥</span><span class="nav-label">فواتير المشتريات</span></button>
-      <div class="nav-sub">
-        <button class="nav-link" type="button" onclick="openPurchaseReturn()"><span class="nav-label">مرتجع مشتريات</span></button>
-        <button class="nav-link" type="button" onclick="openInvLog('purchase')"><span class="nav-label">فواتير مشتريات محفوظة</span></button>
-        <button class="nav-link" type="button" onclick="openSuppliersPage()"><span class="nav-label">إدارة الموردين</span></button>
-      </div>
-    </div>
-
-    <div class="nav-caption">المخزون والأصناف</div>
-    <div class="nav-group">
-      <button class="nav-link accent" type="button" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')"><span class="nav-icon">📦</span><span class="nav-label">الأصناف والمخزون</span></button>
-      <div class="nav-sub">
-        <button class="nav-link" type="button" onclick="openSec('sec-categories','📁 بيانات المجموعات')"><span class="nav-label">المجموعات</span></button>
-        <button class="nav-link" type="button" onclick="openStockFilter('all')"><span class="nav-label">جرد المخزن</span></button>
-        <button class="nav-link" type="button" onclick="openStockFilter('low')"><span class="nav-label">حد الطلب</span></button>
-        <button class="nav-link" type="button" onclick="openStockFilter('zero')"><span class="nav-label">النواقص</span></button>
-        <button class="nav-link" type="button" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')"><span class="nav-label">ملصقات الباركود</span></button>
-      </div>
-    </div>
-
-    <div class="nav-caption">الحسابات</div>
-    <div class="nav-group">
-      <button class="nav-link accent" type="button" onclick="openCustomersPage()"><span class="nav-icon">👥</span><span class="nav-label">إدارة العملاء</span></button>
-      <div class="nav-sub">
-        <button class="nav-link" type="button" onclick="openPartyReport('customer','balances')"><span class="nav-label">أرصدة العملاء</span></button>
-        <button class="nav-link" type="button" onclick="openPartyReport('supplier','balances')"><span class="nav-label">أرصدة الموردين</span></button>
-        <button class="nav-link" type="button" onclick="openTreasury('in')"><span class="nav-label">وارد الخزنة</span></button>
-        <button class="nav-link" type="button" onclick="openTreasury('out')"><span class="nav-label">منصرف الخزنة</span></button>
-        <button class="nav-link" type="button" onclick="openTreasury('expense')"><span class="nav-label">المصروفات</span></button>
-      </div>
-    </div>
-
-    <div class="nav-caption">التقارير</div>
-    <div class="nav-group">
-      <button class="nav-link accent" type="button" onclick="openProfitSec('general')"><span class="nav-icon">📈</span><span class="nav-label">التقرير العام والأرباح</span></button>
-      <div class="nav-sub">
-        <button class="nav-link" type="button" onclick="openProfitSec('item')"><span class="nav-label">أرباح صنف</span></button>
-        <button class="nav-link" type="button" onclick="openProfitSec('net')"><span class="nav-label">صافي الأرباح</span></button>
-        <button class="nav-link" type="button" onclick="openProfitSec('period')"><span class="nav-label">أرباح فترة</span></button>
-      </div>
-    </div>
-
-    <div class="nav-caption">البرنامج</div>
-    <div class="nav-group">
-      <button class="nav-link" type="button" onclick="openSec('sec-settings','⚙️ إعدادات النظام')"><span class="nav-icon">⚙️</span><span class="nav-label">إعدادات النظام</span></button>
-      <button class="nav-link" type="button" onclick="lockApp()"><span class="nav-icon">🔐</span><span class="nav-label">المستخدمون والصلاحيات</span></button>
-    </div>
-    <div class="side-nav-foot"><span class="nav-status-dot"></span><span class="nav-label">البيانات محفوظة على هذا الجهاز</span></div>
-  </aside>
 
   <main class="main-content" id="mainContent">
 

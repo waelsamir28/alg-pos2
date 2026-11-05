@@ -533,7 +533,7 @@ function initializeApp() {
   window.clearInterval(clockTimer);
   clockTimer = window.setInterval(updateClock, 1000);
   window.addEventListener('online', scheduleAutoSync);
-  $('sideNav').addEventListener('click', event => {
+  $('sideNav')?.addEventListener('click', event => {
     const link = event.target.closest('.nav-link'); if (!link) return;
     document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('selected', item === link));
     if (window.innerWidth <= 760) toggleSidebar(false);
@@ -692,40 +692,40 @@ const SHELL_MENUS = [
   ] }
 ];
 const PAGE_DEFS = {
-  home: { title: 'لوحة المتابعة', home: true },
-  sale: { title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
-  purchase: { title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
-  sale_return: { title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
-  purchase_return: { title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
-  quote: { title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
-  'log-sale': { title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
-  'log-purchase': { title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
-  'log-sale-period': { title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
-  items: { title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
-  categories: { title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
-  labels: { title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
-  'stock-zero': { title: 'كشف النواقص', run: () => openStockFilter('zero') },
-  'stock-low': { title: 'حد الطلب', run: () => openStockFilter('low') },
-  'stock-all': { title: 'جرد المخزن', run: () => openStockFilter('all') },
-  customers: { title: 'إدارة العملاء', run: () => openPartySec('customer') },
-  suppliers: { title: 'إدارة الموردين', run: () => openPartySec('supplier') },
-  employees: { title: 'إدارة الموظفين', run: () => openHrPage('employees') },
-  'employees-attendance': { title: 'الحضور والانصراف', run: () => openHrPage('attendance') },
-  'employees-payroll': { title: 'المرتبات', run: () => openHrPage('payroll') },
-  'employees-vacations': { title: 'الإجازات', run: () => openHrPage('vacations') },
-  'customers-balances': { title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
-  'suppliers-balances': { title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
-  'customers-statement': { title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
-  'suppliers-statement': { title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
-  'treasury-all': { title: 'الخزينة', run: () => openTreasury('all') },
-  'treasury-in': { title: 'وارد الخزينة', run: () => openTreasury('in') },
-  'treasury-out': { title: 'منصرف الخزينة', run: () => openTreasury('out') },
-  'treasury-expense': { title: 'المصروفات', run: () => openTreasury('expense') },
-  'profits-general': { title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
-  'profits-item': { title: 'أرباح صنف', run: () => openProfitSec('item') },
-  'profits-period': { title: 'أرباح فترة', run: () => openProfitSec('period') },
-  settings: { title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
-  activity: { title: 'سجل النشاط', run: () => openActivityPage() },
+  home: { title: 'لوحة المتابعة', home: true, section: '' },
+  sale: { section: 'sec-invoice', title: 'فاتورة مبيعات', run: () => openInvoiceSec('sale') },
+  purchase: { section: 'sec-invoice', title: 'فاتورة مشتريات', run: () => openInvoiceSec('purchase') },
+  sale_return: { section: 'sec-invoice', title: 'مرتجع مبيعات', run: () => openInvoiceSec('sale_return') },
+  purchase_return: { section: 'sec-invoice', title: 'مرتجع مشتريات', run: () => openInvoiceSec('purchase_return') },
+  quote: { section: 'sec-invoice', title: 'عرض أسعار', run: () => openInvoiceSec('quote') },
+  'log-sale': { section: 'sec-invlog', title: 'سجل فواتير المبيعات', run: () => openInvLog('sale') },
+  'log-purchase': { section: 'sec-invlog', title: 'سجل فواتير المشتريات', run: () => openInvLog('purchase') },
+  'log-sale-period': { section: 'sec-invlog', title: 'مبيعات فترة', run: () => openInvLog('sale', true) },
+  items: { section: 'sec-items', title: 'بيانات الأصناف', run: () => openSec('sec-items', '📦 بيانات الأصناف والمخزون') },
+  categories: { section: 'sec-categories', title: 'المجموعات', run: () => openSec('sec-categories', '📁 بيانات المجموعات') },
+  labels: { section: 'sec-labels', title: 'ملصقات الباركود', run: () => openSec('sec-labels', '🏷️ طباعة ملصقات الباركود') },
+  'stock-zero': { section: 'sec-stock', title: 'كشف النواقص', run: () => openStockFilter('zero') },
+  'stock-low': { section: 'sec-stock', title: 'حد الطلب', run: () => openStockFilter('low') },
+  'stock-all': { section: 'sec-stock', title: 'جرد المخزن', run: () => openStockFilter('all') },
+  customers: { section: 'sec-parties', title: 'إدارة العملاء', run: () => openPartySec('customer') },
+  suppliers: { section: 'sec-parties', title: 'إدارة الموردين', run: () => openPartySec('supplier') },
+  employees: { section: 'sec-hr', title: 'إدارة الموظفين', run: () => openHrPage('employees') },
+  'employees-attendance': { section: 'sec-hr', title: 'الحضور والانصراف', run: () => openHrPage('attendance') },
+  'employees-payroll': { section: 'sec-hr', title: 'المرتبات', run: () => openHrPage('payroll') },
+  'employees-vacations': { section: 'sec-hr', title: 'الإجازات', run: () => openHrPage('vacations') },
+  'customers-balances': { section: 'sec-parties', title: 'أرصدة العملاء', run: () => openPartyReport('customer', 'balances') },
+  'suppliers-balances': { section: 'sec-parties', title: 'أرصدة الموردين', run: () => openPartyReport('supplier', 'balances') },
+  'customers-statement': { section: 'sec-parties', title: 'كشف حساب عميل', run: () => openPartyReport('customer', 'statement') },
+  'suppliers-statement': { section: 'sec-parties', title: 'كشف حساب مورد', run: () => openPartyReport('supplier', 'statement') },
+  'treasury-all': { section: 'sec-treasury', title: 'الخزينة', run: () => openTreasury('all') },
+  'treasury-in': { section: 'sec-treasury', title: 'وارد الخزينة', run: () => openTreasury('in') },
+  'treasury-out': { section: 'sec-treasury', title: 'منصرف الخزينة', run: () => openTreasury('out') },
+  'treasury-expense': { section: 'sec-treasury', title: 'المصروفات', run: () => openTreasury('expense') },
+  'profits-general': { section: 'sec-profits', title: 'التقرير العام والأرباح', run: () => openProfitSec('general') },
+  'profits-item': { section: 'sec-profits', title: 'أرباح صنف', run: () => openProfitSec('item') },
+  'profits-period': { section: 'sec-profits', title: 'أرباح فترة', run: () => openProfitSec('period') },
+  settings: { section: 'sec-settings', title: 'إعدادات النظام', run: () => openSec('sec-settings', '⚙️ إعدادات النظام') },
+  activity: { section: 'sec-settings', title: 'سجل النشاط', run: () => openActivityPage() },
   lock: { title: 'قفل الشاشة', action: () => lockApp() },
   'close-all': { title: 'إغلاق الكل', action: () => closeAllTabs() }
 };
@@ -785,12 +785,13 @@ function openPage(key) {
   if (!def) return;
   if (def.action) { def.action(); return; }
   if (def.home) { activatePage('home'); return; }
-  // permission-guarded pages return early: only register a tab when the screen actually opened
   def.run();
   // a permission guard aborts the screen, so no tab is registered for it
   if (!$('windowLayer').classList.contains('open')) return;
   registerTab(key, def.title);
-  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+  activeTab = key;
+  presentActivePane();
+  renderTabs();
 }
 function registerTab(key, title) {
   const existing = openTabs.find(tab => tab.key === key);
@@ -798,21 +799,48 @@ function registerTab(key, title) {
   else { openTabs.push({ key, title }); activeTab = key; }
   renderTabs();
 }
+/* the home tab only hides the open screens; their tabs (and their state) stay alive */
+function showShellHome() {
+  document.body.classList.remove('screen-open', 'section-open');
+  document.body.style.overflow = '';
+  if ($('sectionPool')) [...$('sectionPool').querySelectorAll('.float-window')].forEach(el => { el.hidden = true; });
+  if ($('windowLayer')) { $('windowLayer').classList.remove('open'); $('windowLayer').hidden = true; }
+  ensureHomeVisible();
+  renderTabs();
+}
+function ensureHomeVisible() {
+  ['dashWrap', 'homeDashboard', 'alertsPanel', 'classicPanel'].forEach(id => { if ($(id)) $(id).hidden = false; });
+}
+/* exactly one visible pane: the screen that belongs to the active tab */
+function presentActivePane() {
+  const layer = $('windowLayer');
+  if (!layer) return;
+  const win = activeFloatId ? floatWindows.get(activeFloatId) : null;
+  if (!win) { showShellHome(); return; }
+  [...floatWindows.values()].forEach(entry => {
+    const current = entry.el === win.el;
+    entry.el.hidden = !current;
+    entry.el.classList.toggle('active', current);
+  });
+  layer.hidden = false;
+  layer.classList.add('open');
+  if ($('floatTaskbar')) $('floatTaskbar').hidden = true;
+  if ($('windowDock')) $('windowDock').hidden = true;
+  ['dashWrap', 'homeDashboard', 'alertsPanel', 'classicPanel'].forEach(id => { if ($(id)) $(id).hidden = true; });
+  document.body.classList.add('screen-open');
+  document.body.classList.remove('section-open');
+  document.body.style.overflow = '';
+}
 function activatePage(key) {
   closeMenus();
-  if (key === 'home') {
-    activeTab = 'home';
-    closeWorkspace();
-    document.body.classList.remove('screen-open');
-    renderTabs();
-    return;
-  }
+  if (key === 'home') { activeTab = 'home'; showShellHome(); return; }
   const def = pageDef(key);
-  if (!def) return;
+  if (!def || def.action) return;
   if (!openTabs.some(tab => tab.key === key)) { openPage(key); return; }
-  activeTab = key;
+  // re-run the screen so shared pages (invoice modes, clients/suppliers) show their own data
   def.run();
-  document.body.classList.add('screen-open');
+  activeTab = key;
+  presentActivePane();
   renderTabs();
 }
 function closeTab(key) {
@@ -820,26 +848,46 @@ function closeTab(key) {
   const index = openTabs.findIndex(tab => tab.key === key);
   if (index < 0) return;
   const wasActive = activeTab === key;
+  const def = pageDef(key);
   openTabs.splice(index, 1);
+  // drop only the screen of this tab; a shared screen stays alive for its other tabs
+  if (def && def.section && !openTabs.some(tab => pageDef(tab.key)?.section === def.section)) removeFloatWindow(def.section);
   if (wasActive) {
-    const next = openTabs[Math.max(0, index - 1)];
-    if (next) activatePage(next.key); else activatePage('home');
-  } else renderTabs();
+    const next = openTabs.filter(tab => tab.key !== 'home').at(-1);
+    if (next) activatePage(next.key); else { activeTab = 'home'; showShellHome(); }
+  } else { presentActivePane(); renderTabs(); }
+}
+function removeFloatWindow(sectionId) {
+  const win = floatWindows.get(sectionId);
+  if (!win) return;
+  win.el.remove();
+  floatWindows.delete(sectionId);
+  if (activeFloatId === sectionId) activeFloatId = [...floatWindows.keys()].at(-1) || null;
 }
 function closeAllTabs() {
   openTabs = openTabs.filter(tab => tab.key === 'home');
-  activatePage('home');
+  for (const [id, entry] of [...floatWindows]) { entry.el.remove(); floatWindows.delete(id); }
+  activeFloatId = null;
+  activeTab = 'home';
+  showShellHome();
   notify('تم إغلاق كل الشاشات.');
 }
 function renderTabs() {
   const bar = $('tabBar');
   if (!bar) return;
   if (!openTabs.some(tab => tab.key === 'home')) openTabs.unshift({ key: 'home', title: 'الرئيسية', home: true });
-  bar.innerHTML = openTabs.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
+  // the pinned home tab always sits at the far right, new tabs open next to it
+  const ordered = [openTabs.find(tab => tab.key === 'home'), ...openTabs.filter(tab => tab.key !== 'home')];
+  const tabs = ordered.map(tab => `<button type="button" class="tab${tab.home ? ' is-home' : ''}" role="tab"
       data-tab="${esc(tab.key)}" aria-selected="${String(tab.key === activeTab)}" onclick="activatePage('${esc(tab.key)}')">
       <span>${esc(tab.title)}</span>
       <span class="tab-x" role="button" tabindex="-1" aria-label="إغلاق ${esc(tab.title)}" onclick="event.stopPropagation();closeTab('${esc(tab.key)}')">✕</span>
-    </button>`).join('') + '<button type="button" class="tab-add" onclick="openHomeMenu()" title="شاشة أخرى" aria-label="فتح شاشة أخرى">+</button>';
+    </button>`).join('');
+  const extra = ordered.length > 1
+    ? `<span class="tab-extra"><span>${ordered.length - 1} شاشة مفتوحة</span><button type="button" onclick="closeAllTabs()" title="إغلاق كل الشاشات" aria-label="إغلاق كل الشاشات">✕ إغلاق الكل</button></span>`
+    : '<span class="tab-extra"><span>اضغط أي زر في القائمة ليفتح في تبويب</span></span>';
+  bar.innerHTML = tabs + extra;
+  if ($('tabCount')) $('tabCount').textContent = String(ordered.length - 1);
 }
 function paintNavbar() {
   const bar = $('appNavbar');
@@ -930,9 +978,9 @@ function paintTitleChrome() {
   paintNavBell();
 }
 function shellSecondaryNav() {
-  // keep exactly one close control per screen: the tab bar replaces the in-page ✕
+  // the tab strip is the only page switcher now: no in-page ✕ and no window title bar
   document.querySelectorAll('.page-close-btn').forEach(button => { button.hidden = true; button.style.display = 'none'; });
-  document.querySelectorAll('.win-header, #winHeader').forEach(header => { header.hidden = true; });
+  document.querySelectorAll('.win-header, #winHeader, .float-titlebar').forEach(header => { header.hidden = true; });
 }
 
 /* ================================================================== */
@@ -1720,6 +1768,8 @@ function deleteMaintenanceRequest(id) {
   renderMaintenanceRequests();
 }
 function closeWorkspace() {
+  // in the tabbed shell the ✕ of a page closes its tab, so the strip and the screen stay in step
+  if (document.body.classList.contains('shell-v2') && activeTab && activeTab !== 'home') { closeTab(activeTab); return; }
   if (activeFloatId) closeFloat(activeFloatId);
   else closeAllFloat();
 }
@@ -4368,13 +4418,13 @@ function printPartyStatementA5() {
 
 /* ---------------- invoice log ---------------- */
 /* ---- invoice log views: sales, purchases, quotes and everything, each with its own look ---- */
-const LOG_KINDS = {
+const LOG_KINDS = {  
   sale: { title: '🛍️ سجل فواتير المبيعات', section: '🛍️ فواتير المبيعات المسجلة', party: 'العميل', chip: 'إجمالي المبيعات',
-    filters: ['sale', 'sale_return'], permission: 'sales-log' },
+    filters: ['sale', 'sale_return'], permission: 'sales-log' },  
   purchase: { title: '🚚 سجل فواتير المشتريات', section: '🚚 فواتير المشتريات المسجلة', party: 'المورد', chip: 'إجمالي المشتريات',
-    filters: ['purchase', 'purchase_return'], permission: 'purchase-log' },
+    filters: ['purchase', 'purchase_return'], permission: 'purchase-log' },  
   quote: { title: '🧾 سجل عروض الأسعار', section: '🧾 عروض الأسعار', party: 'العميل', chip: 'إجمالي العروض',
-    filters: ['quote'], permission: 'sales-log' },
+    filters: ['quote'], permission: 'sales-log' },  
   all: { title: '📚 سجل كل الحركات', section: '📚 كل الفواتير والحركات', party: 'العميل / المورد', chip: 'إجمالي الحركة',
     filters: ['sale', 'sale_return', 'purchase', 'purchase_return', 'quote'], permission: 'admin' }
 };

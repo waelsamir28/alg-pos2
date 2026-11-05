@@ -987,10 +987,16 @@ test('opening a page from the dropdown registers a tab, re-opening reuses it and
   // activating a tab switches the screen
   f.window.activatePage('items');
   assert.equal(f.$('sec-items').classList.contains('active'), true);
-  // the home tab never closes
+  // the home tab never closes: it shows the dashboard and keeps the other screens alive
   f.window.closeTab('home');
   assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 3);
+  assert.equal(f.$('dashWrap').hidden, false);
+  assert.equal(f.$('windowLayer').classList.contains('open'), false);
+  // going back to a screen tab shows that screen again
+  f.window.activatePage('sale');
   assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  assert.equal(f.$('sec-invoice').closest('.float-window').hidden, false);
+  assert.equal(f.$('dashWrap').hidden, true);
   // closing the active tab falls back to the dashboard
   f.window.closeTab('items');
   assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 2);
@@ -1008,6 +1014,11 @@ test('the dashboard shows a KPI strip and framed feature groups', async t => {
   assert.match(f.$('dashBody').querySelector('.dash-card[data-page="customers"]').getAttribute('onclick'), /openPage\('customers'\)/);
   f.window.openPage('customers');
   assert.equal(f.$('sec-parties').classList.contains('active'), true);
+  // the opened screen is visible: its pane is not hidden and the layer is open
+  const pane = f.$('sec-parties').closest('.float-window');
+  assert.equal(pane.hidden, false);
+  assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  assert.equal(f.$('dashWrap').hidden, true);
   assert.match(f.$('tabBar').textContent, /إدارة العملاء/);
   // title bar, footer and status chrome are populated from the store data
   assert.equal(f.$('titleBarName').textContent, 'مكتبة الجمال');
@@ -1129,4 +1140,77 @@ test('employees page: colourful HR tiles, staff records, attendance and payroll'
   assert.equal(f.window.document.querySelector('[data-hr-panel="payroll"]').classList.contains('active'), false);
   assert.equal(f.window.document.querySelector('[data-hr-panel="departments"]').classList.contains('active'), true);
   assert.equal(f.$('tabBar').textContent.includes('إدارة الموظفين'), true);
+});
+
+test('shell v3: banner on top, tab strip under it, no legacy nav rows and no tab-add button', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  const doc = f.window.document;
+  // the legacy row under the banner and the coloured side menu are gone from the markup
+  assert.equal(f.$('mainNav'), null);
+  assert.equal(f.$('sideNav'), null);
+  assert.equal(doc.querySelector('.tool-strip'), null);
+  // the banner is above the tab strip, which is above the shell
+  const banner = f.$('appHeader'), tabs = f.$('tabBar'), shell = f.$('appShell');
+  assert.ok(banner && tabs && shell);
+  assert.equal(banner.compareDocumentPosition(tabs) & 4, 4, 'the banner comes before the tab strip');
+  assert.equal(tabs.compareDocumentPosition(shell) & 4, 4, 'the tab strip comes before the shell');
+  assert.equal(banner.closest('.app-shell'), null, 'the banner is not inside the shell');
+  // the legacy add button is gone and the strip explains itself instead
+  assert.equal(f.$('tabBar').querySelector('.tab-add'), null);
+  assert.match(f.$('tabBar').textContent, /اضغط أي زر في القائمة/);
+});
+
+test('shell v3: any dashboard button opens its screen inside its own tab and closing all tabs resets', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  const doc = f.window.document;
+  // every dashboard card opens a visible screen, one at a time
+  const cards = [...f.$('dashBody').querySelectorAll('.dash-card')];
+  assert.ok(cards.length >= 20);
+  for (const card of cards.slice(0, 6)) {
+    const key = card.dataset.page;
+    f.window.openPage(key);
+    const def = f.window.PAGE_DEFS[key];
+    if (def.action) continue;
+    const active = doc.querySelector(`.float-window[data-section="${def.section}"]`);
+    assert.ok(active, `${key} opened its screen`);
+    assert.equal(active.hidden, false, `${key} is visible`);
+    assert.equal(f.$('windowLayer').classList.contains('open'), true);
+    assert.equal(f.$('dashWrap').hidden, true, `${key} hides the dashboard`);
+    assert.ok([...f.$('tabBar').querySelectorAll('.tab')].some(tab => tab.dataset.tab === key), `${key} has a tab`);
+  }
+  const count = f.$('tabBar').querySelectorAll('.tab').length;
+  assert.ok(count > 2);
+  // the strip shows a counter and a close-all control
+  assert.match(f.$('tabBar').querySelector('.tab-extra').textContent, /شاشة مفتوحة/);
+  f.window.document.querySelector('.tab-extra button').click?.();
+  f.window.closeAllTabs();
+  assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 1);
+  assert.equal(f.$('windowLayer').classList.contains('open'), false);
+  assert.equal(f.$('dashWrap').hidden, false);
+  assert.equal(doc.querySelectorAll('.float-window').length, 0);
+});
+
+test('shell v3: the active tab is the only visible screen and the home tab sits at the far right', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  f.window.openPage('sale');
+  f.window.openPage('items');
+  const panes = [...f.window.document.querySelectorAll('.float-window')];
+  assert.equal(panes.length, 2);
+  assert.equal(panes.filter(pane => !pane.hidden).length, 1, 'only the active screen is visible');
+  assert.equal(f.$('sec-items').closest('.float-window').hidden, false);
+  assert.equal(f.$('sec-invoice').closest('.float-window').hidden, true);
+  // the home tab is rendered first in RTL (far right) and never shows a close ✕
+  const tabs = [...f.$('tabBar').querySelectorAll('.tab')];
+  assert.equal(tabs[0].classList.contains('is-home'), true);
+  assert.equal(f.window.getComputedStyle(tabs[0].querySelector('.tab-x')).display, 'none');
+  // closing a tab only drops its own screen
+  f.window.closeTab('items');
+  assert.equal(f.window.document.querySelector('.float-window[data-section="sec-items"]'), null);
+  assert.ok(f.window.document.querySelector('.float-window[data-section="sec-invoice"]'));
+  assert.equal(f.$('windowLayer').classList.contains('open'), true);
+  // the active tab always matches the visible screen
+  assert.equal(f.$('sec-invoice').closest('.float-window').hidden, false);
 });
