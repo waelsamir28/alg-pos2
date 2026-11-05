@@ -228,13 +228,10 @@ test('POS screen uses the new bars: title, tabs on the left, group dropdown and 
   assert.equal(f.$('posGroupSelect').value, 'كتب خارجية');
   assert.equal(f.$('posQuickItems').children.length, 1);
   assert.equal(f.$('posGroupCount').textContent, '1 صنف');
-  // invoice tabs keep exactly one active tab and swap the contextual fields
-  f.window.switchInvoiceTab('discount');
-  assert.deepEqual([...f.window.document.querySelectorAll('#invTabs .pos-tab')].map(b => b.classList.contains('is-active')), [false, false, true, false]);
-  assert.equal(f.window.document.querySelector('[data-inv-group="discount"]').hidden, false);
-  assert.equal(f.$('invPanelTitle').textContent, 'الخصم');
-  f.window.switchInvoiceTab('details');
-  assert.equal(f.window.document.querySelector('[data-inv-group="details"]').hidden, false);
+  // every invoice field is on the strip at once: no tab panel hides a box
+  assert.equal(f.window.document.querySelectorAll('[data-inv-group]').length, 0);
+  assert.equal(f.$('invDiscPct') !== null && f.$('invPrintNote') !== null, true);
+  assert.equal(f.$('invTabs').hidden, true);
   // save / hold / restore / print / clear are ordered in one strip
   const actions = [...f.window.document.querySelectorAll('.pos-actions-strip .pos-action')].map(button => button.textContent.trim());
   assert.match(actions[0], /^💾حفظ/);
@@ -244,13 +241,15 @@ test('POS screen uses the new bars: title, tabs on the left, group dropdown and 
   assert.match(actions[4], /تعليق/);
   assert.match(actions[5], /استعادة معلقة/);
   assert.match(actions.at(-1), /تفريغ/);
-  // ten equal function keys sit in a bar at the bottom
-  assert.equal(f.window.document.querySelectorAll('.pos-fnbar .fn-btn').length, 10);
-  // the money boxes stay on one row in the summary and never stack
-  const totalsCard = f.window.document.querySelector('.posx-totals');
-  const boxes = [...totalsCard.querySelectorAll('.posx-total-row input')].map(input => input.id);
+  // the brown function-key strip is gone
+  assert.equal(f.window.document.querySelectorAll('.fn-strip').length, 0);
+  assert.equal(f.window.document.querySelectorAll('.pos-fnbar').length, 0);
+  // the money boxes sit on one row of big boxes in the summary
+  const totalsCard = f.window.document.querySelector('.posv3-sum-row');
+  const boxes = [...totalsCard.querySelectorAll('input')].map(input => input.id).filter(id => id && id !== 'invPaidWithKeypad');
   assert.deepEqual(boxes, ['invSubTotal', 'invDiscTotalView', 'invNetTotal', 'invPaidAmount', 'invRemainAmount']);
   assert.equal(f.$('invNetTotal').tagName, 'INPUT');
+  assert.equal(f.window.getComputedStyle(totalsCard).display, 'flex');
 });
 
 test('floating screens open large and the screen-print button is gone', async t => {
@@ -590,17 +589,22 @@ test('POS keeps invoice data on the left, money boxes side by side and no quick-
   assert.equal(f.window.document.querySelectorAll('.cash-chip').length, 0);
   const wrap = f.window.document.querySelector('#sec-invoice .pos-wrap');
   assert.equal(wrap.dataset.mode, 'sale');
-  // the totals are compact, clearly labelled rows (net, paid, remaining) in the summary card
-  const rows = [...f.window.document.querySelectorAll('.posx-totals .posx-total-row > span:first-child')].map(cell => cell.textContent.trim());
+  // the totals are one row of big boxes (net, paid, remaining) in the summary card
+  const rows = [...f.window.document.querySelectorAll('.posv3-sum > span:first-child')].map(cell => cell.textContent.trim());
   assert.deepEqual(rows, ['إجمالي البنود', 'خصم إضافي', 'الصافي المطلوب', 'المدفوع', 'المتبقي (آجل)']);
   assert.equal(f.$('invNetTotal').tagName, 'INPUT');
-  // invoice data tabs sit in the invoice-data card, above the contextual fields
-  const dataCard = f.window.document.querySelector('#invTabs')?.closest('.ws-card');
-  assert.ok(dataCard, 'the invoice tabs live inside a workspace card');
-  assert.equal(f.$('invTabs').getAttribute('role'), 'tablist');
+  // the invoice data is a wide strip: the customer box is as wide as the barcode box
+  const meta = f.window.document.querySelector('#sec-invoice .posv3-meta-row');
+  assert.ok(meta, 'the invoice data strip exists');
+  const partyBox = f.$('invPartySelect').closest('.pv3-field');
+  const dateBox = f.$('invDateView').closest('.pv3-field');
+  assert.equal(partyBox.classList.contains('pv3-wide'), true);
+  assert.equal(f.window.getComputedStyle(meta).display, 'flex');
+  // payment type and price tier are chips in the strip head, not separate cards
+  assert.ok(f.$('invPayType').closest('.posv3-meta-head'));
+  assert.ok(f.$('invPriceTier').closest('.posv3-meta-head'));
   f.window.openInvoiceSec('purchase');
   assert.equal(wrap.dataset.mode, 'purchase');
-  assert.equal(f.$('invPanelTitle') !== null, true);
 });
 
 test('invoice log switches between sales, purchases, quotes with distinct headings', async t => {
@@ -1026,18 +1030,38 @@ test('the dashboard shows a KPI strip and framed feature groups', async t => {
   assert.match(f.$('titleBarUser').textContent, /مكتبة الجمال|مدير/);
 });
 
-test('sales invoice page: utility rail, metadata, item grid and money summary', async t => {
+test('sales invoice page: metadata strip, item grid beside quick groups and money summary', async t => {
   const f = await ready(t, { db: seedDatabase() });
   f.window.openPage('sale');
-  // left utility rail: add-item action, calculator and free notes
-  assert.ok(f.window.document.querySelector('.posx-rail .posx-add'));
-  assert.equal(f.window.document.querySelectorAll('.posx-rail .calc-keys button').length, 20);
-  assert.equal(f.$('posNotes').tagName, 'TEXTAREA');
+  // the calculator is a floating window opened from the invoice-data strip
+  const calc = f.$('calcFloat');
+  assert.ok(calc, 'the calculator floats');
+  assert.equal(calc.classList.contains('open'), false);
+  f.window.toggleCalculator(true);
+  assert.equal(calc.classList.contains('open'), true);
+  assert.equal(f.$('calcToggleBtn').getAttribute('aria-expanded'), 'true');
+  assert.equal(calc.querySelectorAll('.calc-keys button').length, 20);
   // the calculator actually computes
   ['7', '×', '8', '='].forEach(key => f.window.calcInput(key));
   assert.match(f.$('calcScreen').textContent, /56$/);
   f.window.calcInput('C');
   assert.equal(f.$('calcScreen').textContent, '0');
+  f.window.toggleCalculator(false);
+  assert.equal(calc.classList.contains('open'), false);
+  // add-a-new-item is a button inside the quick groups card, not a rail
+  assert.equal(f.window.document.querySelectorAll('.posx-rail').length, 0);
+  assert.ok(f.window.document.querySelector('.posv3-quick .posv3-new-item'));
+  // the quick groups sit in the same grid row as the invoice lines
+  const grid = f.window.document.querySelector('#sec-invoice .posv3-grid');
+  assert.equal(grid.contains(f.$('posQuickItems')), true);
+  assert.equal(grid.contains(f.$('invCartTable')), true);
+  // the barcode strip is short and sits right under the invoice data
+  const scan = f.window.document.querySelector('#sec-invoice .posv3-scan');
+  assert.ok(scan);
+  assert.equal(scan.contains(f.$('invBarcodeInp')), true);
+  assert.equal(f.window.getComputedStyle(scan).display, 'flex');
+  const metaCard = f.window.document.querySelector('#sec-invoice .posv3-meta-card');
+  assert.equal(metaCard.compareDocumentPosition(scan) & 4, 4, 'the barcode strip comes after the invoice data');
   // invoice metadata: date, number, warehouse, safe, employee and client
   assert.match(f.$('invDateView').value, /^\d{4}\/\d{2}\/\d{2}$/);
   assert.match(f.$('invNumberView').value, /^#\d+/);
@@ -1213,4 +1237,85 @@ test('shell v3: the active tab is the only visible screen and the home tab sits 
   assert.equal(f.$('windowLayer').classList.contains('open'), true);
   // the active tab always matches the visible screen
   assert.equal(f.$('sec-invoice').closest('.float-window').hidden, false);
+});
+
+test('POS v3: the invoice data is a wide strip, the customer box matches the barcode width', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('sale');
+  const doc = f.window.document;
+  // no banner: the store title / phone block is gone, only the slim utility bar remains
+  assert.equal(f.$('lblStoreName'), null);
+  assert.equal(f.$('lblStorePhone'), null);
+  assert.ok(f.$('appHeader').classList.contains('posv3-slim-bar'));
+  assert.equal(f.$('liveDate') !== null && f.$('syncStatusBadge') !== null, true);
+  // one metadata row: party first, then date, number, warehouse, safe, employee
+  const row = doc.querySelector('#sec-invoice .posv3-meta-row');
+  const order = [...row.children].map(box => box.querySelector('input,select')?.id);
+  assert.deepEqual(order, ['invPartySelect', 'invDateView', 'invNumberView', 'invWarehouseView', 'invSafeView', 'invEmployeeView']);
+  // the customer box is twice the width of every other box (it follows the barcode box)
+  assert.equal(doc.querySelector('#sec-invoice .posv3-meta-row').style.getPropertyValue('--x') , '');
+  const scanField = doc.querySelector('#sec-invoice .posv3-scan .scan-field');
+  assert.ok(scanField, 'the barcode box exists under the strip');
+  // payment type + price tier + calculator live in the strip head
+  const head = doc.querySelector('#sec-invoice .posv3-meta-head');
+  assert.ok(head.contains(f.$('invPayType')) && head.contains(f.$('invPriceTier')) && head.contains(f.$('calcToggleBtn')));
+  // add-customer is a green icon right beside the customer box
+  const addParty = f.$('invQuickPartyBtn');
+  assert.ok(addParty.closest('.pv3-party'), 'the green icon sits beside the customer select');
+  assert.match(addParty.className, /pv3-add-party/);
+  // summary and finish are each a single row
+  assert.equal(doc.querySelectorAll('#sec-invoice .posv3-sum-row').length, 1);
+  assert.equal(doc.querySelectorAll('#sec-invoice .posv3-actions').length, 1);
+  assert.match(doc.querySelector('#sec-invoice .posv3-actions').textContent, /حفظ/);
+});
+
+test('POS v3: the green customer icon opens a floating new-customer window that saves and selects', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.window.openPage('sale');
+  const box = f.$('invQuickParty');
+  assert.equal(box.classList.contains('open'), false);
+  f.window.toggleQuickParty(true);
+  assert.equal(box.classList.contains('open'), true);
+  assert.equal(box.getAttribute('aria-hidden'), 'false');
+  assert.equal(f.$('invQuickPartyBtn').getAttribute('aria-expanded'), 'true');
+  // the name box is the wide one; the rest are two per row
+  assert.equal(f.$('invQuickPartyName').closest('.pv3-field').classList.contains('pv3-wide'), true);
+  assert.equal(box.querySelectorAll('.ppf-grid .pv3-field').length, 5);
+  f.fill('invQuickPartyName', 'مكتبة النيل');
+  f.fill('invQuickPartyPhone', '01011112222');
+  f.fill('invQuickPartyPhone2', '01033334444');
+  f.fill('invQuickPartyCity', 'القاهرة');
+  f.fill('invQuickPartyEmail', 'nile@mail.com');
+  f.fill('invQuickPartyNotes', 'عميل جملة');
+  f.window.saveQuickParty();
+  const party = f.saved().parties.find(p => p.name === 'مكتبة النيل');
+  assert.ok(party, 'the customer was stored');
+  assert.equal(party.phone2, '01033334444');
+  assert.equal(party.city, 'القاهرة');
+  assert.equal(party.email, 'nile@mail.com');
+  assert.equal(party.notes, 'عميل جملة');
+  assert.equal(box.classList.contains('open'), false);
+  assert.equal(f.$('invPartySelect').value, String(party.id));
+  // closing without saving drops the typed values
+  f.window.toggleQuickParty(true);
+  f.fill('invQuickPartyName', 'اسم مؤقت');
+  f.window.toggleQuickParty(false);
+  assert.equal(f.$('invQuickPartyName').value, '');
+});
+
+test('picking an item from a header dropdown closes the menu straight away', async t => {
+  const f = await ready(t, { db: seedDatabase() });
+  f.fill('unlockPinInp', '1234'); f.window.unlockApp();
+  const bar = f.$('appNavbar');
+  const sales = bar.querySelector('.nv-btn[data-menu="sales"]');
+  f.window.toggleNavMenu('sales', sales);
+  assert.equal(f.$('navMenuLayer').hidden, false);
+  f.window.openPage('sale');
+  assert.equal(f.$('navMenuLayer').hidden, true, 'the menu closes after the page opens');
+  assert.equal(f.$('navMenuLayer').innerHTML, '');
+  assert.equal(sales.getAttribute('aria-expanded'), 'false');
+  // every menu item closes the menu itself, before running its page
+  f.window.toggleNavMenu('sales', sales);
+  const first = f.$('navMenuLayer').querySelector('.nm-item');
+  assert.match(first.getAttribute('onclick'), /^closeMenus\(\);/);
 });
