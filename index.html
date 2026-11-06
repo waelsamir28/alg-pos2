@@ -5835,37 +5835,223 @@
 <div id="printAreaA5" dir="rtl"></div>
 
 <style id="fit-screen">
-  /* ============ fit-to-screen: كل الشاشات على الصفحة بدون اسكرول، والمحتوى يُصغر وينسق ============ */
-  html.fit-mode, body.fit-mode { overflow: hidden !important; }
-  html.fit-mode #appShell { transform-origin: top center; transform: scale(var(--fit-scale, 1)); will-change: transform; }
-  /* لا أشرطة تمرير داخلية عند التوصيف — المحتوى كله يُصغر ليناسب الشاشة */
-  html.fit-mode .side-nav, html.fit-mode .float-body, html.fit-mode .workspace { overflow: hidden !important; max-height: none !important; }
-  html.fit-mode .page-table .table-wrap { max-height: none !important; }
+  /* ========================================================================
+     LANDSCAPE PAGE LAYOUT — كل صفحة: عرض > ارتفاع، والهيدر والمحتوى والفوتر
+     جميعهم يظهرون على الشاشة من غير اسكرول. المحتوى يُصغر تلقائياً ليناسب.
+     ======================================================================== */
+
+  /* --- Root: viewport fills screen, no page scroll --- */
+  html.fit-mode, body.fit-mode {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  /* --- Body children stack: header bars → main area → footer bars --- */
+  body.fit-mode > #titleBar,
+  body.fit-mode > #appNavbar,
+  body.fit-mode > #appHeader,
+  body.fit-mode > #tabBar {
+    flex: 0 0 auto !important;
+  }
+
+  body.fit-mode > #appShell,
+  body.fit-mode > #windowLayer {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.fit-mode > #appFooter,
+  body.fit-mode > .app-status {
+    flex: 0 0 auto !important;
+  }
+
+  /* --- App shell (home dashboard): keep grid sidebar+content, but fit height --- */
+  html.fit-mode .app-shell {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    align-items: start !important;
+  }
+
+  html.fit-mode .main-content {
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    max-height: 100% !important;
+  }
+
+  /* Sidebar stays side-by-side with content but no vertical scroll */
+  html.fit-mode .side-nav {
+    overflow: hidden !important;
+    max-height: none !important;
+    position: sticky !important;
+    top: 6px !important;
+    max-height: 88vh !important;
+  }
+
+  /* --- Footer strips stay at bottom, shrink to content --- */
+  html.fit-mode .app-footer,
+  html.fit-mode .app-status {
+    flex: 0 0 auto !important;
+  }
+
+  /* --- Sidebar: no vertical scroll, content scales instead --- */
+  html.fit-mode .side-nav {
+    overflow: hidden !important;
+    max-height: none !important;
+    position: static !important;
+    top: auto !important;
+  }
+
+  /* --- Floating workspace: centered, landscape-constrained, no scroll --- */
+  html.fit-mode .window-layer {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px !important;
+  }
+
+  html.fit-mode .workspace {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    height: 88vh !important;
+    max-height: 88vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html.fit-mode .window-layer.maximized .workspace {
+    width: 98vw !important;
+    height: 94vh !important;
+    max-height: 94vh !important;
+  }
+
+  /* --- Win body: column layout, no internal scroll --- */
+  html.fit-mode .win-body {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 8px !important;
+  }
+
+  /* --- Each page (sec-view): header | content | footer, all fit --- */
+  html.fit-mode .sec-view {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    max-height: 100% !important;
+  }
+
+  /* Page header zone — fixed height, shrink to content */
+  html.fit-mode .sec-view > header,
+  html.fit-mode .win-header,
+  html.fit-mode .pos-titlebar,
+  html.fit-mode .ws-head,
+  html.fit-mode .section-bar,
+  html.fit-mode .page-bar,
+  html.fit-mode .group-head {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Page content zone — fills middle, no scroll (fit-scale handles overflow) */
+  html.fit-mode .win-body > .sec-view > *,
+  html.fit-mode .sec-view > .pos-wrap,
+  html.fit-mode .sec-view > .posv3-body,
+  html.fit-mode .sec-view > .page-table,
+  html.fit-mode .sec-view > .action-groups-grid,
+  html.fit-mode .sec-view > .dash-wrap,
+  html.fit-mode .sec-view > .classic-panel {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+
+  /* Page footer zone — fixed height, shrink to content */
+  html.fit-mode .sec-view > .t-foot-bar,
+  html.fit-mode .sec-view > footer,
+  html.fit-mode .sec-view > .page-actions {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* --- Remove ALL internal scrollbars — content scales instead of scrolling --- */
+  html.fit-mode .side-nav,
+  html.fit-mode .float-body,
+  html.fit-mode .workspace,
+  html.fit-mode .win-body,
+  html.fit-mode .page-table .table-wrap,
+  html.fit-mode .table-wrap,
+  html.fit-mode .dash-body,
+  html.fit-mode .dash-groups,
+  html.fit-mode .classic-grid,
+  html.fit-mode .action-group .group-body {
+    overflow: hidden !important;
+    max-height: none !important;
+  }
+
+  /* --- Landscape preference: on desktop portrait, cap height so width > height --- */
+  @media (orientation: portrait) and (min-width: 761px) {
+    html.fit-mode .workspace {
+      height: 82vh !important;
+      max-height: 82vh !important;
+    }
+  }
+
+  /* --- Fit-scale scaler applies to both home shell and floating windows --- */
+  html.fit-mode #appShell,
+  html.fit-mode .window-layer.open .workspace {
+    transform-origin: top center !important;
+    transform: scale(var(--fit-scale, 1)) !important;
+    will-change: transform !important;
+  }
 </style>
 <script type="module" src="./app.js"></script>
 <script>
-  /* viewport auto-fit: يصغّر contenuto القشرة والنوافذ المنبثقة ليناسب الشاشة من غير اسكرول */
+  /* viewport auto-fit landscape: يصغّر القشرة والنوافذ المنبثقة ليناسب الشاشة من غير اسكرول */
   (function fitScreen(){
-    const PAD = 20;
-    const MIN_SCALE = 0.5;
+    const PAD = 16;
+    const MIN_SCALE = 0.45;
     let raf = null;
     function refit(){
       document.documentElement.classList.add('fit-mode');
       document.body.classList.add('fit-mode');
+
+      const targets = [];
       const shell = document.getElementById('appShell');
-      if(!shell) return;
-      const cw = shell.scrollWidth, ch = shell.scrollHeight;
-      const vw = shell.clientWidth, vh = shell.clientHeight;
-      if(!cw || !ch) return;
-      let s = Math.min(1, (vw - PAD) / cw, (vh - PAD) / ch);
-      if(s < MIN_SCALE) s = MIN_SCALE;
-      if(s < 1){
-        shell.style.setProperty('--fit-scale', s);
-        shell.classList.add('fit-scaler');
-      } else {
-        shell.style.removeProperty('--fit-scale');
-        shell.classList.remove('fit-scaler');
-      }
+      const ws = document.querySelector('.workspace');
+      if(shell) targets.push(shell);
+      if(ws) targets.push(ws);
+      if(targets.length === 0) return;
+
+      targets.forEach(el => {
+        const cw = el.scrollWidth, ch = el.scrollHeight;
+        const vw = el.clientWidth, vh = el.clientHeight;
+        if(!cw || !ch || !vw || !vh) return;
+        let s = Math.min(1, (vw - PAD) / cw, (vh - PAD) / ch);
+        if(s < MIN_SCALE) s = MIN_SCALE;
+        if(s < 1){
+          el.style.setProperty('--fit-scale', s);
+          el.classList.add('fit-scaler');
+        } else {
+          el.style.removeProperty('--fit-scale');
+          el.classList.remove('fit-scaler');
+        }
+      });
     }
     function schedule(){ if(raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(refit); }
     window.addEventListener('load', schedule);
