@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="fit-mode">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -5834,8 +5834,46 @@
 <div id="appNotice" role="alert" hidden></div>
 <div id="printAreaA5" dir="rtl"></div>
 
+<style id="fit-screen">
+  /* ============ fit-to-screen: كل الشاشات على الصفحة بدون اسكرول، والمحتوى يُصغر وينسق ============ */
+  html.fit-mode, body.fit-mode { overflow: hidden !important; }
+  html.fit-mode #appShell { transform-origin: top center; transform: scale(var(--fit-scale, 1)); will-change: transform; }
+  /* لا أشرطة تمرير داخلية عند التوصيف — المحتوى كله يُصغر ليناسب الشاشة */
+  html.fit-mode .side-nav, html.fit-mode .float-body, html.fit-mode .workspace { overflow: hidden !important; max-height: none !important; }
+  html.fit-mode .page-table .table-wrap { max-height: none !important; }
+</style>
 <script type="module" src="./app.js"></script>
 <script>
+  /* viewport auto-fit: يصغّر contenuto القشرة والنوافذ المنبثقة ليناسب الشاشة من غير اسكرول */
+  (function fitScreen(){
+    const PAD = 20;
+    const MIN_SCALE = 0.5;
+    let raf = null;
+    function refit(){
+      document.documentElement.classList.add('fit-mode');
+      document.body.classList.add('fit-mode');
+      const shell = document.getElementById('appShell');
+      if(!shell) return;
+      const cw = shell.scrollWidth, ch = shell.scrollHeight;
+      const vw = shell.clientWidth, vh = shell.clientHeight;
+      if(!cw || !ch) return;
+      let s = Math.min(1, (vw - PAD) / cw, (vh - PAD) / ch);
+      if(s < MIN_SCALE) s = MIN_SCALE;
+      if(s < 1){
+        shell.style.setProperty('--fit-scale', s);
+        shell.classList.add('fit-scaler');
+      } else {
+        shell.style.removeProperty('--fit-scale');
+        shell.classList.remove('fit-scaler');
+      }
+    }
+    function schedule(){ if(raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(refit); }
+    window.addEventListener('load', schedule);
+    window.addEventListener('resize', schedule, {passive:true});
+    new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class','hidden','style']});
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
+    else schedule();
+  })();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
