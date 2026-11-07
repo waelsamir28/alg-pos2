@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="fit-mode">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3683,85 +3683,6 @@
       <ul id="systemAlertsList"></ul>
     </section>
 
-    <!-- ============ QUICK ACCESS ============ -->
-    <div class="classic-panel" id="classicPanel">
-      <div class="section-bar">
-        <span aria-hidden="true">🗂️</span>
-        <h2>شاشات البرنامج</h2>
-        <button type="button" class="bar-mini" onclick="expandAllGroups()" title="فتح كل المجموعات">فتح الكل</button>
-        <button type="button" class="bar-mini" onclick="collapseAllGroups()" title="إغلاق كل المجموعات">إغلاق الكل</button>
-      </div>
-      <div class="action-groups-grid">
-        <section class="action-group" data-group="quick">
-          <button type="button" class="group-head" onclick="toggleActionGroup('quick')" aria-expanded="false"><span class="group-arrow" aria-hidden="true">▾</span><span aria-hidden="true">⚡</span> المهام السريعة</button>
-          <div class="group-body">
-            <div class="classic-grid">
-              <button type="button" class="c-btn" onclick="openSalesInvoice()">🛒 شاشة البيع</button>
-              <button type="button" class="c-btn" onclick="openPurchaseInvoice()">📥 فاتورة مشتريات</button>
-              <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف والمخزون')">📦 الأصناف</button>
-              <button type="button" class="c-btn" onclick="openSec('sec-labels','🏷️ طباعة ملصقات الباركود')">🏷️ ملصقات الباركود</button>
-              <button type="button" class="c-btn" onclick="openCustomersPage()">👥 العملاء</button>
-              <button type="button" class="c-btn" onclick="openSuppliersPage()">🚚 الموردون</button>
-              <button type="button" class="c-btn" onclick="openTreasury('all')">💰 الخزنة</button>
-              <button type="button" class="c-btn" onclick="lockApp()">🔐 قفل الشاشة</button>
-            </div>
-          </div>
-        </section>
-        <section class="action-group" data-group="stock">
-          <button type="button" class="group-head" onclick="toggleActionGroup('stock')" aria-expanded="false"><span class="group-arrow" aria-hidden="true">▾</span><span aria-hidden="true">📦</span> المخزون والأصناف</button>
-          <div class="group-body">
-            <div class="classic-grid">
-              <button type="button" class="c-btn" onclick="openSec('sec-items','📦 بيانات الأصناف')">بيانات الأصناف</button>
-              <button type="button" class="c-btn" onclick="openSec('sec-categories','📁 بيانات المجموعات')">بيانات المجموعات</button>
-              <button type="button" class="c-btn" onclick="openStockFilter('zero')">النواقص</button>
-              <button type="button" class="c-btn" onclick="openStockFilter('low')">حد الطلب</button>
-              <button type="button" class="c-btn" onclick="openStockFilter('all')">جرد المخزن</button>
-            </div>
-          </div>
-        </section>
-        <section class="action-group" data-group="invoices">
-          <button type="button" class="group-head" onclick="toggleActionGroup('invoices')" aria-expanded="false"><span class="group-arrow" aria-hidden="true">▾</span><span aria-hidden="true">🧾</span> الفواتير والحركة</button>
-          <div class="group-body">
-            <div class="classic-grid">
-              <button type="button" class="c-btn" onclick="openQuotePage()">عرض أسعار</button>
-              <button type="button" class="c-btn" onclick="openInvLog('sale')">عمليات البيع</button>
-              <button type="button" class="c-btn" onclick="openInvLog('purchase')">عمليات الشراء</button>
-              <button type="button" class="c-btn" onclick="openInvLog('sale',true)">مبيعات فترة</button>
-              <button type="button" class="c-btn" onclick="openInvLog('purchase',true)">مشتريات فترة</button>
-            </div>
-          </div>
-        </section>
-        <section class="action-group" data-group="parties">
-          <button type="button" class="group-head" onclick="toggleActionGroup('parties')" aria-expanded="false"><span class="group-arrow" aria-hidden="true">▾</span><span aria-hidden="true">🤝</span> العملاء والموردون</button>
-          <div class="group-body">
-            <div class="classic-grid">
-              <button type="button" class="c-btn" onclick="openPartyReport('customer','moves')">حركة حساب عميل</button>
-              <button type="button" class="c-btn" onclick="openPartyReport('supplier','moves')">حركة حساب مورد</button>
-              <button type="button" class="c-btn" onclick="openPartyReport('customer','balances')">أرصدة العملاء</button>
-              <button type="button" class="c-btn" onclick="openPartyReport('supplier','balances')">أرصدة الموردين</button>
-              <button type="button" class="c-btn" onclick="openPartyReport('customer','statement')">كشف حساب عميل</button>
-              <button type="button" class="c-btn" onclick="openPartyReport('supplier','statement')">كشف حساب مورد</button>
-            </div>
-          </div>
-        </section>
-        <section class="action-group" data-group="cash">
-          <button type="button" class="group-head" onclick="toggleActionGroup('cash')" aria-expanded="false"><span class="group-arrow" aria-hidden="true">▾</span><span aria-hidden="true">💰</span> الخزينة والأرباح</button>
-          <div class="group-body">
-            <div class="classic-grid">
-              <button type="button" class="c-btn" onclick="openTreasury('all')">الخزنة</button>
-              <button type="button" class="c-btn" onclick="openTreasury('in')">وارد الخزنة</button>
-              <button type="button" class="c-btn" onclick="openTreasury('out')">منصرف الخزنة</button>
-              <button type="button" class="c-btn" onclick="openTreasury('expense')">المصروفات</button>
-              <button type="button" class="c-btn" onclick="openProfitSec('item')">أرباح صنف</button>
-              <button type="button" class="c-btn" onclick="openProfitSec('general')">الأرباح</button>
-              <button type="button" class="c-btn" onclick="openProfitSec('net')">صافي الأرباح</button>
-              <button type="button" class="c-btn" onclick="openProfitSec('period')">أرباح فترة</button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-
 <div class="window-layer" id="windowLayer" role="region" aria-labelledby="winTitle">
   <div class="float-windows" id="floatWindows" aria-live="polite"></div>
   <div class="float-taskbar" id="floatTaskbar" hidden></div>
@@ -5834,232 +5755,198 @@
 <div id="appNotice" role="alert" hidden></div>
 <div id="printAreaA5" dir="rtl"></div>
 
-<style id="fit-screen">
+<style id="page-layout">
   /* ========================================================================
-     LANDSCAPE PAGE LAYOUT — كل صفحة: عرض > ارتفاع، والهيدر والمحتوى والفوتر
-     جميعهم يظهرون على الشاشة من غير اسكرول. المحتوى يُصغر تلقائياً ليناسب.
+     PAGE LAYOUT — الهيدر ثابت، والمحتوى 중間 يتScroll، والفوتر ثابت في الأسفل
+     الأزرار مصغرة والمنتظمة لتناسب الشاشة بشكل احترافي
      ======================================================================== */
 
-  /* --- Root: viewport fills screen, no page scroll --- */
-  html.fit-mode, body.fit-mode {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
+  html, body { height: 100%; overflow: auto; }
+
+  /* --- Body: stack header → main → footer --- */
+  body > #titleBar,
+  body > #appNavbar,
+  body > #appHeader,
+  body > #tabBar {
+    flex: 0 0 auto;
   }
 
-  /* --- Body children stack: header bars → main area → footer bars --- */
-  body.fit-mode > #titleBar,
-  body.fit-mode > #appNavbar,
-  body.fit-mode > #appHeader,
-  body.fit-mode > #tabBar {
-    flex: 0 0 auto !important;
+  body > #appShell,
+  body > #windowLayer {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
-  body.fit-mode > #appShell,
-  body.fit-mode > #windowLayer {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
+  body > #appFooter,
+  body > .app-status {
+    flex: 0 0 auto;
   }
 
-  body.fit-mode > #appFooter,
-  body.fit-mode > .app-status {
-    flex: 0 0 auto !important;
-  }
-
-  /* --- App shell (home dashboard): keep grid sidebar+content, but fit height --- */
-  html.fit-mode .app-shell {
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    gap: 6px !important;
-    padding: 6px !important;
-    align-items: start !important;
-  }
-
-  html.fit-mode .main-content {
-    min-height: 0 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    max-height: 100% !important;
-  }
-
-  /* Sidebar stays side-by-side with content but no vertical scroll */
-  html.fit-mode .side-nav {
-    overflow: hidden !important;
-    max-height: none !important;
-    position: sticky !important;
-    top: 6px !important;
-    max-height: 88vh !important;
-  }
-
-  /* --- Footer strips stay at bottom, shrink to content --- */
-  html.fit-mode .app-footer,
-  html.fit-mode .app-status {
-    flex: 0 0 auto !important;
-  }
-
-  /* --- Sidebar: no vertical scroll, content scales instead --- */
-  html.fit-mode .side-nav {
-    overflow: hidden !important;
-    max-height: none !important;
-    position: static !important;
-    top: auto !important;
-  }
-
-  /* --- Floating workspace: centered, landscape-constrained, no scroll --- */
-  html.fit-mode .window-layer {
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 6px !important;
-  }
-
-  html.fit-mode .workspace {
-    width: 96vw !important;
-    max-width: 96vw !important;
-    height: 88vh !important;
-    max-height: 88vh !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  html.fit-mode .window-layer.maximized .workspace {
-    width: 98vw !important;
-    height: 94vh !important;
-    max-height: 94vh !important;
-  }
-
-  /* --- Win body: column layout, no internal scroll --- */
-  html.fit-mode .win-body {
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    min-height: 0 !important;
+  /* --- App shell: compact home dashboard --- */
+  .app-shell {
+    gap: 8px !important;
     padding: 8px !important;
+    overflow: visible !important;
+    min-height: auto !important;
   }
 
-  /* --- Each page (sec-view): header | content | footer, all fit --- */
-  html.fit-mode .sec-view {
+  .main-content {
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  /* --- KPI cards: smaller --- */
+  .dash-kpi {
+    padding: 8px 10px !important;
+    min-height: 70px !important;
+  }
+  .dash-kpi .dk-body small { font-size: 10px !important; }
+  .dash-kpi .dk-body strong { font-size: 15px !important; }
+
+  /* --- Floating workspace: scrollable, fits screen --- */
+  .window-layer {
+    padding: 8px !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+
+  .workspace {
+    width: 98vw !important;
+    max-width: 1200px !important;
+    min-height: 60vh !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    max-height: 100% !important;
+    margin: 8px auto !important;
   }
 
-  /* Page header zone — fixed height, shrink to content */
-  html.fit-mode .sec-view > header,
-  html.fit-mode .win-header,
-  html.fit-mode .pos-titlebar,
-  html.fit-mode .ws-head,
-  html.fit-mode .section-bar,
-  html.fit-mode .page-bar,
-  html.fit-mode .group-head {
+  .window-layer.maximized .workspace {
+    width: 99vw !important;
+    max-width: none !important;
+    min-height: 90vh !important;
+  }
+
+  .win-body {
+    overflow: auto !important;
+    padding: 10px !important;
+    min-height: 0 !important;
+  }
+
+  /* --- Each page: header | scrollable content | footer --- */
+  .sec-view {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Page header: compact */
+  .sec-view > header,
+  .win-header,
+  .pos-titlebar,
+  .ws-head,
+  .section-bar,
+  .page-bar,
+  .group-head {
     flex: 0 0 auto !important;
     min-height: 0 !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
   }
 
-  /* Page content zone — fills middle, no scroll (fit-scale handles overflow) */
-  html.fit-mode .win-body > .sec-view > *,
-  html.fit-mode .sec-view > .pos-wrap,
-  html.fit-mode .sec-view > .posv3-body,
-  html.fit-mode .sec-view > .page-table,
-  html.fit-mode .sec-view > .action-groups-grid,
-  html.fit-mode .sec-view > .dash-wrap,
-  html.fit-mode .sec-view > .classic-panel {
-    flex: 1 1 auto !important;
+  .pos-title { font-size: 16px !important; }
+  .pos-titlebar p { font-size: 11px !important; margin: 2px 0 0 !important; }
+
+  /* Page content: scrollable */
+  .sec-view > .pos-wrap,
+  .sec-view > .posv3-body,
+  .sec-view > .page-table,
+  .sec-view > .action-groups-grid,
+  .sec-view > .dash-wrap,
+  .sec-view > .classic-panel,
+  .win-body > .sec-view > * {
+    flex: 0 0 auto !important;
     min-height: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Page footer: compact */
+  .sec-view > .t-foot-bar,
+  .sec-view > footer,
+  .sec-view > .page-actions {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    padding: 6px 10px !important;
+  }
+
+  /* --- Buttons: smaller and compact --- */
+  .c-btn {
+    padding: 6px 8px !important;
+    min-height: 48px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+  }
+  .c-btn .button-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 13px !important;
+  }
+  .c-btn .button-label {
+    line-height: 1.2 !important;
+    font-size: 10.5px !important;
+  }
+
+  /* Action buttons in groups */
+  .classic-grid {
     gap: 6px !important;
+    padding: 6px !important;
   }
 
-  /* Page footer zone — fixed height, shrink to content */
-  html.fit-mode .sec-view > .t-foot-bar,
-  html.fit-mode .sec-view > footer,
-  html.fit-mode .sec-view > .page-actions {
-    flex: 0 0 auto !important;
-    min-height: 0 !important;
+  .group-head {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
   }
 
-  /* --- Remove ALL internal scrollbars — content scales instead of scrolling --- */
-  html.fit-mode .side-nav,
-  html.fit-mode .float-body,
-  html.fit-mode .workspace,
-  html.fit-mode .win-body,
-  html.fit-mode .page-table .table-wrap,
-  html.fit-mode .table-wrap,
-  html.fit-mode .dash-body,
-  html.fit-mode .dash-groups,
-  html.fit-mode .classic-grid,
-  html.fit-mode .action-group .group-body {
-    overflow: hidden !important;
+  .group-arrow { font-size: 10px !important; }
+
+  /* --- Sidebar: compact --- */
+  .side-nav {
+    padding: 8px 6px !important;
+    gap: 4px !important;
+  }
+  .nav-link {
+    padding: 6px 8px !important;
+    font-size: 10.5px !important;
+    margin: 2px 0 !important;
+  }
+  .nav-icon { width: 20px !important; height: 20px !important; font-size: 12px !important; }
+
+  /* --- Footer strips: compact --- */
+  .app-footer {
+    padding: 6px 14px !important;
+    font-size: 10.5px !important;
+    gap: 14px !important;
+  }
+  .app-status {
+    padding: 3px 12px !important;
+    font-size: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* --- Ensure scrolling works on tables and forms --- */
+  .table-wrap, .page-table .table-wrap {
+    overflow: auto !important;
     max-height: none !important;
   }
-
-  /* --- Landscape preference: on desktop portrait, cap height so width > height --- */
-  @media (orientation: portrait) and (min-width: 761px) {
-    html.fit-mode .workspace {
-      height: 82vh !important;
-      max-height: 82vh !important;
-    }
-  }
-
-  /* --- Fit-scale scaler applies to both home shell and floating windows --- */
-  html.fit-mode #appShell,
-  html.fit-mode .window-layer.open .workspace {
-    transform-origin: top center !important;
-    transform: scale(var(--fit-scale, 1)) !important;
-    will-change: transform !important;
+  .win-body, .float-body {
+    overflow: auto !important;
   }
 </style>
 <script type="module" src="./app.js"></script>
 <script>
-  /* viewport auto-fit landscape: يصغّر القشرة والنوافذ المنبثقة ليناسب الشاشة من غير اسكرول */
-  (function fitScreen(){
-    const PAD = 16;
-    const MIN_SCALE = 0.45;
-    let raf = null;
-    function refit(){
-      document.documentElement.classList.add('fit-mode');
-      document.body.classList.add('fit-mode');
-
-      const targets = [];
-      const shell = document.getElementById('appShell');
-      const ws = document.querySelector('.workspace');
-      if(shell) targets.push(shell);
-      if(ws) targets.push(ws);
-      if(targets.length === 0) return;
-
-      targets.forEach(el => {
-        const cw = el.scrollWidth, ch = el.scrollHeight;
-        const vw = el.clientWidth, vh = el.clientHeight;
-        if(!cw || !ch || !vw || !vh) return;
-        let s = Math.min(1, (vw - PAD) / cw, (vh - PAD) / ch);
-        if(s < MIN_SCALE) s = MIN_SCALE;
-        if(s < 1){
-          el.style.setProperty('--fit-scale', s);
-          el.classList.add('fit-scaler');
-        } else {
-          el.style.removeProperty('--fit-scale');
-          el.classList.remove('fit-scaler');
-        }
-      });
-    }
-    function schedule(){ if(raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(refit); }
-    window.addEventListener('load', schedule);
-    window.addEventListener('resize', schedule, {passive:true});
-    new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class','hidden','style']});
-    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
-    else schedule();
-  })();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
