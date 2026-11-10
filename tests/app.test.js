@@ -1008,8 +1008,13 @@ test('opening a page from the dropdown registers a tab, re-opening reuses it and
   assert.equal(f.$('tabBar').querySelectorAll('.tab').length, 1);
 });
 
-test('the dashboard shows a KPI strip and framed feature groups', async t => {
+test('the dashboard shows the blue storefront layout, KPIs and all core feature groups', async t => {
   const f = await ready(t, { db: seedDatabase() });
+  assert.equal(f.window.document.body.dataset.theme, 'ref-light-blue');
+  assert.ok(f.$('dashboardRail'));
+  assert.ok(f.$('dashWrap').querySelector('.dashboard-hero'));
+  assert.equal(f.$('dashboardStoreName').textContent, 'مكتبة الجمال');
+  assert.match(f.$('dashboardRail').querySelector('[onclick="openPage(\'sale\')"]').textContent, /المبيعات/);
   assert.equal(f.$('dashKpis').querySelectorAll('.dash-kpi').length, 4);
   assert.equal(f.$('dashBody').querySelectorAll('.dash-group').length, 7);
   assert.ok(f.$('dashBody').querySelectorAll('.dash-card').length >= 20);

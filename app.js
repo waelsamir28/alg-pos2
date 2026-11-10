@@ -736,45 +736,54 @@ const PAGE_DEFS = {
   'close-all': { title: 'إغلاق الكل', action: () => closeAllTabs() }
 };
 const DASH_GROUPS = [
-  { key: 'cash', title: 'النقدية والخزنة', tint: 'cash', icon: 'wallet', items: [
+  { key: 'cash', title: 'النقدية والخزينة', tint: 'cash', icon: 'wallet', items: [
     { label: 'الخزينة', page: 'treasury-all', icon: 'wallet' },
-    { label: 'وارد', page: 'treasury-in', icon: 'plus' },
-    { label: 'منصرف', page: 'treasury-out', icon: 'download' },
+    { label: 'إيداع نقدي', page: 'treasury-in', icon: 'plus' },
+    { label: 'منصرف الخزينة', page: 'treasury-out', icon: 'download' },
     { label: 'المصروفات', page: 'treasury-expense', icon: 'money' }
   ] },
-  { key: 'invoice', title: 'الفواتير', tint: 'invoice', icon: 'cart', items: [
+  { key: 'invoice', title: 'المبيعات والمشتريات', tint: 'invoice', icon: 'cart', items: [
     { label: 'فاتورة مبيعات', page: 'sale', icon: 'cart' },
-    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
     { label: 'مرتجع مبيعات', page: 'sale_return', icon: 'swap' },
-    { label: 'عرض أسعار', page: 'quote', icon: 'doc' }
+    { label: 'فاتورة مشتريات', page: 'purchase', icon: 'truck' },
+    { label: 'مرتجع مشتريات', page: 'purchase_return', icon: 'swap' },
+    { label: 'عرض أسعار', page: 'quote', icon: 'doc' },
+    { label: 'سجل فواتير البيع', page: 'log-sale', icon: 'receipt' },
+    { label: 'سجل فواتير الشراء', page: 'log-purchase', icon: 'receipt' }
   ] },
   { key: 'people', title: 'العملاء والموردون', tint: 'people', icon: 'users', items: [
-    { label: 'العملاء', page: 'customers', icon: 'users' },
-    { label: 'الموردون', page: 'suppliers', icon: 'truck' },
+    { label: 'إدارة العملاء', page: 'customers', icon: 'users' },
+    { label: 'إدارة الموردين', page: 'suppliers', icon: 'truck' },
     { label: 'أرصدة العملاء', page: 'customers-balances', icon: 'chart' },
-    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' }
+    { label: 'أرصدة الموردين', page: 'suppliers-balances', icon: 'chart' },
+    { label: 'كشف حساب عميل', page: 'customers-statement', icon: 'receipt' },
+    { label: 'كشف حساب مورد', page: 'suppliers-statement', icon: 'receipt' }
   ] },
-  { key: 'stock', title: 'المخزون والأصناف', tint: 'stock', icon: 'box', items: [
-    { label: 'الأصناف', page: 'items', icon: 'box' },
+  { key: 'stock', title: 'المخازن والأصناف', tint: 'stock', icon: 'box', items: [
+    { label: 'بيانات الأصناف', page: 'items', icon: 'box' },
     { label: 'المجموعات', page: 'categories', icon: 'folder' },
-    { label: 'النواقص', page: 'stock-zero', icon: 'alert' },
-    { label: 'الملصقات', page: 'labels', icon: 'tag' }
+    { label: 'الأصناف النافدة', page: 'stock-zero', icon: 'alert' },
+    { label: 'حد الطلب', page: 'stock-low', icon: 'alert' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' },
+    { label: 'ملصقات الباركود', page: 'labels', icon: 'tag' }
   ] },
-  { key: 'reports', title: 'التقارير', tint: 'reports', icon: 'chart', items: [
-    { label: 'الأرباح', page: 'profits-general', icon: 'chart' },
+  { key: 'reports', title: 'التقارير والمتابعة', tint: 'reports', icon: 'chart', items: [
+    { label: 'التقرير العام والأرباح', page: 'profits-general', icon: 'chart' },
     { label: 'أرباح صنف', page: 'profits-item', icon: 'chart' },
-    { label: 'سجل الفواتير', page: 'log-sale', icon: 'receipt' },
-    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' }
+    { label: 'أرباح فترة', page: 'profits-period', icon: 'chart' },
+    { label: 'مبيعات فترة', page: 'log-sale-period', icon: 'receipt' },
+    { label: 'جرد المخزن', page: 'stock-all', icon: 'grid' },
+    { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
   ] },
-  { key: 'staff', title: 'الموظفون', tint: 'staff', icon: 'user', items: [
-    { label: 'إدارة الموظفين', page: 'employees', icon: 'user' },
+  { key: 'staff', title: 'إدارة الموظفين', tint: 'staff', icon: 'user', items: [
+    { label: 'بيانات الموظفين', page: 'employees', icon: 'user' },
     { label: 'الحضور والانصراف', page: 'employees-attendance', icon: 'bell' },
     { label: 'المرتبات', page: 'employees-payroll', icon: 'money' },
-    { label: 'الإجازات', page: 'employees-vacations', icon: 'doc' }
+    { label: 'الإجازات والجزاءات', page: 'employees-vacations', icon: 'doc' }
   ] },
-  { key: 'settings', title: 'البرنامج', tint: 'settings', icon: 'settings', items: [
-    { label: 'الإعدادات', page: 'settings', icon: 'settings' },
-    { label: 'المستخدمون', page: 'lock', icon: 'lock' },
+  { key: 'settings', title: 'البرنامج والإعدادات', tint: 'settings', icon: 'settings', items: [
+    { label: 'إعدادات البرنامج', page: 'settings', icon: 'settings' },
+    { label: 'تغيير المستخدم', page: 'lock', icon: 'lock' },
     { label: 'سجل النشاط', page: 'activity', icon: 'bell' }
   ] }
 ];
@@ -977,7 +986,10 @@ function renderDashboard() {
 }
 function paintTitleChrome() {
   if ($('titleBarName')) $('titleBarName').textContent = db.settings.name;
+  if ($('headStoreName')) $('headStoreName').textContent = db.settings.name;
+  if ($('dashboardStoreName')) $('dashboardStoreName').textContent = db.settings.name;
   if ($('titleBarLogo')) $('titleBarLogo').src = lookSettings().storeLogo || '/icon-192.png';
+  if ($('dashboardLogo')) $('dashboardLogo').src = lookSettings().storeLogo || '/icon-192.png';
   if ($('titleBarUser')) $('titleBarUser').textContent = `${activeStaff().name} · ${roleLabel(activeStaff().role)}`;
   if ($('titleBarClock')) $('titleBarClock').textContent = `${localDate()} ${new Date().toTimeString().slice(0, 5)}`;
   if ($('footerBrand')) $('footerBrand').textContent = db.settings.name;
@@ -1840,7 +1852,7 @@ function saveAppearance(settings) {
 }
 function applyAppearance() {
   const appearance = getAppearance();
-  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'win11-indigo';
+  const theme = THEMES.includes(appearance.theme) ? appearance.theme : 'ref-light-blue';
   document.body.dataset.theme = theme;
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
   if ($('darkModeButton')) {
@@ -1944,8 +1956,8 @@ function decorateActionButtons() {
 }
 function toggleDarkMode() {
   const appearance = getAppearance();
-  if (appearance.theme === 'night') appearance.theme = appearance.previousTheme || 'vista-classic';
-  else { appearance.previousTheme = appearance.theme || 'vista-classic'; appearance.theme = 'night'; }
+  if (appearance.theme === 'night') appearance.theme = appearance.previousTheme || 'ref-light-blue';
+  else { appearance.previousTheme = appearance.theme || 'ref-light-blue'; appearance.theme = 'night'; }
   saveAppearance(appearance); applyAppearance();
   paintLookControls(lookSettings());
 }
@@ -2435,7 +2447,7 @@ function setNightMode(mode) {
   saveLook({ nightMode: mode });
   const appearance = getAppearance();
   if (appearance.theme !== 'night') {
-    appearance.previousTheme = appearance.theme || 'vista-classic';
+    appearance.previousTheme = appearance.theme || 'ref-light-blue';
     appearance.theme = 'night';
     saveAppearance(appearance); applyAppearance();
   }
@@ -2453,7 +2465,7 @@ function applyAutoNight() {
   const appearance = getAppearance();
   if (hour >= 19 || hour < 6) {
     if (appearance.theme !== 'night') {
-      appearance.previousTheme = appearance.theme || 'vista-classic';
+      appearance.previousTheme = appearance.theme || 'ref-light-blue';
       appearance.theme = 'night';
       saveAppearance(appearance); applyAppearance();
     }
@@ -4638,7 +4650,7 @@ function loadSettingsForm() {
     $('setDefaultSafe').value = storeSetting('defaultSafe', 'الخزينة الرئيسية');
   }
   if ($('setStoreHint')) $('setStoreHint').textContent = `آخر تحديث: ${localDate().replaceAll('-', '/')}`;
-  if ($('setThemeChip')) $('setThemeChip').textContent = `الثيم: ${THEME_LABELS[getAppearance().theme] || THEME_LABELS['win11-indigo']}`;
+  if ($('setThemeChip')) $('setThemeChip').textContent = `الثيم: ${THEME_LABELS[getAppearance().theme] || THEME_LABELS['ref-light-blue']}`;
   if ($('storeLogoPreview') && lookSettings().storeLogo) $('storeLogoPreview').style.backgroundImage = `url(${lookSettings().storeLogo})`;
   $('setPinCode').value = ''; $('setSyncKey').value = sessionToken();
   $('rememberSyncKey').checked = Boolean(localStorage.getItem(REMEMBERED_TOKEN_KEY)) || !sessionToken();

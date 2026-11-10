@@ -13,7 +13,7 @@
  *
  * ES module: package.json declares "type": "module" (Electron 28+ can run an ESM main process).
  */
-import { app, BrowserWindow, Menu, dialog, shell } from 'electron';
+import { app, BrowserWindow, Menu, dialog, shell, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createLocalServer } from './electron/local-server.js';
@@ -71,11 +71,16 @@ async function loadSyncHandler() {
 
 function createWindow(url) {
   const origin = new URL(url).origin;
+  const workArea = screen.getPrimaryDisplay().workAreaSize;
+  const minWidth = Math.min(1180, workArea.width);
+  const minHeight = Math.min(680, workArea.height);
+  const width = Math.min(1440, Math.max(minWidth, workArea.width));
+  const height = Math.min(900, Math.max(minHeight, workArea.height));
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 680,
+    width,
+    height,
+    minWidth,
+    minHeight,
     show: false,
     backgroundColor: '#f4f6fa',
     title: 'نقاط البيع',
